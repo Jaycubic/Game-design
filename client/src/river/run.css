@@ -98,3 +98,15 @@
 .rh-tag { position: absolute; left: 0; top: 0; font-weight: 800; font-size: 0.8rem; padding: 2px 8px; border-radius: 99px; background: rgba(10, 30, 40, 0.75); border: 2px solid var(--c); white-space: nowrap; will-change: transform; }
 .rh-tag.me { background: var(--c); color: #102028; text-shadow: none; }
 .rh-banner.go { font-size: 5rem; top: 38%; background: none; color: #4fe0a0; -webkit-text-stroke: 3px #10302a; }
+
+/* Tutorial coach */
+.coach { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); width: min(520px, 92vw); background: rgba(8, 24, 32, 0.9); border: 3px solid #4fe0a0; border-radius: 18px; padding: 12px 16px; pointer-events: auto; text-align: center; }
+.coach.done { top: 30%; border-color: #ffd23f; }
+.coach-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 6px; }
+.coach-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); }
+.coach-dot.done { background: #4fe0a0; }
+.coach-dot.now { background: #ffd23f; box-shadow: 0 0 0 3px rgba(255, 210, 63, 0.35); }
+.coach-title { font-size: 1.5rem; font-weight: 900; display: flex; gap: 10px; justify-content: center; align-items: center; }
+.coach-keys { background: #ffd23f; color: #2a2000; text-shadow: none; border-radius: 8px; padding: 2px 10px; font-family: inherit; font-size: 1.1rem; }
+.coach-text { margin: 6px 0 8px; text-shadow: none; }
+.coach-skip { font-size: 0.85rem; min-height: 32px; padding: 2px 12px; }

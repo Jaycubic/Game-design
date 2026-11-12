@@ -55,6 +55,8 @@ export interface RunResults {
 
 export interface Snapshot {
   tick: number;
+  duration: number;
+  tutorial: boolean;
   t: number;
   phase: RunPhase;
   health: number;

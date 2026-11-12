@@ -23,6 +23,7 @@ const MAX_QUEUED: usize = 8;
 pub struct RunHost {
     pub run: Run,
     pub practice: bool,
+    pub tutorial: bool,
     /// seat → boat colour (the player's equipped boat).
     pub skins: HashMap<u8, String>,
     pending: HashMap<u8, VecDeque<Input>>,
@@ -62,6 +63,7 @@ pub fn start(
     g: &mut RoomEntry,
     player: &str,
     practice: bool,
+    tutorial: bool,
     skins: HashMap<u8, String>,
     db: PgPool,
 ) -> Result<(), GameError> {
@@ -82,7 +84,7 @@ pub fn start(
         return Err(GameError::new("no_players", "Nobody is connected."));
     }
     let seed = rand::random::<u64>();
-    let run = Run::new(seed, &seats);
+    let run = if tutorial { Run::tutorial(seed, &seats) } else { Run::new(seed, &seats) };
     let boats: Vec<_> = run.boats.iter().map(|b| json!({ "seat": b.seat, "crew": b.crew })).collect();
     let names: HashMap<u8, String> = g
         .state
@@ -95,12 +97,12 @@ pub fn start(
         "run.started",
         g.state.id,
         g.state.version,
-        json!({ "seed": seed, "boats": boats, "names": names, "skins": skins, "practice": practice }),
+        json!({ "seed": seed, "boats": boats, "names": names, "skins": skins, "practice": practice, "tutorial": tutorial }),
     );
     for c in g.conns.values() {
         let _ = c.tx.send(msg.clone());
     }
-    g.run = Some(RunHost { run, practice, skins, pending: HashMap::new() });
+    g.run = Some(RunHost { run, practice, tutorial, skins, pending: HashMap::new() });
     tokio::spawn(run_loop(entry_arc, db));
     Ok(())
 }
@@ -147,6 +149,10 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
             g.state.version += 1;
             broadcast(&g, &[]);
             drop(g);
+            if host.tutorial {
+                tracing::info!(room = %room, "tutorial finished");
+                return;
+            }
             // Pay out after releasing the room lock; tell players what they earned.
             match meta::award(&db, room, host.practice, outcomes).await {
                 Ok(paid) => {

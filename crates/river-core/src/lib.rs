@@ -283,7 +283,12 @@ pub struct Run {
     pub spawn_timer: f32,
     pub events: Vec<Event>,
     pub results: Option<Results>,
+    /// Scripted 60-second tutorial course: no rule changes, no debris waves.
+    #[serde(default)]
+    pub tutorial: bool,
 }
+
+pub const TUTORIAL_SECONDS: f32 = 60.0;
 
 impl Run {
     /// Seats are assigned to crews alternately (0,1,0,1). Two players = one crew.
@@ -329,9 +334,57 @@ impl Run {
             spawn_timer: 0.0,
             events: Vec::new(),
             results: None,
+            tutorial: false,
         };
         run.generate_course();
         run
+    }
+
+    /// A short hand-built course that teaches one control at a time:
+    /// plastic lines → logs to hop → weed to cut → a pipe to plug → open water.
+    pub fn tutorial(seed: u64, seats: &[u8]) -> Run {
+        let mut run = Run::new(seed, seats);
+        run.tutorial = true;
+        run.objs.clear();
+        run.next_id = 1;
+        run.next_wave = f32::MAX;
+        // 1–2: steer and collect (plastic on both side lanes)
+        for k in 0..6 {
+            run.spawn(Kind::Plastic, if k < 3 { -1 } else { 1 }, 40.0 + k as f32 * 4.0);
+        }
+        for k in 0..5 {
+            run.spawn(Kind::Plastic, 0, 110.0 + k as f32 * 3.0);
+        }
+        // 3: hop — logs across every lane, so hopping is the only way through
+        for (i, z) in [190.0, 250.0, 310.0].into_iter().enumerate() {
+            for lane in [-1, 0, 1] {
+                run.spawn(Kind::Log, lane, z);
+            }
+            run.spawn(Kind::Plastic, (i as i8) - 1, z + 8.0);
+        }
+        // 4: cut — weed mats in every lane
+        for (i, z) in [380.0, 440.0].into_iter().enumerate() {
+            for lane in [-1, 0, 1] {
+                run.spawn(Kind::Weed, lane, z);
+                run.spawn(Kind::Plastic, lane, z + 5.0 + i as f32);
+            }
+        }
+        // 5: plug — a pipe on each bank, well spaced
+        run.spawn(Kind::Pipe, -1, 520.0);
+        run.spawn(Kind::Pipe, 1, 610.0);
+        // then a relaxed run-out with plastic to finish
+        for k in 0..20 {
+            run.spawn(Kind::Plastic, [-1, 0, 1][k % 3], 660.0 + k as f32 * 7.0);
+        }
+        run
+    }
+
+    pub fn duration(&self) -> f32 {
+        if self.tutorial {
+            TUTORIAL_SECONDS
+        } else {
+            RUN_SECONDS
+        }
     }
 
     pub fn lanes(&self) -> &'static [i8] {
@@ -559,7 +612,9 @@ impl Run {
                 self.phase = Phase::Warning { change, left: left - DT };
             }
             Phase::Running => {
-                if self.changes == 0 && self.t + WARNING >= TWIST_AT {
+                if self.tutorial {
+                    // no rule changes in the tutorial
+                } else if self.changes == 0 && self.t + WARNING >= TWIST_AT {
                     self.phase = Phase::Warning { change: ChangeKind::Twist, left: TWIST_AT - self.t };
                 } else if self.changes == 1 && self.twist.is_some() && self.t + WARNING >= FINALE_AT {
                     self.phase = Phase::Warning { change: ChangeKind::Finale, left: FINALE_AT - self.t };
@@ -574,7 +629,7 @@ impl Run {
         self.move_boats();
         self.collide();
         self.pressure();
-        if self.t >= RUN_SECONDS {
+        if self.t >= self.duration() {
             self.finish();
         }
     }
@@ -882,6 +937,8 @@ pub struct PlugView {
 #[derive(Clone, Debug, Serialize)]
 pub struct Snapshot {
     pub tick: u64,
+    pub duration: f32,
+    pub tutorial: bool,
     pub t: f32,
     pub phase: Phase,
     pub health: f32,
@@ -969,6 +1026,8 @@ impl Run {
                 .cloned()
                 .collect(),
             plugs,
+            duration: self.duration(),
+            tutorial: self.tutorial,
             results: self.results.clone(),
         }
     }

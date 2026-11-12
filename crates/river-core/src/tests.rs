@@ -317,3 +317,14 @@ fn bot(r: &Run, b: &Boat) -> Input {
     }
     i
 }
+
+#[test]
+fn tutorial_is_short_scripted_and_has_no_rule_changes() {
+    let mut r = Run::tutorial(3, &[0]);
+    assert!(r.objs.iter().any(|o| o.kind == Kind::Pipe));
+    assert!(r.objs.iter().filter(|o| o.kind == Kind::Log).count() >= 9);
+    until(&mut r, |r| r.phase == Phase::Finished);
+    assert_eq!(r.changes, 0);
+    assert!((r.t - TUTORIAL_SECONDS).abs() < 0.1);
+    assert!(r.results.is_some());
+}

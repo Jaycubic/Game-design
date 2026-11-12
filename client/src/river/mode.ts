@@ -4,6 +4,8 @@ import "./run.css";
 import { AbstractEngine, Color4, Vector3 } from "@babylonjs/core";
 import { RiverScene, type BoatPose } from "./scene";
 import { RunHud } from "./hud";
+import { Coach } from "./coach";
+import { GamepadInput, intentForKey, type Intent } from "../input/controls";
 import { LANE_W, type RunEvent, type RunResults, type Snapshot } from "./types";
 
 export interface RunSender {
@@ -30,6 +32,8 @@ export class RunMode {
   private keyHandler: (e: KeyboardEvent) => void;
   private finished = false;
   private last = performance.now();
+  private pad = new GamepadInput();
+  private coach: Coach | null = null;
 
   constructor(
     private engine: AbstractEngine,
@@ -52,22 +56,33 @@ export class RunMode {
 
   private onKey(e: KeyboardEvent) {
     if (e.repeat || (e.target as HTMLElement).closest?.("input, textarea")) return;
-    const k = e.key.toLowerCase();
     const s = this.snap;
     if (!s) return;
-    const choosing = s.phase.phase === "choosing";
-    if (choosing && k >= "1" && k <= "3") {
-      this.send.choose(Number(k) - 1);
-      e.preventDefault();
-      return;
-    }
-    if (k === "arrowleft" || k === "a") this.steer(-1);
-    else if (k === "arrowright" || k === "d") this.steer(1);
-    else if (k === "arrowup" || k === "w" || k === " ") this.send.input({ hop: true });
-    else if (k === "arrowdown" || k === "s" || k === "e") this.send.input({ action: true });
-    else if (k >= "1" && k <= "6") this.send.input({ glyph: Number(k) - 1 });
-    else return;
+    const it = intentForKey(e.key, s.phase.phase === "choosing");
+    if (!it) return;
     e.preventDefault();
+    this.apply(it);
+  }
+
+  private apply(it: Intent) {
+    switch (it.type) {
+      case "choose":
+        this.send.choose(it.option);
+        break;
+      case "steer":
+        this.steer(it.dir);
+        break;
+      case "hop":
+        this.send.input({ hop: true });
+        break;
+      case "action":
+        this.send.input({ action: true });
+        break;
+      case "glyph":
+        this.send.input({ glyph: it.g });
+        break;
+    }
+    this.coach?.input(it);
   }
 
   private steer(dir: number) {
@@ -97,13 +112,16 @@ export class RunMode {
     if (first) for (const b of s.boats) this.smooth.set(b.seat, { x: b.lane * LANE_W, z: b.z });
     const me = s.boats.find((b) => b.seat === this.mySeat);
     if (me && this.predictedLane !== null && (me.lane === this.predictedLane || performance.now() > this.predictedUntil)) this.predictedLane = null;
+    if (s.tutorial && !this.coach) this.coach = new Coach(document.getElementById("run-ui")!, () => this.onLeave());
+    this.coach?.snapshot(s, this.mySeat);
     if (!this.finished) this.hud.update(s);
-    if (s.results && !this.finished) this.finish(s.results);
+    if (s.results && !this.finished && !s.tutorial) this.finish(s.results);
   }
 
   onEvents(events: RunEvent[]) {
     const s = this.snap;
     if (!s) return;
+    this.coach?.events(events, this.mySeat);
     for (const e of events) {
       const seat = "seat" in e ? e.seat : -1;
       const pose = this.smooth.get(seat);
@@ -169,6 +187,7 @@ export class RunMode {
       this.scene.scene.render();
       return;
     }
+    for (const it of this.pad.poll(s.phase.phase === "choosing")) this.apply(it);
     const paused = ["countdown", "choosing", "reveal", "finished"].includes(s.phase.phase);
     const since = paused ? 0 : Math.min(0.25, (now - this.snapAt) / 1000);
     const poses: BoatPose[] = [];
@@ -203,6 +222,7 @@ export class RunMode {
     window.removeEventListener("keydown", this.keyHandler);
     this.engine.stopRenderLoop();
     this.hud.dispose();
+    this.coach?.dispose();
     this.scene.dispose();
   }
 }

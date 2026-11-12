@@ -1,6 +1,7 @@
 // In-run HUD: big, glanceable, minimal text. Rebuilt only when its inputs change.
 
 import { h } from "../ui/dom";
+import { hint } from "../input/controls";
 import {
   CREW_NAMES,
   FINALE_INFO,
@@ -50,7 +51,7 @@ export class RunHud {
       this.bottom,
       this.fx,
       this.promptEl,
-      h("div", { class: "rh-keys" }, "◀ ▶ steer · ▲ hop · ▼ cut / plug · 1–6 signal"),
+      h("div", { class: "rh-keys" }, `${hint("left")} ${hint("right")} steer · ${hint("hop")} hop · ${hint("action")} cut / plug · 1–6 signal`),
     );
     host.appendChild(this.root);
   }
@@ -75,7 +76,7 @@ export class RunHud {
       this.promptEl.classList.toggle("on", !!prompt);
     }
     const myCrew = me?.crew ?? 0;
-    const left = Math.max(0, RUN_SECONDS - s.t);
+    const left = Math.max(0, (s.duration || RUN_SECONDS) - s.t);
     const mm = Math.floor(left / 60),
       ss = Math.floor(left % 60);
     const twist = s.twist ? TWIST_INFO[s.twist] : null;

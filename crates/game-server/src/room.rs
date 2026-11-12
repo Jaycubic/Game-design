@@ -120,6 +120,8 @@ pub enum Command {
     RunStart {
         #[serde(default)]
         practice: bool,
+        #[serde(default)]
+        tutorial: bool,
     },
     /// River run: one player's input (applied on the next tick).
     #[serde(rename = "run.input")]

@@ -28,6 +28,23 @@ let myRooms: { room_id: string; code: string; status: string }[] = [];
 let started = false;
 let authError: string | null = null;
 let pendingPractice = false;
+let pendingTutorial = false;
+let runWasTutorial = false;
+const TUTORIAL_KEY = "nt.tutorialDone";
+const tutorialDone = () => {
+  try {
+    return localStorage.getItem(TUTORIAL_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+const markTutorialDone = () => {
+  try {
+    localStorage.setItem(TUTORIAL_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+};
 
 // ── server messages ──────────────────────────────────────────────────────
 
@@ -38,6 +55,10 @@ function onMessage(m: Envelope) {
   if (m.type === "room.joined" && pendingPractice) {
     pendingPractice = false;
     send("run.start", { practice: true });
+  }
+  if (m.type === "room.joined" && pendingTutorial) {
+    pendingTutorial = false;
+    send("run.start", { tutorial: true });
   }
   for (const ev of (p.events ?? []) as any[]) {
     if (ev.event === "room.member_joined") toast(`${ev.name} joined the crew.`, "good");
@@ -53,6 +74,7 @@ function onMessage(m: Envelope) {
 function handleRun(type: string, p: any) {
   if (type === "run.started") {
     runNames = p.names ?? {};
+    runWasTutorial = !!p.tutorial;
     openRun();
     runMode?.setSkins(p.skins);
   } else if (type === "run.snapshot") {
@@ -84,6 +106,12 @@ function openRun() {
 }
 
 function closeRun() {
+  if (runWasTutorial) {
+    runWasTutorial = false;
+    markTutorialDone();
+    send("room.leave");
+    setTimeout(leaveToHub, 150);
+  }
   void loadProfile();
   runMode?.dispose();
   runMode = null;
@@ -175,6 +203,12 @@ const ui: UiActions = {
     enterRoom(r.room_id);
   },
   openRoom: (id) => enterRoom(id),
+  async tutorial() {
+    modals.close("welcome");
+    const r = await api.createRoom();
+    pendingTutorial = true;
+    enterRoom(r.room_id);
+  },
   leaveRoom() {
     send("room.leave");
     setTimeout(leaveToHub, 150);
@@ -198,6 +232,7 @@ const ui: UiActions = {
 async function afterLogin() {
   authError = null;
   void loadProfile();
+  if (!tutorialDone() && !new URLSearchParams(location.search).has("room")) offerTutorial();
   await refreshRooms();
   const params = new URLSearchParams(location.search);
   const join = params.get("join");
@@ -209,6 +244,34 @@ async function afterLogin() {
       toast(e instanceof Error ? e.message : String(e), "error");
     }
   } else if (room && myRooms.some((r) => r.room_id === room)) enterRoom(room);
+}
+
+function offerTutorial() {
+  modals.push(
+    "welcome",
+    "Welcome aboard!",
+    h(
+      "div",
+      { class: "welcome" },
+      h("p", { class: "lede" }, "New to the river? Take the 60-second tutorial — it teaches every control by doing."),
+      h(
+        "div",
+        { class: "row" },
+        h("button", { class: "btn primary big", "data-autofocus": true, onclick: () => void ui.tutorial() }, "🎓 Quick tutorial"),
+        h(
+          "button",
+          {
+            class: "btn ghost",
+            onclick: () => {
+              markTutorialDone();
+              modals.close("welcome");
+            },
+          },
+          "Skip",
+        ),
+      ),
+    ),
+  );
 }
 
 // ── DOM ──────────────────────────────────────────────────────────────────

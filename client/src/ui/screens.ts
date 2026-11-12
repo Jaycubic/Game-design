@@ -21,6 +21,7 @@ export interface UiActions {
   openHowTo(): void;
   openSettings(): void;
   openPanel(kind: "garage" | "shop" | "daily" | "road"): void;
+  tutorial(): Promise<void>;
 }
 
 function logo() {
@@ -129,6 +130,7 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
         h("span", { class: "seeds-chip", title: "Seeds — earned by playing" }, "🌱 ", String(s.profile?.seeds ?? 0)),
         h("span", { class: "hub-avatar" }, (s.player?.display_name ?? "?").slice(0, 1).toUpperCase()),
         h("span", null, s.player?.display_name ?? ""),
+        h("button", { class: "icon-btn", title: "Tutorial", "aria-label": "Tutorial", onclick: () => void a.tutorial() }, "🎓"),
         h("button", { class: "icon-btn", title: "How to play", "aria-label": "How to play", onclick: () => a.openHowTo() }, "?"),
         h("button", { class: "icon-btn", title: "Settings", "aria-label": "Settings", onclick: () => a.openSettings() }, "⚙"),
         h("button", { class: "icon-btn", title: "Sign out", "aria-label": "Sign out", onclick: () => a.logout() }, "⏻"),

@@ -241,13 +241,13 @@ impl Hub {
             return self.hint(&entry, &pid).await;
         }
         match cmd {
-            Command::RunStart { practice } => {
+            Command::RunStart { practice, tutorial } => {
                 let racers = crate::river::racers(&*entry.lock().await);
                 let ids: Vec<Uuid> = racers.iter().map(|(_, p)| *p).collect();
                 let colours = crate::meta::skins(db, &ids).await;
                 let skins = racers.iter().filter_map(|(s, p)| colours.get(p).map(|c| (*s, c.clone()))).collect();
                 let mut g = entry.lock().await;
-                crate::river::start(entry.clone(), &mut g, &pid, practice, skins, db.clone())?;
+                crate::river::start(entry.clone(), &mut g, &pid, practice || tutorial, tutorial, skins, db.clone())?;
                 return Ok(Outcome2::default());
             }
             Command::RunInput { steer, hop, action, glyph } => {
