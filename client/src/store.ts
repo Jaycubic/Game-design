@@ -1,5 +1,6 @@
 import type { Content, PlayerInfo, RoomView, ActionKind, SpeciesId } from "./types";
 import type { SocketStatus } from "./net/socket";
+import type { Profile } from "./net/api";
 
 /** Local UI selection — never sent to the server as state. */
 export type Tool =
@@ -18,6 +19,7 @@ export interface AppState {
   showPreview: boolean;
   hint: { action: any; message?: string } | null;
   clues: string[];
+  profile: Profile | null;
 }
 
 type Listener = (s: AppState, prev: AppState) => void;
@@ -57,4 +59,5 @@ export const store = new Store({
   showPreview: true,
   hint: null,
   clues: [],
+  profile: null,
 });

@@ -66,6 +66,26 @@ export interface AuthResponse {
   expires_at: string;
   player: PlayerInfo;
 }
+export interface CatalogBoat {
+  key: string;
+  name: string;
+  colour: string;
+  price: number;
+  source: "default" | "shop" | "road";
+}
+export interface Profile {
+  seeds: number;
+  runs: number;
+  wins: number;
+  best_score: number;
+  equipped: string;
+  owned: string[];
+  refundable: string[];
+  catalog: CatalogBoat[];
+  daily: { claims: number; claimed_today: boolean; track: number[]; next: number };
+  road: { runs: number; seeds: number; item: string | null; reached: boolean; claimed: boolean }[];
+  rules: { win_bonus_per_day: number; refund_minutes: number };
+}
 export interface RoomResponse {
   room_id: string;
   code: string;
@@ -81,6 +101,12 @@ export const api = {
   me: () => request<PlayerInfo>("/api/me"),
   myRooms: () => request<{ rooms: { room_id: string; code: string; status: string }[] }>("/api/me/rooms"),
   progress: () => request<any>("/api/me/progress"),
+  profile: () => request<Profile>("/api/me/profile"),
+  claimDaily: () => request<{ reward: number }>("/api/me/daily", { method: "POST" }),
+  claimRoad: (runs: number) => request<{ seeds: number; item: string | null }>("/api/me/road", { method: "POST", body: { runs } }),
+  buy: (item: string) => request<{ seeds: number; spent: number }>("/api/shop/buy", { method: "POST", body: { item } }),
+  undo: (item: string) => request<{ refunded: number }>("/api/shop/undo", { method: "POST", body: { item } }),
+  equip: (item: string) => request<{ equipped: string }>("/api/garage/equip", { method: "POST", body: { item } }),
   createRoom: () => request<RoomResponse>("/api/rooms", { method: "POST" }),
   joinRoom: (code: string) => request<RoomResponse>("/api/rooms/join", { method: "POST", body: { code } }),
 };

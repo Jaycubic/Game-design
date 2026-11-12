@@ -378,10 +378,23 @@ export class RiverScene {
     for (const bt of Object.values(ob)) bt.commit();
   }
 
+  private skins: Record<string, string> = {};
+
+  /** Equipped boat colours (seat → hex). Boats already built are rebuilt. */
+  setSkins(skins: Record<string, string>) {
+    for (const [seat, colour] of Object.entries(skins)) {
+      if (this.skins[seat] !== colour) {
+        this.skins[seat] = colour;
+        this.boats.get(Number(seat))?.dispose();
+        this.boats.delete(Number(seat));
+      }
+    }
+  }
+
   private boatFor(seat: number): Mesh {
     let m = this.boats.get(seat);
     if (!m) {
-      m = boatMesh(this.scene, SEAT_COLOURS[seat % SEAT_COLOURS.length], 40 + seat);
+      m = boatMesh(this.scene, this.skins[String(seat)] ?? SEAT_COLOURS[seat % SEAT_COLOURS.length], 40 + seat);
       m.material = this.vc;
       m.isPickable = false;
       this.boats.set(seat, m);

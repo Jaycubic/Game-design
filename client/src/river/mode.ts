@@ -81,6 +81,14 @@ export class RunMode {
     this.send.input({ steer: dir });
   }
 
+  setSkins(skins: Record<string, string> | undefined) {
+    if (skins) this.scene.setSkins(skins);
+  }
+
+  rewards(seeds: number, practice: boolean) {
+    this.hud.banner(`+${seeds} Seeds${practice ? " (practice)" : ""} 🌱`, "good");
+  }
+
   onSnapshot(s: Snapshot) {
     const first = !this.snap;
     this.snap = s;

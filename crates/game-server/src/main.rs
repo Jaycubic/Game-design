@@ -5,6 +5,7 @@ mod config;
 mod error;
 mod http;
 mod hub;
+mod meta;
 mod persist;
 mod ratelimit;
 mod river;
@@ -162,6 +163,12 @@ async fn main() -> anyhow::Result<()> {
                     .route("/me", web::get().to(auth::me))
                     .route("/me/progress", web::get().to(http::progress))
                     .route("/me/rooms", web::get().to(http::my_rooms))
+                    .route("/me/profile", web::get().to(meta::profile))
+                    .route("/me/daily", web::post().to(meta::claim_daily))
+                    .route("/me/road", web::post().to(meta::claim_road))
+                    .route("/shop/buy", web::post().to(meta::buy))
+                    .route("/shop/undo", web::post().to(meta::refund))
+                    .route("/garage/equip", web::post().to(meta::equip))
                     .route("/rooms", web::post().to(http::create_room))
                     .route("/rooms/join", web::post().to(http::join_room))
                     .route("/rooms/{id}", web::get().to(http::get_room))

@@ -20,6 +20,7 @@ export interface UiActions {
   startRun(practice: boolean): void;
   openHowTo(): void;
   openSettings(): void;
+  openPanel(kind: "garage" | "shop" | "daily" | "road"): void;
 }
 
 function logo() {
@@ -105,8 +106,16 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
       err.textContent = x instanceof Error ? x.message : String(x);
     }
   };
-  const tile = (icon: string, name: string, note: string) =>
-    h("div", { class: "hub-tile locked", title: note }, h("span", { class: "hub-tile-icon" }, icon), h("span", { class: "hub-tile-name" }, name), h("span", { class: "hub-tile-note" }, note));
+  const p = s.profile;
+  const tile = (kind: "garage" | "shop" | "daily" | "road", icon: string, name: string, note: string, alert = false) =>
+    h(
+      "button",
+      { class: "hub-tile" + (alert ? " alert" : ""), onclick: () => a.openPanel(kind) },
+      h("span", { class: "hub-tile-icon" }, icon),
+      h("span", { class: "hub-tile-name" }, name),
+      h("span", { class: "hub-tile-note" }, note),
+    );
+  const roadReady = p?.road.some((m) => m.reached && !m.claimed) ?? false;
   return h(
     "main",
     { class: "screen hub" },
@@ -117,6 +126,7 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
       h(
         "div",
         { class: "hub-player" },
+        h("span", { class: "seeds-chip", title: "Seeds — earned by playing" }, "🌱 ", String(s.profile?.seeds ?? 0)),
         h("span", { class: "hub-avatar" }, (s.player?.display_name ?? "?").slice(0, 1).toUpperCase()),
         h("span", null, s.player?.display_name ?? ""),
         h("button", { class: "icon-btn", title: "How to play", "aria-label": "How to play", onclick: () => a.openHowTo() }, "?"),
@@ -127,10 +137,10 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
     h(
       "aside",
       { class: "hub-rail" },
-      tile("🚤", "Garage", "Boats & colours — coming soon"),
-      tile("🛒", "Shop", "Earned rewards — coming soon"),
-      tile("📅", "Daily", "Daily river challenge — coming soon"),
-      tile("🗺️", "River Road", "Unlock new rivers — coming soon"),
+      tile("garage", "🚤", "Garage", "Your boats"),
+      tile("shop", "🛒", "Shop", "Spend your Seeds"),
+      tile("daily", "📅", "Daily", p && !p.daily.claimed_today ? `🌱 ${p.daily.next} waiting!` : "Come back tomorrow", !!p && !p.daily.claimed_today),
+      tile("road", "🗺️", "River Road", roadReady ? "Reward ready!" : `${p?.runs ?? 0} runs`, roadReady),
     ),
     h(
       "section",

@@ -11,6 +11,7 @@ import { authScreen, hubScreen, lobbyScreen, titleScreen, type UiActions } from 
 import { howToPlay, settings } from "./ui/panels";
 import { MenuBackdrop } from "./river/backdrop";
 import { RunMode } from "./river/mode";
+import { hubPanel, loadProfile, PANEL_TITLES } from "./ui/hub";
 
 const uiRoot = document.getElementById("ui")!;
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
@@ -53,9 +54,14 @@ function handleRun(type: string, p: any) {
   if (type === "run.started") {
     runNames = p.names ?? {};
     openRun();
+    runMode?.setSkins(p.skins);
   } else if (type === "run.snapshot") {
     if (!runMode) openRun();
+    runMode?.setSkins(p.skins);
     runMode?.onSnapshot(p.snapshot);
+  } else if (type === "run.rewards") {
+    runMode?.rewards(p.seeds ?? 0, !!p.practice);
+    void loadProfile();
   } else if (type === "run.events") runMode?.onEvents(p.events ?? []);
 }
 
@@ -78,6 +84,7 @@ function openRun() {
 }
 
 function closeRun() {
+  void loadProfile();
   runMode?.dispose();
   runMode = null;
   backdrop = new MenuBackdrop(engineInfo.engine);
@@ -175,6 +182,7 @@ const ui: UiActions = {
   ready: (v) => send("room.ready", { ready: v }),
   startRun: (practice) => send("run.start", { practice }),
   openHowTo: () => modals.push("howto", "How to play", howToPlay()),
+  openPanel: (kind) => modals.push("panel-" + kind, PANEL_TITLES[kind], hubPanel(kind), { wide: true, onClose: () => render(true) }),
   openSettings: () =>
     modals.push(
       "settings",
@@ -189,6 +197,7 @@ const ui: UiActions = {
 
 async function afterLogin() {
   authError = null;
+  void loadProfile();
   await refreshRooms();
   const params = new URLSearchParams(location.search);
   const join = params.get("join");
@@ -207,7 +216,7 @@ async function afterLogin() {
 let lastKey = "";
 function render(force = false) {
   const s = store.state;
-  const key = JSON.stringify([started, s.player?.id, s.room?.version, s.room?.phase, myRooms.length]);
+  const key = JSON.stringify([started, s.player?.id, s.room?.version, s.room?.phase, myRooms.length, s.profile?.seeds, s.profile?.daily.claimed_today, s.profile?.runs]);
   if (!force && key === lastKey) return;
   lastKey = key;
   clear(uiRoot);

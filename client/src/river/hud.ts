@@ -66,7 +66,7 @@ export class RunHud {
     // Pipe prompt: the nearest open pipe ahead, and which way to steer.
     const pipe = me ? s.objs.filter((o) => o.kind === "pipe" && !o.plugged && o.z > me.z - 4 && o.z < me.z + 45).sort((a, b) => a.z - b.z)[0] : undefined;
     let prompt = "";
-    if (me && pipe && !me.plugging) {
+    if (me && pipe && !me.plugging && (s.phase.phase === "running" || s.phase.phase === "warning")) {
       const side = pipe.lane < 0 ? "LEFT" : "RIGHT";
       prompt = me.lane === pipe.lane ? (pipe.z - me.z < 7 ? "🔧 Press ▼ now to plug the pipe!" : `🔧 Pipe ahead on the ${side} — get ready to press ▼`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and press ▼`;
     }

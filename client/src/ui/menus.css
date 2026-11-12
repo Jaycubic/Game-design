@@ -41,3 +41,30 @@
   .hub-play { justify-self: stretch; width: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .press-start { animation: none; } }
+
+/* Hub tiles as buttons, Seeds, panels */
+button.hub-tile { color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform 0.12s, border-color 0.12s; }
+button.hub-tile:hover { transform: translateX(4px); border-color: #ffd23f; }
+.hub-tile.alert { border-color: #ffd23f; box-shadow: 0 0 0 3px rgba(255, 210, 63, 0.25); animation: rh-pulse 1.6s infinite; }
+.seeds-chip { background: #1f5b3a; border: 2px solid #4fe0a0; border-radius: 99px; padding: 2px 12px; font-weight: 900; }
+.hub-panel { display: grid; gap: 12px; }
+.seeds-line { font-size: 1.15rem; }
+.boat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.boat-card { display: grid; gap: 8px; justify-items: center; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 14px 10px; }
+.boat-card.equipped { border-color: #4fe0a0; }
+.boat-chip { display: grid; justify-items: center; gap: 6px; }
+.boat-hull { position: relative; width: 92px; height: 34px; background: var(--hull); border-radius: 6px 6px 22px 22px; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.2); margin-top: 22px; }
+.boat-cabin { position: absolute; left: 22px; top: -22px; width: 34px; height: 24px; background: #f4efe2; border-radius: 4px; box-shadow: 0 -5px 0 -1px var(--hull); }
+.boat-name { font-weight: 800; }
+.daily-track { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.daily-day { display: grid; justify-items: center; gap: 2px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 8px 2px; font-size: 0.85rem; }
+.daily-day.done { opacity: 0.5; }
+.daily-day.today { border-color: #ffd23f; background: rgba(255, 210, 63, 0.12); }
+.daily-r { font-weight: 800; }
+.center-text { text-align: center; }
+.road { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.road-step { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 8px 12px; border-left: 4px solid rgba(255, 255, 255, 0.15); }
+.road-step.reached { border-left-color: #ffd23f; }
+.road-step.claimed { border-left-color: #4fe0a0; opacity: 0.7; }
+.road-runs { font-weight: 900; font-size: 1.3rem; color: #ffd23f; text-align: center; }
+.road-item { color: #bff3ff; }

@@ -93,7 +93,7 @@
   .pop, .rh-pop, .rh-banner, .rh-bubble, .rh-time.urgent, .rh-boost.on, .rh-health.low, .rh-warning { animation: none; }
 }
 
-.rh-prompt { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); font-weight: 900; font-size: 1.25rem; padding: 8px 18px; border-radius: 14px; background: rgba(40, 90, 140, 0.88); border: 2px solid #4fb3ff; opacity: 0; transition: opacity 0.2s; white-space: nowrap; }
+.rh-prompt { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); font-weight: 900; font-size: 1.25rem; padding: 8px 18px; border-radius: 14px; background: rgba(40, 90, 140, 0.88); border: 2px solid #4fb3ff; opacity: 0; transition: opacity 0.2s; max-width: 90vw; text-align: center; }
 .rh-prompt.on { opacity: 1; animation: rh-pulse 1.2s infinite; }
 .rh-tag { position: absolute; left: 0; top: 0; font-weight: 800; font-size: 0.8rem; padding: 2px 8px; border-radius: 99px; background: rgba(10, 30, 40, 0.75); border: 2px solid var(--c); white-space: nowrap; will-change: transform; }
 .rh-tag.me { background: var(--c); color: #102028; text-shadow: none; }
