@@ -1,0 +1,18 @@
+[package]
+name = "natures-thread-core"
+description = "Deterministic rules engine, level solver and campaign logic for Nature's Thread"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "nt_core"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[[bin]]
+name = "classify"
+path = "src/bin/classify.rs"

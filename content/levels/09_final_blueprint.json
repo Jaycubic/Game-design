@@ -1,0 +1,22 @@
+{
+  "id": "forest-09",
+  "number": 9,
+  "mode": "puzzle",
+  "kind": "blueprint",
+  "title": "The Final Blueprint",
+  "area": "north_canopy",
+  "instruction": "Draw the restoration plan for the finale: canopy route, macaque home, frog site and 22 forest cells.",
+  "intro": "Everything you have learned comes together. Your corridor rule decides which links count; your recovery rule decides what heals by itself when the plan is checked.",
+  "map": ["FFDD.DD=nF", "FfDFD..=FF", "FFDDD.D=Ff", "~DD...DD~~", "~~~~~~~~~~"],
+  "rounds": 1,
+  "capacity": 10,
+  "objectives": [
+    { "kind": "connect", "species": "malabar_giant_squirrel", "from": [0, 0], "to": [9, 0], "label": "Canopy route West → East" },
+    { "kind": "habitat", "species": "lion_tailed_macaque", "at": [1, 1], "label": "Macaque home in the West Woodland" },
+    { "kind": "habitat", "species": "malabar_gliding_frog", "at": [1, 3], "label": "Frog site at the stream" },
+    { "kind": "forest_cover", "min": 22, "label": "At least 22 healthy forest cells" }
+  ],
+  "challenge": { "text": "Also restore the whole western stream bank.", "kind": "forest_at", "cells": [[1, 3], [2, 3]] },
+  "reward": { "journal": ["restoration_planning"], "insight": "final_blueprint" },
+  "par": { "continuous+succession": 7, "continuous+active": 9, "stepping_stone+succession": 7, "stepping_stone+active": 8 }
+}

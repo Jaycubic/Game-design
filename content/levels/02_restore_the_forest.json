@@ -1,0 +1,27 @@
+{
+  "id": "forest-02",
+  "number": 2,
+  "mode": "expedition",
+  "kind": "expedition",
+  "title": "Restore the Forest",
+  "area": "west_woodland",
+  "instruction": "Restore a forest route from the West to the East woodland before the rounds run out.",
+  "intro": "Three forest patches, one road and a lot of damaged ground. The team shares 2 Restoration Capacity each round — choose together where to spend it.",
+  "map": ["=========", "FF..Ff.FF", "Ff.DFF..F", "FFD.FFD.F", "FF..FF.DF", "~~~~~~~~~"],
+  "rounds": 3,
+  "capacity": 2,
+  "events": [
+    {
+      "round": 2,
+      "title": "Lantana spreads",
+      "text": "Invasive Lantana is creeping into the central patch. Cells marked in orange degrade at the end of this round unless the team clears them.",
+      "kind": "lantana",
+      "cells": [[4, 1], [5, 1], [4, 2]]
+    }
+  ],
+  "objectives": [{ "kind": "connect", "species": "malabar_giant_squirrel", "from": [0, 3], "to": [8, 3], "label": "Forest route from West to East woodland" }],
+  "critical_degraded": 9,
+  "challenge": { "text": "Keep the fruiting fig in the central patch healthy.", "kind": "forest_at", "cells": [[5, 1]] },
+  "par": { "base+base": 4 },
+  "reward": { "journal": ["restoration_capacity", "lantana_invasion"], "insight": "first_route" }
+}

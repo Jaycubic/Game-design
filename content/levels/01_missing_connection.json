@@ -1,0 +1,25 @@
+{
+  "id": "forest-01",
+  "number": 1,
+  "mode": "puzzle",
+  "kind": "connection",
+  "title": "The Missing Connection",
+  "area": "central_clearing",
+  "instruction": "Connect the two forest areas so wildlife can move between them.",
+  "intro": "A Malabar giant squirrel is stranded in the West Woodland. Its family lives across the clearing. Plant native saplings to close the gap.",
+  "map": ["FF...FF", "Ff...FF", "FF...Fn", "FF...FF", "~~~~~~~"],
+  "rounds": 1,
+  "capacity": 5,
+  "objectives": [
+    {
+      "kind": "connect",
+      "species": "malabar_giant_squirrel",
+      "from": [0, 1],
+      "to": [6, 1],
+      "label": "Link the West and East woodland for the squirrel"
+    }
+  ],
+  "challenge": { "text": "Grow the corridor along the stream bank — streamside forest shades the water.", "kind": "forest_at", "cells": [[2, 3], [3, 3], [4, 3]] },
+  "par": { "base+base": 3 },
+  "reward": { "journal": ["habitat_fragmentation", "malabar_giant_squirrel"], "insight": "corridor_basics" }
+}

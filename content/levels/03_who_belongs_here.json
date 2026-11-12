@@ -1,0 +1,24 @@
+{
+  "id": "forest-03",
+  "number": 3,
+  "mode": "puzzle",
+  "kind": "niche_match",
+  "title": "Who Belongs Here?",
+  "area": "east_woodland",
+  "instruction": "Place each animal where its needs are met. You may build one link across the road.",
+  "intro": "Four species, six possible homes. Read each animal's needs on its card — and remember the corridor rule your team chose.",
+  "map": ["Ff.=FFF~", "FF.=Fn~~", "...=~~F~", "gg.=.Ff~", "^g.=..F~"],
+  "slots": [[1, 1], [4, 0], [5, 1], [6, 3], [1, 3], [2, 2]],
+  "tokens": ["lion_tailed_macaque", "great_hornbill", "malabar_gliding_frog", "nilgiri_tahr"],
+  "rounds": 1,
+  "capacity": 2,
+  "objectives": [
+    { "kind": "habitat", "species": "lion_tailed_macaque", "label": "Lion-tailed macaque: fig + 6 connected forest" },
+    { "kind": "habitat", "species": "great_hornbill", "label": "Great hornbill: nest tree with a fig nearby" },
+    { "kind": "habitat", "species": "malabar_gliding_frog", "label": "Malabar gliding frog: forest beside the stream" },
+    { "kind": "habitat", "species": "nilgiri_tahr", "label": "Nilgiri tahr: grassland linked to cliffs" }
+  ],
+  "challenge": { "text": "Get every animal right on the first check.", "kind": "first_try" },
+  "reward": { "journal": ["lion_tailed_macaque", "great_hornbill", "malabar_gliding_frog", "nilgiri_tahr"], "insight": "species_needs" },
+  "par": { "continuous+base": 2, "stepping_stone+base": 2 }
+}

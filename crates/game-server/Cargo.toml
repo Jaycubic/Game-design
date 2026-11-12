@@ -1,0 +1,35 @@
+[package]
+name = "natures-thread-server"
+description = "Authoritative HTTP/WebSocket server for Nature's Thread shared rooms"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+natures-thread-core = { path = "../game-core" }
+river-core = { path = "../river-core" }
+actix-web = { version = "4", default-features = false, features = ["macros", "compress-gzip", "rustls-0_23"] }
+actix-ws = "0.3"
+actix-files = "0.6"
+actix-cors = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "signal"] }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid", "chrono", "json", "migrate", "macros"] }
+serde.workspace = true
+serde_json.workspace = true
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+jsonwebtoken = "9"
+argon2 = { version = "0.5", features = ["std"] }
+rand = "0.8"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-pemfile = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+dotenvy = "0.15"
+anyhow = "1"
+thiserror = "2"
+
+[dev-dependencies]
+awc = { version = "3", default-features = false }

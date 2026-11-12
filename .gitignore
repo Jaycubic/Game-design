@@ -1,0 +1,30 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node / client
+node_modules/
+/client/dist/
+/client/.vite/
+
+# Generated WebAssembly bindings (rebuilt by `make wasm`)
+/client/src/wasm/pkg/
+
+# Secrets and local config — never commit
+.env
+.env.*
+!.env.example
+/certs/
+*.pem
+*.key
+*.crt
+
+# Packaging / scratch
+/dist/
+*.zip
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/

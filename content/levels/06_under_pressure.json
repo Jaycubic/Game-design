@@ -1,0 +1,41 @@
+{
+  "id": "forest-06",
+  "number": 6,
+  "mode": "expedition",
+  "kind": "expedition",
+  "title": "Under Pressure",
+  "area": "river_edge",
+  "instruction": "Reconnect the canopy for the lion-tailed macaques, restore the frog breeding site, and lift forest cover to 22.",
+  "intro": "A dry spell has arrived and Lantana is on the move. You cannot fix everything — decide which connections matter most.",
+  "map": ["FFFD.=DFFF", "FfFD.=.FnF", "FFD..=.DFF", "DD...=..DF", "~~D..=.DD~", "~~~D.=..~~", "~~~~~=~~~~"],
+  "sites": [[3, 0], [4, 0], [5, 0], [6, 0], [3, 1], [4, 1], [6, 1], [2, 2], [3, 2], [4, 2], [6, 2], [7, 2], [0, 3], [1, 3], [8, 3], [2, 4], [7, 4], [8, 4]],
+  "rounds": 4,
+  "capacity": 4,
+  "events": [
+    {
+      "round": 1,
+      "title": "Dry spell",
+      "text": "A hot, dry week: the team has 1 less capacity this round and nothing regrows on its own.",
+      "kind": "dry_spell",
+      "capacity_penalty": 1
+    },
+    { "round": 2, "title": "Lantana in the east", "text": "Lantana threatens the east patch edge.", "kind": "lantana", "cells": [[7, 1], [8, 2]] },
+    {
+      "round": 3,
+      "title": "Lantana in the west",
+      "text": "Lantana has crossed into the West Woodland beside the fig.",
+      "kind": "lantana",
+      "cells": [[1, 1], [2, 1]]
+    }
+  ],
+  "objectives": [
+    { "kind": "connect", "species": "lion_tailed_macaque", "from": [0, 1], "to": [9, 1], "label": "Canopy route for the lion-tailed macaques" },
+    { "kind": "habitat", "species": "malabar_gliding_frog", "at": [2, 4], "label": "Frog breeding site at the stream" },
+    { "kind": "forest_cover", "min": 22, "label": "At least 22 healthy forest cells" }
+  ],
+  "uses_insight": { "insight": "field_reports", "cells": [[2, 4]], "text": "Field reports from the River Edge marked this streamside site for the gliding frogs." },
+  "critical_degraded": 12,
+  "challenge": { "text": "Keep the West Woodland fig healthy through the Lantana spread.", "kind": "forest_at", "cells": [[1, 1]] },
+  "reward": { "journal": ["lion_tailed_macaque_canopy", "dry_spells"], "insight": "canopy_network" },
+  "par": { "continuous+succession": 7, "continuous+active": 11, "stepping_stone+succession": 6, "stepping_stone+active": 10 }
+}

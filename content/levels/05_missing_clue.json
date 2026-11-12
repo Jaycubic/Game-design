@@ -1,0 +1,46 @@
+{
+  "id": "forest-05",
+  "number": 5,
+  "mode": "puzzle",
+  "kind": "deduction",
+  "title": "The Missing Clue",
+  "area": "river_edge",
+  "instruction": "Share your field reports and agree which site to restore so the North Canopy squirrels can spread.",
+  "intro": "Each Guardian surveyed a different part of the River Edge. Nobody has the whole picture — talk it through. Your corridor rule matters: it changes which trees wildlife can already reach.",
+  "map": ["FFFG=FFF~", "FfFd=.FF~", "FFFD=.dD~", "FFDF=G..~", "DF..=FFF~", "FF..=FFF~"],
+  "rounds": 1,
+  "capacity": 0,
+  "objectives": [],
+  "deduction": {
+    "question": "Which site should the team restore first?",
+    "candidates": [
+      { "id": "A", "label": "Site A — west road verge", "at": [3, 2] },
+      { "id": "B", "label": "Site B — upper stream bank", "at": [7, 2] },
+      { "id": "C", "label": "Site C — west hollow", "at": [2, 3] },
+      { "id": "D", "label": "Site D — fig by the grove", "at": [3, 1] },
+      { "id": "E", "label": "Site E — east fig", "at": [6, 2] },
+      { "id": "F", "label": "Site F — lower west edge", "at": [0, 4] },
+      { "id": "G", "label": "Site G — open patch by the grove", "at": [5, 2] }
+    ],
+    "clues": [
+      {
+        "text": "Giant squirrels from the North Canopy can already reach a tree right beside our site — under the corridor rule we chose.",
+        "test": "next_to_reachable",
+        "species": "malabar_giant_squirrel",
+        "from": [0, 0]
+      },
+      {
+        "text": "The macaque troop in the south-east can NOT reach any tree beside our site yet — under our corridor rule. This one is for the squirrels.",
+        "test": "not_next_to_reachable",
+        "species": "lion_tailed_macaque",
+        "from": [7, 5]
+      },
+      { "text": "Our site is degraded forest, not bare ground.", "test": "terrain", "terrain": "degraded" },
+      { "text": "The site is in the northern half of the map.", "test": "half", "side": "north" },
+      { "text": "There is no fig tree at the site.", "test": "no_fig" },
+      { "text": "It will not heal by itself this season — under the recovery rule we chose.", "test": "would_not_regrow" }
+    ]
+  },
+  "challenge": { "text": "Agree on the right site without a wrong guess.", "kind": "first_try" },
+  "reward": { "journal": ["field_reports", "stepping_stones"], "insight": "field_reports" }
+}

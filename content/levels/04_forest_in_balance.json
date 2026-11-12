@@ -1,0 +1,39 @@
+{
+  "id": "forest-04",
+  "number": 4,
+  "mode": "expedition",
+  "kind": "expedition",
+  "title": "A Forest in Balance",
+  "area": "east_woodland",
+  "instruction": "Link West to East for the squirrel, and secure homes for the hornbill and the gliding frog.",
+  "intro": "The road splits the forest. A hornbill pair needs its nest tree and a fruiting fig; gliding frogs need streamside forest. One route cannot fix everything — prioritise together.",
+  "map": ["FFF.=.FFnF", "FfF.=.dFFF", "FFD.=..FFF", "....=....~", "gg..=..DD~", "^gg.=..DF~", "^^g.=...F~"],
+  "sites": [[3, 0], [5, 0], [3, 1], [5, 1], [6, 1], [2, 2], [3, 2], [5, 2], [6, 2], [4, 0], [4, 1], [4, 2], [7, 4], [8, 4], [8, 3]],
+  "rounds": 3,
+  "capacity": 3,
+  "events": [
+    {
+      "round": 2,
+      "title": "Lantana spreads east",
+      "text": "Lantana is moving along the east patch edge. Marked cells degrade at round end unless cleared.",
+      "kind": "lantana",
+      "cells": [[7, 1], [7, 2]]
+    },
+    {
+      "round": 3,
+      "title": "Lantana reaches the nest tree",
+      "text": "The thicket now threatens the hornbill nest tree itself.",
+      "kind": "lantana",
+      "cells": [[8, 0], [7, 0]]
+    }
+  ],
+  "objectives": [
+    { "kind": "connect", "species": "malabar_giant_squirrel", "from": [0, 1], "to": [9, 1], "label": "Squirrel route West → East" },
+    { "kind": "habitat", "species": "great_hornbill", "at": [8, 0], "label": "Hornbill nest tree with a live fig in reach" },
+    { "kind": "habitat", "species": "malabar_gliding_frog", "at": [8, 4], "label": "Streamside forest for the gliding frog" }
+  ],
+  "critical_degraded": 9,
+  "challenge": { "text": "Meet every goal by the end of round 2.", "kind": "finish_by_round", "round": 2 },
+  "reward": { "journal": ["great_hornbill_figs", "riparian_forest"], "insight": "competing_priorities" },
+  "par": { "continuous+base": 6, "stepping_stone+base": 5 }
+}

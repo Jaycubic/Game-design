@@ -1,0 +1,64 @@
+{
+  "id": "western_ghats_forest",
+  "ecosystem": "forest_realm",
+  "name": "Western Ghats — Anamalai Forest Realm",
+  "tagline": "Reconnect the Living World",
+  "areas": [
+    { "id": "north_canopy", "name": "North Canopy", "description": "Tall evergreen forest with a closed canopy — the healthiest part of the region." },
+    { "id": "west_woodland", "name": "West Woodland", "description": "A forest fragment cut off by an old plantation edge and a road." },
+    { "id": "central_clearing", "name": "Central Clearing", "description": "Cleared and degraded land where a corridor could be restored." },
+    { "id": "east_woodland", "name": "East Woodland", "description": "A second fragment with old hornbill nest trees and fruiting figs." },
+    { "id": "south_meadow", "name": "South Shola Meadow", "description": "Montane shola grassland and rocky cliffs at the forest edge." },
+    { "id": "river_edge", "name": "River Edge", "description": "Streamside forest where frogs breed and monsoon run-off erodes bare ground." }
+  ],
+  "amendments": [
+    {
+      "number": 1,
+      "after_level": 2,
+      "title": "Living Charter Amendment 1 — Connectivity",
+      "question": "How should a wildlife route be judged for the rest of this region?",
+      "option_a": {
+        "name": "Continuous Corridors",
+        "summary": "A route only counts when every step is connected habitat.",
+        "effects": [
+          "Routes must be unbroken forest.",
+          "Unlocks Canopy Bridges: a rope bridge across a road (2 capacity) that canopy animals can use.",
+          "Frogs cannot use canopy bridges."
+        ]
+      },
+      "option_b": {
+        "name": "Stepping-Stone Networks",
+        "summary": "A route may hop one gap beside a planted stepping-stone grove.",
+        "effects": [
+          "Unlocks Stepping-Stone Groves on open ground (2 capacity).",
+          "A route may hop a single open, degraded, grassland or road cell when it starts or lands on a grove.",
+          "Streams and cliffs can never be hopped."
+        ]
+      }
+    },
+    {
+      "number": 2,
+      "after_level": 4,
+      "title": "Living Charter Amendment 2 — Recovery",
+      "question": "How should degraded forest recover for the rest of this region?",
+      "option_a": {
+        "name": "Natural Succession",
+        "summary": "Damaged forest regrows by itself when healthy forest surrounds it.",
+        "effects": [
+          "At the end of each round, degraded forest with 3 or more healthy forest neighbours regrows for free.",
+          "Restoring a cell still costs 1.",
+          "A dry spell stops regrowth for that round; Lantana-hit cells cannot regrow the same round."
+        ]
+      },
+      "option_b": {
+        "name": "Active Restoration",
+        "summary": "No regrowth by itself — but every restoration heals a whole cluster at once.",
+        "effects": [
+          "No natural regrowth.",
+          "Restoring costs 2 and also heals every degraded cell directly beside the target.",
+          "Results appear immediately, before the round ends."
+        ]
+      }
+    }
+  ]
+}

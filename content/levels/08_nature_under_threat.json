@@ -1,0 +1,48 @@
+{
+  "id": "forest-08",
+  "number": 8,
+  "mode": "expedition",
+  "kind": "expedition",
+  "title": "Nature Under Threat",
+  "area": "central_clearing",
+  "instruction": "Restore a habitat network across three zones while Lantana, a dry spell and monsoon run-off strike.",
+  "intro": "Several zones are under pressure at once. The nearest damaged cell is rarely the most valuable one — look for the intervention with the biggest overall benefit.",
+  "map": ["FFFD.=.DFnF", "FfF.D=.DFFF", "FFD..=..dFF", "D...D=.D...", "gg...=...DD", "^gg..=..D~~", "^^g..=.DD~~", "~~~~~=~~~~~"],
+  "sites": [[3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [3, 1], [4, 1], [6, 1], [7, 1], [8, 2], [7, 6], [8, 6], [8, 5]],
+  "rounds": 4,
+  "capacity": 4,
+  "events": [
+    {
+      "round": 1,
+      "title": "Lantana in the east",
+      "text": "Lantana threatens the forest beside the nest tree.",
+      "kind": "lantana",
+      "cells": [[8, 1], [9, 1]]
+    },
+    {
+      "round": 2,
+      "title": "Monsoon run-off",
+      "text": "Heavy rain: marked streamside cells that are still degraded at round end wash out to bare ground.",
+      "kind": "erosion",
+      "cells": [[8, 6], [7, 6], [8, 5]]
+    },
+    {
+      "round": 2,
+      "title": "Dry spell",
+      "text": "Hot winds before the rain: 1 less capacity and no natural regrowth this round.",
+      "kind": "dry_spell",
+      "capacity_penalty": 1
+    },
+    { "round": 3, "title": "Lantana in the west", "text": "Lantana spreads into the West Woodland.", "kind": "lantana", "cells": [[1, 1], [2, 2]] }
+  ],
+  "objectives": [
+    { "kind": "connect", "species": "malabar_giant_squirrel", "from": [0, 1], "to": [10, 1], "label": "Squirrel route across all three zones" },
+    { "kind": "habitat", "species": "great_hornbill", "at": [9, 0], "label": "Hornbill nest with a live fig" },
+    { "kind": "habitat", "species": "malabar_gliding_frog", "at": [8, 6], "label": "Frog breeding forest at the river" },
+    { "kind": "forest_cover", "min": 26, "label": "At least 26 healthy forest cells" }
+  ],
+  "critical_degraded": 14,
+  "challenge": { "text": "Keep the West Woodland fig healthy.", "kind": "forest_at", "cells": [[1, 1]] },
+  "reward": { "journal": ["monsoon_erosion", "multiple_pressures"], "insight": "network_thinking" },
+  "par": { "continuous+succession": 10, "continuous+active": 13, "stepping_stone+succession": 10, "stepping_stone+active": 14 }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "natures-thread",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Nature's Thread — cooperative ecological restoration game (Babylon.js client)",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite --config client/vite.config.ts",
+    "build": "tsc -p client/tsconfig.json --noEmit && vite build --config client/vite.config.ts",
+    "preview": "vite preview --config client/vite.config.ts",
+    "typecheck": "tsc -p client/tsconfig.json --noEmit",
+    "lint": "tsc -p client/tsconfig.json --noEmit --noUnusedLocals --noUnusedParameters",
+    "test": "vitest run --config client/vite.config.ts",
+    "format:content": "node scripts/format-content.mjs",
+    "test:room": "node tests/e2e/room.mjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.32.1"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

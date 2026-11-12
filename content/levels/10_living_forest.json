@@ -1,0 +1,54 @@
+{
+  "id": "forest-10",
+  "number": 10,
+  "mode": "expedition",
+  "kind": "expedition",
+  "title": "A Living Forest",
+  "area": "central_clearing",
+  "instruction": "Restore the whole Forest Realm: macaque canopy West ↔ East, hornbill nest, frog stream site and 31 forest cells.",
+  "intro": "The full regional map — North Canopy, both woodlands, the Central Clearing, the Shola Meadow and the River Edge. Both of your Living Charter amendments are in force.",
+  "map": ["FFfFm.=DFFFF", "FfFFD.=DFhFF", "DD.D..=..DFF", "FF..D.=.D..F", "Ff.DD.=.DD.F", "gg...D=.D.DF", "^g.g..=...~~", "^^gg..=.D~~~", "~~~~~~=~~~~~"],
+  "sites": [[0, 2], [1, 2], [4, 0], [5, 0], [6, 0], [7, 0], [4, 1], [5, 1], [6, 1], [7, 1], [8, 7], [8, 5], [3, 4], [4, 4]],
+  "rounds": 5,
+  "capacity": 3,
+  "events": [
+    {
+      "round": 1,
+      "title": "Dry spell",
+      "text": "A dry start to the season: 1 less capacity and no regrowth this round.",
+      "kind": "dry_spell",
+      "capacity_penalty": 1
+    },
+    {
+      "round": 2,
+      "title": "Lantana in the North Canopy",
+      "text": "Lantana pushes into the canopy edge.",
+      "kind": "lantana",
+      "cells": [[8, 0], [8, 1]]
+    },
+    {
+      "round": 3,
+      "title": "Monsoon run-off",
+      "text": "Streamside cells still degraded at round end wash out.",
+      "kind": "erosion",
+      "cells": [[8, 7], [8, 5]]
+    },
+    {
+      "round": 4,
+      "title": "Lantana in the West Woodland",
+      "text": "The thicket reaches the West Woodland fig.",
+      "kind": "lantana",
+      "cells": [[1, 4], [0, 3]]
+    }
+  ],
+  "objectives": [
+    { "kind": "connect", "species": "lion_tailed_macaque", "from": [0, 3], "to": [11, 3], "label": "Macaque canopy: West ↔ East Woodland" },
+    { "kind": "habitat", "species": "great_hornbill", "at": [4, 0], "label": "Restore the hornbill nest tree" },
+    { "kind": "habitat", "species": "malabar_gliding_frog", "at": [8, 7], "label": "Frog breeding forest at the river" },
+    { "kind": "forest_cover", "min": 31, "label": "At least 31 healthy forest cells" }
+  ],
+  "critical_degraded": 22,
+  "challenge": { "text": "Keep the West Woodland fig healthy to the end.", "kind": "forest_at", "cells": [[1, 4]] },
+  "reward": { "journal": ["landscape_restoration", "western_ghats"], "insight": "region_restored" },
+  "par": { "continuous+succession": 8, "continuous+active": 10, "stepping_stone+succession": 8, "stepping_stone+active": 10 }
+}

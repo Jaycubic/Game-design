@@ -1,0 +1,43 @@
+/* Title, hub and lobby — game-style menus over the live river. */
+.title-screen { display: grid; place-items: center; align-content: center; gap: 28px; cursor: pointer; outline: none; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(5, 15, 20, 0.55) 100%); }
+.logo-block { text-align: center; }
+.logo-mark { font-size: 3.4rem; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.3)); }
+.logo-title { font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; font-weight: 900; font-size: clamp(2.6rem, 7vw, 5.2rem); margin: 0; letter-spacing: 0.02em; color: #fff; text-shadow: 0 4px 0 #1b5b6a, 0 8px 24px rgba(0, 0, 0, 0.45); }
+.logo-tag { margin: 6px 0 0; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #bff3ff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.press-start { font-weight: 900; font-size: 1.3rem; color: #ffd23f; letter-spacing: 0.08em; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); animation: blink 1.2s ease-in-out infinite; }
+.title-foot { position: absolute; bottom: 22px; color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5); }
+@keyframes blink { 50% { opacity: 0.35; } }
+.card-narrow { width: min(440px, 100%); padding: 26px 26px 22px; text-align: center; }
+.card-narrow .logo-title { font-size: 2.4rem; }
+.card-narrow .logo-mark { font-size: 2.2rem; }
+
+.hub { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: auto 1fr; padding: 16px; gap: 16px; font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; }
+.hub-top { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+.hub-brand { font-weight: 900; font-size: 1.5rem; color: #fff; text-shadow: 0 3px 0 #1b5b6a; }
+.hub-player { display: flex; align-items: center; gap: 8px; background: rgba(10, 30, 40, 0.65); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 99px; padding: 4px 6px 4px 4px; font-weight: 700; }
+.hub-avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #ffd23f; color: #2a2000; font-weight: 900; }
+.hub-rail { display: grid; align-content: start; gap: 10px; }
+.hub-tile { display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 8px; background: rgba(10, 30, 40, 0.65); border: 2px solid rgba(255, 255, 255, 0.18); border-radius: 16px; padding: 10px 12px; }
+.hub-tile-icon { grid-row: span 2; font-size: 1.8rem; }
+.hub-tile-name { font-weight: 900; }
+.hub-tile-note { font-size: 0.75rem; opacity: 0.75; }
+.hub-tile.locked { opacity: 0.7; filter: saturate(0.6); }
+.hub-play { align-self: end; justify-self: end; display: grid; gap: 10px; width: min(360px, 100%); }
+.play-btn { display: grid; padding: 18px 22px; border: none; border-radius: 22px; cursor: pointer; background: linear-gradient(180deg, #ffd23f, #ff9a1f); color: #2a1400; box-shadow: 0 6px 0 #b8640c, 0 14px 30px rgba(0, 0, 0, 0.35); transition: transform 0.1s, box-shadow 0.1s; font-family: inherit; }
+.play-btn:hover { transform: translateY(-2px); }
+.play-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b8640c, 0 6px 14px rgba(0, 0, 0, 0.3); }
+.play-main { font-size: 3rem; font-weight: 900; letter-spacing: 0.08em; line-height: 1; }
+.play-sub { font-weight: 800; opacity: 0.8; }
+.btn.wide { width: 100%; }
+.hub-play .join-row .code-input { text-transform: uppercase; }
+
+.lobby-card { width: min(520px, 100%); padding: 22px; }
+.lobby-head { display: flex; justify-content: space-between; align-items: center; }
+.lobby-head h2 { margin: 0; font-family: "Trebuchet MS", system-ui, sans-serif; font-weight: 900; }
+
+@media (max-width: 760px) {
+  .hub { grid-template-columns: 1fr; }
+  .hub-rail { grid-template-columns: 1fr 1fr; }
+  .hub-play { justify-self: stretch; width: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .press-start { animation: none; } }

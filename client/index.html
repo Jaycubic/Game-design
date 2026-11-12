@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1c2a1f" />
+    <meta name="description" content="Nature's Thread — a cooperative game about reconnecting fragmented Western Ghats forest." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Clearwater Run</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" aria-label="3D game view" tabindex="-1"></canvas>
+      <div id="banner" role="status" hidden></div>
+      <div id="ui"></div>
+      <div id="run-ui"></div>
+      <div id="modals"></div>
+      <div id="toasts" aria-live="polite"></div>
+      <div id="tooltip" role="tooltip" hidden></div>
+      <div id="renderer" aria-hidden="true"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

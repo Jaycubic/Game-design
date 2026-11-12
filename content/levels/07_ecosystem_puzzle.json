@@ -1,0 +1,25 @@
+{
+  "id": "forest-07",
+  "number": 7,
+  "mode": "puzzle",
+  "kind": "ecosystem_logic",
+  "title": "The Ecosystem Puzzle",
+  "area": "east_woodland",
+  "instruction": "Link the canopy West to East and give all four animals a home that meets their needs.",
+  "intro": "Plan the whole ecosystem at once. Remember: your recovery rule decides what heals by itself when you check the plan.",
+  "map": ["FfFDD.FnF", "FFDDD.FFF", "...=..d~~", "gg.=..F~~", "^g.=..Ff~", "^^.=..FF~"],
+  "slots": [[1, 1], [7, 0], [8, 1], [6, 4], [0, 3], [4, 4]],
+  "tokens": ["lion_tailed_macaque", "malabar_giant_squirrel", "great_hornbill", "malabar_gliding_frog"],
+  "rounds": 1,
+  "capacity": 5,
+  "objectives": [
+    { "kind": "connect", "species": "malabar_giant_squirrel", "from": [0, 0], "to": [8, 0], "label": "Canopy route West → East" },
+    { "kind": "habitat", "species": "lion_tailed_macaque", "label": "Lion-tailed macaque home" },
+    { "kind": "habitat", "species": "malabar_giant_squirrel", "label": "Malabar giant squirrel home" },
+    { "kind": "habitat", "species": "great_hornbill", "label": "Great hornbill nest with fig" },
+    { "kind": "habitat", "species": "malabar_gliding_frog", "label": "Gliding frog by the stream" }
+  ],
+  "challenge": { "text": "Complete the plan using 4 capacity or less.", "kind": "max_cost", "cost": 4 },
+  "reward": { "journal": ["seed_dispersal", "keystone_figs"], "insight": "ecosystem_web" },
+  "par": { "continuous+succession": 4, "continuous+active": 5, "stepping_stone+succession": 4, "stepping_stone+active": 5 }
+}

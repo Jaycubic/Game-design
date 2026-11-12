@@ -1,0 +1,155 @@
+{
+  "sources": [
+    { "id": "unesco", "title": "UNESCO World Heritage Centre — Western Ghats (site 1342)", "url": "https://whc.unesco.org/en/list/1342" },
+    { "id": "iucn", "title": "IUCN Red List of Threatened Species", "url": "https://www.iucnredlist.org" },
+    {
+      "id": "ncf",
+      "title": "Nature Conservation Foundation — Anamalai rainforest restoration and canopy bridges",
+      "url": "https://www.ncf-india.org"
+    }
+  ],
+  "entries": [
+    {
+      "key": "habitat_fragmentation",
+      "title": "Habitat fragmentation",
+      "kind": "idea",
+      "text": "When forest is cut into small, isolated pieces by roads, plantations or clearings, animals that cannot cross open ground get trapped. Small fragments hold fewer animals and lose species over time. Reconnecting fragments with suitable habitat lets wildlife move, find food and mates, and recolonise.",
+      "sources": ["ncf"]
+    },
+    {
+      "key": "malabar_giant_squirrel",
+      "title": "Malabar giant squirrel (Ratufa indica)",
+      "kind": "species",
+      "text": "One of the largest squirrels in the world, found only in India. It lives high in the canopy and rarely comes to the ground, so it depends on tree crowns that touch. In the game it needs connected forest of at least 4 cells.",
+      "sources": ["iucn"]
+    },
+    {
+      "key": "restoration_capacity",
+      "title": "Restoration Capacity",
+      "kind": "rule",
+      "text": "Your team's shared ability to plant, restore and protect each round — people, saplings and time. It is not money. Choosing where to spend it together is the heart of every Expedition."
+    },
+    {
+      "key": "lantana_invasion",
+      "title": "Lantana — an invasive shrub",
+      "kind": "pressure",
+      "text": "Lantana camara is a shrub from the tropical Americas that has spread through many Indian forests. It forms dense thickets on disturbed ground and stops native seedlings from growing. Clearing it early is cheaper than restoring the forest it smothers.",
+      "sources": ["ncf"]
+    },
+    {
+      "key": "lion_tailed_macaque",
+      "title": "Lion-tailed macaque (Macaca silenus)",
+      "kind": "species",
+      "text": "An endangered monkey found only in the rainforests of the Western Ghats. It spends most of its life in the canopy and eats mainly fruit. Groups need large, connected rainforest with fruiting trees — in the game, a fig within 6 or more connected forest cells.",
+      "sources": ["iucn"]
+    },
+    {
+      "key": "great_hornbill",
+      "title": "Great hornbill (Buceros bicornis)",
+      "kind": "species",
+      "text": "A huge, vulnerable bird that nests in cavities of tall old trees. The female seals herself inside while the male brings food. It flies easily across gaps, so routes do not limit it — but it needs a nest tree and fruiting figs within reach.",
+      "sources": ["iucn"]
+    },
+    {
+      "key": "malabar_gliding_frog",
+      "title": "Malabar gliding frog (Rhacophorus malabaricus)",
+      "kind": "species",
+      "text": "A Western Ghats tree frog that glides between trees on its large webbed feet. It lays eggs in a foam nest on leaves hanging over water; the tadpoles drop into the pool below. It needs forest right beside streams.",
+      "sources": ["iucn"]
+    },
+    {
+      "key": "nilgiri_tahr",
+      "title": "Nilgiri tahr (Nilgiritragus hylocrius)",
+      "kind": "species",
+      "text": "An endangered mountain goat found only in the southern Western Ghats. It grazes montane grasslands and escapes predators on steep cliffs, so it needs grassland that is connected to rocky refuges.",
+      "sources": ["iucn"]
+    },
+    {
+      "key": "great_hornbill_figs",
+      "title": "Hornbills and figs",
+      "kind": "relationship",
+      "text": "Figs fruit at different times through the year, so they feed hornbills when little else is available. In return, hornbills carry seeds long distances and help forests regrow."
+    },
+    {
+      "key": "riparian_forest",
+      "title": "Streamside (riparian) forest",
+      "kind": "habitat",
+      "text": "Trees along streams shade the water, hold the banks together and drop leaves that feed stream life. Many frogs breed only where forest meets water."
+    },
+    {
+      "key": "field_reports",
+      "title": "Field reports",
+      "kind": "idea",
+      "text": "Real restoration teams combine observations from many people: who saw which animal, where the ground is damaged, which trees are fruiting. No single survey shows the whole picture."
+    },
+    {
+      "key": "stepping_stones",
+      "title": "Stepping stones",
+      "kind": "idea",
+      "text": "Small patches of trees in an open landscape can act as stepping stones that some animals use to cross between larger forests. They help most when the gaps between them are short."
+    },
+    {
+      "key": "lion_tailed_macaque_canopy",
+      "title": "Canopy bridges",
+      "kind": "restoration",
+      "text": "In the Anamalai hills, conservationists have strung canopy bridges across roads so that monkeys can cross above traffic instead of on the ground. In the game this is the Canopy Bridge unlocked by Continuous Corridors.",
+      "sources": ["ncf"]
+    },
+    {
+      "key": "dry_spells",
+      "title": "Dry spells",
+      "kind": "pressure",
+      "text": "Hot, dry weeks stress young plants and slow natural regrowth. Restoration plans have to allow for bad seasons."
+    },
+    {
+      "key": "seed_dispersal",
+      "title": "Seed dispersal",
+      "kind": "relationship",
+      "text": "Fruit-eating birds and mammals swallow seeds and drop them far away. Connected forest keeps these seed carriers moving, which helps degraded land recover on its own."
+    },
+    {
+      "key": "keystone_figs",
+      "title": "Figs as keystone plants",
+      "kind": "relationship",
+      "text": "A keystone plant supports far more species than its numbers suggest. Figs feed many fruit-eating animals in tropical forests, so losing them affects the whole community."
+    },
+    {
+      "key": "monsoon_erosion",
+      "title": "Monsoon run-off",
+      "kind": "pressure",
+      "text": "The Western Ghats receive very heavy monsoon rain. Where degraded slopes and stream banks have lost their roots and leaf litter, rain washes the soil away. Restoring vegetation before the rains protects the ground."
+    },
+    {
+      "key": "multiple_pressures",
+      "title": "Many pressures at once",
+      "kind": "idea",
+      "text": "Ecosystems rarely face one problem at a time. Invasive plants, dry weather and erosion can strike together, so the most useful action is often the one that helps several problems at once."
+    },
+    {
+      "key": "natural_regeneration",
+      "title": "Natural regeneration vs active restoration",
+      "kind": "restoration",
+      "text": "Damaged forest next to healthy forest often regrows by itself as seeds arrive. Badly damaged areas may need active planting of native trees. Restoration programmes in the Anamalai hills use both, depending on the site.",
+      "sources": ["ncf"]
+    },
+    {
+      "key": "restoration_planning",
+      "title": "Planning a restoration",
+      "kind": "restoration",
+      "text": "Good plans decide what to connect, which species to support and which places can heal on their own before spending scarce effort."
+    },
+    {
+      "key": "landscape_restoration",
+      "title": "Landscape restoration",
+      "kind": "idea",
+      "text": "Restoring one patch helps a little; restoring the links between many patches helps the whole landscape. A living forest is a connected network, not a set of islands."
+    },
+    {
+      "key": "western_ghats",
+      "title": "The Western Ghats",
+      "kind": "place",
+      "text": "A mountain chain along India's west coast and a UNESCO World Heritage Site. It is one of the world's richest places for wildlife, with many species found nowhere else.",
+      "sources": ["unesco"]
+    }
+  ]
+}
