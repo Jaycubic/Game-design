@@ -1,148 +1,190 @@
-# Nature's Thread — Rule Book
+# Clearwater Run — Rule Book
 
-*Reconnect the Living World*
-
-Nature's Thread is a cooperative game for **2–4 Nature Guardians**, each playing on their own device in a shared online room. Together you restore a damaged Western Ghats forest. There is no secret saboteur — the challenge comes from the **Environmental Pressure Engine** and from deciding together how to spend limited effort.
+*A crew boat race to keep a river alive.* 2–4 players, each on their own device. A run lasts 3 minutes.
 
 ---
 
-## 1. How to play
+## 1. Getting into a run
 
-1. One player **creates a room** and shares the six-letter **invitation code**.
-2. The others **join** from their own devices with that code (2–4 players).
-3. Everyone presses **Ready**; the host starts the level.
-4. Play through the region's **ten levels**, alternating **Puzzle** and **Expedition** levels.
-5. After levels 2 and 4 the team **votes on a Living Charter amendment** that changes the rules for the rest of the region.
+1. Sign in and press **PLAY**. The game opens a room and shows a six-character **invitation code**.
+2. Friends press **Join** on their own devices and type the code. 2–4 players can join.
+3. Everyone presses **Ready**, and the host starts the run.
 
-Every level shows its objective, its limits and how it can be lost **before** play starts. A failed level can always be replayed; you never lose campaign progress.
+**Practice solo** starts a run with just you. It pays half Seeds.
 
-## 2. The map
+**Tutorial** is a 60-second course that teaches each control in turn. You can skip it at any time, and it pays
+nothing.
 
-The board is a grid of cells seen as a 3D diorama. Wildlife moves between cells that share a side (never diagonally).
+## 2. Crews
 
-| Cell | Meaning |
+| Players | Crews |
 |---|---|
-| Forest | Healthy habitat with closed canopy. Some forest cells hold a **fruiting fig** or a **hornbill nest tree**. |
-| Degraded forest | Damaged by Lantana or clearing. Figs and nest trees on it do not count until it is restored. |
-| Open ground | Cleared land. It can be planted. |
-| Road | Cannot be planted. Canopy animals need a bridge or a stepping-stone hop to cross. |
-| Stream | Never crossed by forest animals. Frogs need forest beside it. |
-| Shola grassland / Rocky cliff | Home of the Nilgiri tahr. |
-| Stepping-stone grove / Canopy bridge | Built by players once the matching amendment is chosen. |
+| 1 (practice) | You alone |
+| 2 | One crew together, against the river |
+| 3–4 | Two rival crews; seats alternate between Crew A and Crew B |
 
-## 3. Restoration Capacity and actions
+Crews compete on score, but **everyone shares one River Health bar**.
 
-The team shares one pool of **Restoration Capacity** each round (in puzzles: one budget for the whole plan). It is effort, not money.
+## 3. Controls
 
-| Action | Where | Cost |
+| Action | Keyboard | Gamepad |
 |---|---|---|
-| **Plant** native saplings | Open ground → forest | 1 |
-| **Restore** degraded forest | Degraded → forest | 1 (2 under Active Restoration — see §7) |
-| **Clear Lantana** | A cell Lantana threatens this round | 1 |
-| **Canopy Bridge** | A road cell (Continuous Corridors only) | 2 |
-| **Stepping-Stone Grove** | Open ground (Stepping-Stone Networks only) | 2 |
+| Steer left / right | ◀ ▶ or A / D | D-pad or left stick |
+| Hop | ▲, W or Space | A |
+| Action (cut weed, start plugging) | ▼, S or E | B or X |
+| Send signal glyph 1–6 | keys 1–6 | hold RT + A/B/X/Y/LB/RB |
+| Vote during a rule change | keys 1–3 | A / B / X |
 
-Some levels mark a limited set of **restoration sites**; actions are only possible there (and on cells a pressure event touches).
+Your boat moves forward on its own. The letter keys can be rebound in **Settings**; the arrow keys always work.
 
-## 4. Puzzle levels (Discover)
+## 4. The river
 
-Puzzles are focused top-down diorama boards.
+The river has **three lanes**.
 
-1. Read the objective.
-2. Place interventions within the budget and, in species puzzles, drag each animal onto a marked habitat spot.
-3. Take back any placement for a full refund before you check.
-4. Press **Check plan**. The plan is resolved (including any natural regrowth under your recovery rule). If it fails, the game explains why and the board stays as you left it. You have **3 checks**.
-
-**Field Report puzzles (level 5):** each player privately receives different clues. No single player can solve it alone — talk, combine your clues, and agree on one answer. You may submit **3 answers**.
-
-## 5. Expedition levels (Restore)
-
-Expeditions are shared 3D missions played in rounds:
-
-1. **Reveal pressure** — this round's environmental event is shown, with every affected cell marked.
-2. **Discuss** — agree on priorities.
-3. **Take actions** — players act in seat order, one action per turn, sharing the round's capacity. Pass when you are done; the round ends when everyone has passed or capacity runs out.
-4. **Resolve** — the pressure event strikes, then natural regrowth (if your rules allow it).
-5. **Check the objective** — success, failure, or another round.
-6. **Update the landscape** — the map shows the result.
-
-**You lose an Expedition** if the rounds run out before the objective is met, or if degraded forest reaches the level's **critical level**. A **Restoration Preview** shows what your planned actions would change; it is a preview, not a promise — the pressure event and regrowth happen at round end.
-
-## 6. Environmental Pressure
-
-Every event has a visible cause and a fair response:
-
-| Event | Effect at round end | Response |
+| Thing | What it does | What to do |
 |---|---|---|
-| **Lantana spreads** | Marked forest cells become degraded. | Clear Lantana on them this round, or restore them later. |
-| **Dry spell** | 1 less capacity this round and no natural regrowth. | Plan around it. |
-| **Monsoon run-off** | Marked cells that are still degraded wash out to open ground. | Restore them before the round ends. |
+| **Plastic** (bottles, bags) | Scores 1 point for your crew, fills your boost and heals the river a little. Plastic you miss hurts the river. | Drive into it. |
+| **Weed mat** | Slows you for a second. | Press **Action** just before it to cut it. Each cut greens a bank: +5 crew score and the river heals. |
+| **Log** | Capsizes you for 2 seconds. | **Hop** over it. |
+| **Debris wave** (every 30 s) | Covers every lane but one and capsizes you. | Steer to the gap, or hop. |
+| **Sewage pipe** (on a bank) | Pours murk that drains River Health every second until it is plugged. | Pull up beside it, press **Action**, then type its gate code (§5). |
 
-## 7. The Living Charter
+**Other boats:** if you run into the back of a boat in your lane, you slow down for a moment. Hop or change lanes
+to pass.
 
-Each ten-level region has **exactly two** amendment votes. The chosen rules stay in force for the rest of the region, in both Puzzle and Expedition levels, and are always shown in the campaign status.
+**Boost:** collecting plastic fills your boost meter. When it is full, your boat surges at 1.5× speed for
+2.5 seconds, and weed can't slow you while you boost.
 
-### Amendment 1 — Connectivity (after level 2)
+## 5. Plugging a pipe: the gate code
 
-| A. Continuous Corridors | B. Stepping-Stone Networks |
+- When you start plugging, a **3-symbol gate code** appears. You have 8 seconds to type it with keys 1–6.
+- **You see the right symbols in the wrong order. Your crewmates see the real order.**
+- Crewmates can only talk through the six **signal glyphs**: leaf, drop, fish, bridge, arrow and star. Signals appear
+  over the sender's boat.
+- **The rival crew sees your signals too**, so crews invent shorthand, or send decoys.
+- A player with no crewmate sees the real order for the first 1.5 seconds, then has to type it from memory.
+- A plugged pipe heals the river by 10 and raises your crew's **multiplier** for the rest of the run.
+
+## 6. Score and River Health
+
+**Crew score** = plastic × (1 + 0.5 × pipes plugged) + 5 × banks greened
+
+For example, 40 plastic with 2 pipes plugged and 3 banks greened scores 40 × 2 + 15 = 95.
+
+**River Health** starts at 70 out of 100.
+
+| Event | Effect on River Health |
 |---|---|
-| Routes must be unbroken habitat. | A route may **hop one cell** (open, degraded, grassland or road) when it starts or lands on a **grove**. |
-| Unlocks **Canopy Bridges** over roads (2). Frogs cannot use them. | Unlocks **Stepping-Stone Groves** on open ground (2). Streams and cliffs are never hopped. |
+| Plastic collected | +0.5 |
+| Weed cut | +1.5 |
+| Pipe plugged | +10 |
+| Plastic missed | −0.8 |
+| Each open pipe | −0.12 every second |
 
-### Amendment 2 — Recovery (after level 4)
+- **River choked:** if River Health ever reaches 0, every crew's final score is **halved**.
+- **River revived:** if the run ends with River Health at 60 or more, every crew gets **+20**.
 
-| A. Natural Succession | B. Active Restoration |
+## 7. The two rule changes
+
+Every run has **exactly two** rule changes, and players choose both. Each one goes through the same steps:
+
+1. a 5-second warning while you keep racing;
+2. the run pauses and the choice opens;
+3. a full-screen card shows the new rule;
+4. a badge stays on the HUD, and you get 3 seconds to adjust before racing resumes.
+
+The controls, the score formula and the win condition never change.
+
+### Rule change 1: Twist (about 1:03 into the run)
+
+Everyone votes within 15 seconds. The option with the most votes wins. A tie, or no votes at all, is settled by a
+visible spin among the tied options.
+
+| Twist | Upside | Downside |
+|---|---|---|
+| **Monsoon Surge** | Extra plastic appears. | Debris waves come every 15 s. |
+| **Dry Season** | Fewer lanes to watch. | The river narrows to 2 lanes, and pipes pour twice as fast. |
+| **Volunteer Day** | Each plastic counts double. | Weed mats spread. |
+
+### Rule change 2: Finale (about 2:20 into the run)
+
+The **trailing crew** chooses within 10 seconds. With only one crew, that crew chooses. A tied score, or no choice,
+is settled by a visible spin.
+
+| Finale | Effect |
 |---|---|
-| At round end, degraded forest with **3 or more** healthy forest neighbours **regrows for free**. | **No** natural regrowth. |
-| Restore costs 1. A dry spell, or a Lantana hit that round, stops regrowth. | Restore costs **2** and also heals **every degraded cell beside the target**, immediately. |
+| **Second Wind** | The choosing crew's boost fills, and extra plastic flows into its lanes for 20 s. |
+| **Clean Sweep** | Every open pipe pours at half rate for the rest of the run, which helps everyone. |
 
-### Voting
+The Finale lets the trailing crew either chase points or help the shared river.
 
-1. The game pauses and explains both options.
-2. Discuss. Each player casts one vote (you may change it until everyone has voted).
-3. The **majority** wins.
-4. **Tie:** discuss briefly and vote again. If it is still tied, the **tie-break player** decides. The tie-break seat rotates each time the room starts a new regional run.
-5. A player who leaves before voting is removed from the vote so it cannot stall. Votes are saved; a reconnecting player sees the current vote.
+## 8. End of the run
 
-## 8. Species needs
+- **Two crews:** the higher crew score wins. Both crews still live with the shared river result.
+- **One crew:** you "win" by keeping the river revived (River Health of 60 or more at the end).
 
-| Species | Needs (in the game) |
+## 9. Seeds and boats
+
+**Seeds** are the only currency, and they are only earned by playing.
+
+**Seeds per run:**
+- Your crew score ÷ 5, up to 60.
+- **+20** for a win. Only your first 3 wins each day earn this bonus.
+- **+10** if the river was revived.
+- Practice runs pay half. The tutorial pays nothing.
+
+**Daily reward:** collect once per day (UTC). The track pays 20, 25, 30, 40, 50, 60, then 100 Seeds, and then
+repeats. A missed day pauses the track; it never resets it.
+
+**River Road:** rewards for runs completed.
+
+| Runs completed | Reward |
 |---|---|
-| Lion-tailed macaque | Healthy forest cell whose connected forest has **6+ forest cells** and a **live fig**. |
-| Malabar giant squirrel | Healthy forest cell whose connected forest has **4+ forest cells**. |
-| Great hornbill | A healthy **nest tree** with a **live fig within 3 cells**. Flies — routes do not limit it. |
-| Malabar gliding frog | Healthy forest cell **directly beside a stream**. |
-| Nilgiri tahr | Shola **grassland** connected to a **rocky cliff**. |
+| 1 | 50 Seeds + the Kingfisher boat |
+| 3 | 75 Seeds |
+| 5 | 100 Seeds |
+| 8 | 150 Seeds |
+| 10 | 100 Seeds + the River Keeper boat |
+| 15 | 300 Seeds |
 
-"Connected" always uses your current connectivity rule. The Field Journal explains the real ecology behind each simplification.
+**Boats.** Each stat runs from 1 to 5, and level 2 is the starter's level.
 
-## 9. Rewards and progression
+| Boat | How to get it | Speed | Net | Cutter | Boost |
+|---|---|---|---|---|---|
+| Driftwood (rowboat) | Starter | 2 | 2 | 2 | 2 |
+| Kingfisher (fishing boat) | River Road, 1 run | 2 | 3 | 2 | 2 |
+| Coral Skiff | Shop, 120 Seeds | 3 | 2 | 2 | 3 |
+| Bluefin | Shop, 120 Seeds | 3 | 3 | 2 | 2 |
+| Mangrove | Shop, 200 Seeds | 3 | 3 | 3 | 3 |
+| Night Heron (jet boat) | Shop, 300 Seeds | 4 | 3 | 3 | 4 |
+| River Keeper (cleanup tug) | River Road, 10 runs | 3 | 5 | 4 | 3 |
 
-Each level offers up to three **Leaf Marks**:
+Each level above 2 gives:
 
-1. **Objective** — complete the level.
-2. **Efficiency** — spend no more capacity than the best possible plan for your rules (Field Report puzzle: at most one wrong answer).
-3. **Ecological challenge** — the optional goal shown for that level.
+| Stat | Effect per level above 2 |
+|---|---|
+| Speed | +4 % top speed |
+| Net | +15 % pickup reach. Level 5 also scoops plastic from the next lane. |
+| Cutter | +15 % cutting reach |
+| Boost | +15 % boost charge per plastic |
 
-Replaying improves your best result but never repeats one-time rewards. Completing levels unlocks **Field Journal** entries and changes the regional map permanently.
+The upgrades are deliberately small, so new players can still keep up. Equip a boat in the **Garage**. You can undo
+any purchase for a full refund within 10 minutes.
 
-## 10. Multiplayer, turns and reconnection
+## 10. Disconnections
 
-- Rooms hold 2–4 players; a fifth cannot join.
-- The server is the referee: it checks every action. A rejected action changes nothing and the game says why.
-- If you disconnect, rejoin with the same account and you return to the same seat, level, turn and vote. Turns skip disconnected players, so nobody is left waiting.
-- Private Field Report clues are only ever sent to the player who holds them.
+If your connection drops, the game reconnects automatically and you keep your seat. During a run your boat keeps
+moving forward on its own until you return.
 
 ## 11. Fair play
 
-| Loophole | Safeguard |
+| Possible loophole | How the rules stop it |
 |---|---|
-| Spamming cheap actions for points | Leaf Marks come from objectives and efficiency, not clicks. |
-| Building useless corridors | Only routes that meet species needs count. |
-| Waiting forever for regrowth | Expeditions have a round limit. |
-| Groves on unsuitable cells | Groves only go on open ground; streams and cliffs are never hopped. |
-| One player using all the capacity | Seat-order turns, one action per turn. |
-| Leaving during a vote | Votes are saved; absent voters are removed so the vote resolves. |
-| Replaying for rewards | Only the best result is kept; one-time rewards are given once. |
-
-Every level has been checked by the game's solver: it is winnable under every rule combination the team can choose, and the efficiency target is the true minimum.
+| A crew ignores the river and only farms plastic | A choked river halves every score. |
+| A crew lets the other do the clean-up work | The +20 "revived" bonus goes to every crew. |
+| A rival reads your gate code | Signals are public, but only your crew sees the real order. |
+| A rule change is random or forced on players | Both changes are chosen by players. Only a tie, or no choice, spins. |
+| Farming wins for Seeds | The win bonus counts only 3 wins a day. Practice pays half. The tutorial pays nothing. |
+| Paying to win | There is no real money, and upgrades are capped and modest. |
+| A regretted purchase | Undo within 10 minutes for a full refund. |
+| Missing a day | The daily track pauses; it never resets. |

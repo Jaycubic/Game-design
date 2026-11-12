@@ -1,3 +1,5 @@
+import { icon } from "./icons";
+
 // Minimal DOM helpers: h() builds elements; modal stack with focus trapping.
 
 type Child = Node | string | number | null | undefined | false | Child[];
@@ -82,7 +84,7 @@ export class ModalStack {
       h(
         "section",
         { class: "modal panel" + (opts.wide ? " wide" : ""), role: "dialog", "aria-modal": "true", "aria-label": title },
-        h("header", { class: "modal-head" }, h("h2", null, title), closable ? h("button", { class: "icon-btn", "aria-label": "Close", onclick: () => this.pop() }, "✕") : null),
+        h("header", { class: "modal-head" }, h("h2", null, title), closable ? h("button", { class: "icon-btn", "aria-label": "Close", onclick: () => this.pop() }, icon("close")) : null),
         h("div", { class: "modal-body" }, body),
       ),
     );

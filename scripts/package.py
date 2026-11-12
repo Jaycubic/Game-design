@@ -23,7 +23,7 @@ TOP = "Natures-Thread"
 
 EXCLUDED_DIRS = {".git", "target", "node_modules", "dist", "certs", ".vite", ".idea", ".vscode", "__pycache__", ".claude"}
 EXCLUDED_NAMES = {".DS_Store", "Thumbs.db"}
-EXCLUDED_SUFFIXES = {".log", ".pem", ".key", ".crt", ".zip", ".pyc", ".rs.bk", ".tmp"}
+EXCLUDED_SUFFIXES = {".log", ".pem", ".key", ".crt", ".cer", ".zip", ".pyc", ".rs.bk", ".tmp"}
 
 REQUIRED = [
     "README.md", "Makefile", ".env.example", ".gitignore", "Cargo.toml", "Cargo.lock",

@@ -24,7 +24,7 @@ pub struct RunHost {
     pub run: Run,
     pub practice: bool,
     pub tutorial: bool,
-    /// seat → boat colour (the player's equipped boat).
+    /// seat → equipped boat key (sets the 3D model and its stats).
     pub skins: HashMap<u8, String>,
     pending: HashMap<u8, VecDeque<Input>>,
 }
@@ -46,7 +46,7 @@ impl RunHost {
     }
 }
 
-/// Player ids of the seats that would race now (for looking up boat colours).
+/// Player ids of the seats that would race now (for looking up equipped boats).
 pub fn racers(g: &RoomEntry) -> Vec<(u8, Uuid)> {
     g.state
         .roster
@@ -84,7 +84,11 @@ pub fn start(
         return Err(GameError::new("no_players", "Nobody is connected."));
     }
     let seed = rand::random::<u64>();
-    let run = if tutorial { Run::tutorial(seed, &seats) } else { Run::new(seed, &seats) };
+    let mut run = if tutorial { Run::tutorial(seed, &seats) } else { Run::new(seed, &seats) };
+    // Each boat's upgrade levels come from the boat its player has equipped.
+    for (&seat, key) in &skins {
+        run.equip(seat, river_core::boat_stats(key));
+    }
     let boats: Vec<_> = run.boats.iter().map(|b| json!({ "seat": b.seat, "crew": b.crew })).collect();
     let names: HashMap<u8, String> = g
         .state

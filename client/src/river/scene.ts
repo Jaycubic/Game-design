@@ -9,6 +9,7 @@ import {
   DynamicTexture,
   HemisphericLight,
   ImageProcessingConfiguration,
+  TransformNode,
   Matrix,
   Mesh,
   MeshBuilder,
@@ -22,6 +23,7 @@ import {
   Vector3,
 } from "@babylonjs/core";
 import { buildPrototypes } from "../render/flora";
+import { buildBoat, DEFAULT_BOAT, type BuiltBoat } from "./fleet";
 import { fbm, seeded } from "../render/shapes";
 import {
   bagMesh,
@@ -91,7 +93,9 @@ export class RiverScene {
   private bankBatches: Record<string, Batch>;
   private chunkMeshes = new Map<number, Mesh>();
   private chunkKey = "";
-  private boats = new Map<number, Mesh>();
+  /** seat → boat root; holds a quick code-built stand-in until the model loads. */
+  private boats = new Map<number, TransformNode>();
+  private built = new Map<number, BuiltBoat>();
   private splash: ParticleSystem;
   private wake: ParticleSystem;
   private shake = 0;
@@ -380,26 +384,44 @@ export class RiverScene {
 
   private skins: Record<string, string> = {};
 
-  /** Equipped boat colours (seat → hex). Boats already built are rebuilt. */
+  /** Equipped boats (seat → boat key). Boats already built are rebuilt. */
   setSkins(skins: Record<string, string>) {
-    for (const [seat, colour] of Object.entries(skins)) {
-      if (this.skins[seat] !== colour) {
-        this.skins[seat] = colour;
-        this.boats.get(Number(seat))?.dispose();
-        this.boats.delete(Number(seat));
+    for (const [seat, key] of Object.entries(skins)) {
+      if (this.skins[seat] !== key) {
+        this.skins[seat] = key;
+        this.dropBoat(Number(seat));
       }
     }
   }
 
-  private boatFor(seat: number): Mesh {
-    let m = this.boats.get(seat);
-    if (!m) {
-      m = boatMesh(this.scene, this.skins[String(seat)] ?? SEAT_COLOURS[seat % SEAT_COLOURS.length], 40 + seat);
-      m.material = this.vc;
-      m.isPickable = false;
-      this.boats.set(seat, m);
+  private dropBoat(seat: number) {
+    this.built.get(seat)?.dispose();
+    this.built.delete(seat);
+    this.boats.get(seat)?.dispose();
+    this.boats.delete(seat);
+  }
+
+  private boatFor(seat: number): TransformNode {
+    let root = this.boats.get(seat);
+    if (!root) {
+      const node = new TransformNode(`seat-${seat}`, this.scene);
+      root = node;
+      const standIn = boatMesh(this.scene, SEAT_COLOURS[seat % SEAT_COLOURS.length], 40 + seat);
+      standIn.material = this.vc;
+      standIn.isPickable = false;
+      standIn.parent = node;
+      this.boats.set(seat, node);
+      const key = this.skins[String(seat)] ?? DEFAULT_BOAT;
+      buildBoat(this.scene, key, seat)
+        .then((b) => {
+          if (this.boats.get(seat) !== node) return b.dispose(); // replaced while loading
+          standIn.dispose();
+          b.root.parent = node;
+          this.built.set(seat, b);
+        })
+        .catch((e) => console.warn("boat model failed, keeping stand-in", e));
     }
-    return m;
+    return root;
   }
 
   /** Place boats, move camera and water. `me` is the local player's pose. */

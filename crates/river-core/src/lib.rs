@@ -134,6 +134,61 @@ impl Plug {
     }
 }
 
+/// A boat's upgrade levels, 1–5 each. Level 2 is the starter boat and
+/// matches the base tuning; each level above it is a modest step.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Stats {
+    /// Top speed: +4 % per level.
+    pub speed: u8,
+    /// Plastic net: +15 % pickup reach per level; level 5 also nets the next lane.
+    pub net: u8,
+    /// Weed cutter: +15 % cutting reach per level.
+    pub cutter: u8,
+    /// Boost charge: +15 % charge per plastic per level.
+    pub boost: u8,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Stats { speed: 2, net: 2, cutter: 2, boost: 2 }
+    }
+}
+
+impl Stats {
+    fn step(level: u8, per: f32) -> f32 {
+        1.0 + per * (level.clamp(1, 5) as f32 - 2.0)
+    }
+    pub fn speed_mult(&self) -> f32 {
+        Self::step(self.speed, 0.04)
+    }
+    pub fn net_window(&self) -> f32 {
+        HIT_WINDOW * Self::step(self.net, 0.15)
+    }
+    pub fn wide_net(&self) -> bool {
+        self.net >= 5
+    }
+    pub fn cut_reach(&self) -> f32 {
+        CUT_REACH * Self::step(self.cutter, 0.15)
+    }
+    pub fn boost_per_plastic(&self) -> f32 {
+        0.12 * Self::step(self.boost, 0.15)
+    }
+}
+
+/// Stats for each boat in the catalog (unknown keys get the starter stats).
+pub fn boat_stats(key: &str) -> Stats {
+    let (speed, net, cutter, boost) = match key {
+        "boat_sky" => (2, 3, 2, 2),
+        "boat_coral" => (3, 2, 2, 3),
+        "boat_lilac" => (3, 3, 2, 2),
+        "boat_leaf" => (3, 3, 3, 3),
+        "boat_night" => (4, 3, 3, 4),
+        "boat_lotus" => (3, 5, 4, 3),
+        _ => (2, 2, 2, 2),
+    };
+    Stats { speed, net, cutter, boost }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Boat {
     pub seat: u8,
@@ -147,6 +202,8 @@ pub struct Boat {
     pub boosting: f32,
     pub plug: Option<Plug>,
     pub plastic: u32,
+    #[serde(default)]
+    pub stats: Stats,
 }
 
 impl Boat {
@@ -157,7 +214,7 @@ impl Boat {
         if self.capsize > 0.0 || self.plug.is_some() {
             return 0.0;
         }
-        let mut s = BASE_SPEED;
+        let mut s = BASE_SPEED * self.stats.speed_mult();
         if self.boosting > 0.0 {
             s *= BOOST_MULT;
         }
@@ -309,6 +366,7 @@ impl Run {
                 boosting: 0.0,
                 plug: None,
                 plastic: 0,
+                stats: Stats::default(),
             })
             .collect();
         let crews = (0..if two_crews { 2 } else { 1 }).map(|id| Crew { id, ..Default::default() }).collect();
@@ -666,13 +724,21 @@ impl Run {
         }
     }
 
+    /// Give a seat's boat its stats (called before the run starts).
+    pub fn equip(&mut self, seat: u8, stats: Stats) {
+        if let Some(b) = self.boats.iter_mut().find(|b| b.seat == seat) {
+            b.stats = stats;
+        }
+    }
+
     fn do_action(&mut self, i: usize) {
         let (seat, lane, z) = (self.boats[i].seat, self.boats[i].lane, self.boats[i].z);
+        let reach = self.boats[i].stats.cut_reach();
         // 1) cut the nearest weed mat ahead in this lane
         if let Some(w) = self
             .objs
             .iter_mut()
-            .filter(|o| o.alive && o.kind == Kind::Weed && o.lane == lane && o.z >= z - 1.0 && o.z <= z + CUT_REACH)
+            .filter(|o| o.alive && o.kind == Kind::Weed && o.lane == lane && o.z >= z - 1.0 && o.z <= z + reach)
             .min_by(|a, b| a.z.total_cmp(&b.z))
         {
             w.alive = false;
@@ -770,7 +836,12 @@ impl Run {
             }
             for bi in 0..self.boats.len() {
                 let b = &self.boats[bi];
-                if (o.z - b.z).abs() > HIT_WINDOW || (o.kind != Kind::Wave && o.lane != b.lane) {
+                if o.kind == Kind::Plastic {
+                    let lane_ok = o.lane == b.lane || (b.stats.wide_net() && (o.lane - b.lane).abs() == 1);
+                    if (o.z - b.z).abs() > b.stats.net_window() || !lane_ok {
+                        continue;
+                    }
+                } else if (o.z - b.z).abs() > HIT_WINDOW || (o.kind != Kind::Wave && o.lane != b.lane) {
                     continue;
                 }
                 if o.kind == Kind::Wave && !wave_covers(o.lane, b.lane) {
@@ -782,7 +853,7 @@ impl Run {
                         self.objs[oi].alive = false;
                         let crew = self.boats[bi].crew;
                         self.boats[bi].plastic += plastic_value;
-                        self.boats[bi].boost = (self.boats[bi].boost + 0.12).min(1.0);
+                        self.boats[bi].boost = (self.boats[bi].boost + self.boats[bi].stats.boost_per_plastic()).min(1.0);
                         self.crew_mut(crew).plastic += plastic_value;
                         self.heal(HEALTH_PLASTIC);
                         self.events.push(Event::Collected { seat, id: o.id });

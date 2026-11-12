@@ -72,6 +72,10 @@ export interface CatalogBoat {
   colour: string;
   price: number;
   source: "default" | "shop" | "road";
+  model: string;
+  blurb: string;
+  /** Upgrade levels 1–5 (2 = starter boat). */
+  stats: { speed: number; net: number; cutter: number; boost: number };
 }
 export interface Profile {
   seeds: number;

@@ -1,77 +1,93 @@
-# Nature's Thread
+# Clearwater Run
 
-*Reconnect the Living World* — a cooperative 3D game for **2–4 players on their own devices**, about
-reconnecting a fragmented Western Ghats rainforest.
+*A crew boat race to keep a river alive.* A multiplayer 3D browser game for **2–4 players on their own devices**
+on the same local network. ("Clearwater Run" is a working title, set by `GAME_TITLE` in `client/src/ui/screens.ts`.)
 
 ## 1. What it is
 
-Players are Nature Guardians restoring the Anamalai Forest Realm of India's Western Ghats. The environmental
-theme is **biodiversity loss from habitat degradation and fragmentation**: roads, clearings and invasive Lantana
-cut the forest into pieces that lion-tailed macaques, giant squirrels, hornbills, gliding frogs and Nilgiri tahr
-cannot cross. There is no hidden saboteur — the opponent is the **Environmental Pressure Engine** (Lantana
-spread, dry spells, monsoon run-off) and the scarcity of shared effort.
+Each player steers a small cleanup boat down one shared river for a **3-minute run**. You scoop up plastic, cut weed
+mats, hop logs and plug the sewage pipes on the banks. With 3–4 players the boats form two rival crews. Each crew
+competes on score, but both crews share one **River Health** bar. Let it reach zero and everyone's score is halved.
+Finish above 60 and every crew gets a bonus.
 
-## 2. Two game modes
+The environmental issue is **plastic and sewage pollution in rivers**, carried by the scoring rules rather than by text:
+- plastic that slips past hurts the river;
+- an open pipe drains it every second;
+- greening the banks heals it.
 
-- **Puzzle levels (Discover)** — a top-down diorama board: plan corridors, match species to habitats, or deduce
-  the right site from clues only the whole team holds. One plan, up to 3 checks.
-- **Expedition levels (Restore)** — a free 3D camera over the same diorama, played in rounds with shared
-  Restoration Capacity, seat-order turns and a pressure event each round.
+The game uses no real place names; the real-world link belongs in the presentation.
 
-Both modes share one landscape and rules; puzzles unlock Field Journal knowledge and insights used in
-Expeditions, and Expeditions permanently change the regional map.
+- **Rules:** [docs/RULE_BOOK.md](docs/RULE_BOOK.md)
+- **Design and how the brief is met:** [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)
 
-## 3. Shared rooms (2–4 devices)
+## 2. A run at a glance
 
-One player signs in and **creates a room**; the game shows a six-character **invitation code** and a link.
-Others open the game on their own device (same Wi-Fi/LAN), sign in, and enter the code. Everyone presses
-**Ready**; the host starts. The server referees everything; each device renders the same state.
+| Time | What happens |
+|---|---|
+| 0:00 | 3-second countdown, then the boats move forward on their own. |
+| 0:00–1:03 | Steer between 3 lanes, collect plastic, hop logs, cut weed, plug pipes. A debris wave every 30 s. |
+| ≈1:03 | **Rule change 1 – Twist:** everyone votes for one of three river modifiers (15 s). |
+| ≈2:20 | **Rule change 2 – Finale:** the trailing crew picks one of two options (10 s). |
+| 3:00 | Results: crew scores, River Health, Seeds earned. |
 
-## 4. Gameplay loop
+The two rule changes are **always chosen by players and happen exactly twice per run**. The controls, the scoring
+formula and the win condition never change.
 
-Level briefing → act (plant, restore, clear Lantana, bridges/groves) → check the plan / pass the turn →
-pressure resolves → objective checked → result with up to three **Leaf Marks** (objective, efficiency against
-the solver-proven optimum, optional ecological challenge) → next level. A failed level is replayed with no loss
-of progress.
+**Communication puzzle:** to plug a pipe you type a 3-symbol gate code. The boat at the pipe sees the right symbols
+in the wrong order; its crewmate sees the real order. Crewmates can only talk through six signal glyphs (keys 1–6),
+and the rival crew sees those signals too.
 
-## 5. The Living Charter (exactly two amendments per region)
+## 3. Around the run
 
-| After level | Amendment | Option A | Option B |
-|---|---|---|---|
-| 2 | Connectivity | **Continuous Corridors** — unbroken routes; unlocks canopy bridges over roads | **Stepping-Stone Networks** — a route may hop one gap beside a planted grove |
-| 4 | Recovery | **Natural Succession** — degraded forest with 3+ healthy neighbours regrows free each round | **Active Restoration** — no regrowth; restoring costs 2 but heals the whole adjacent cluster |
+- **Hub:**
+  - **PLAY** opens a crew room with a six-character invitation code.
+  - **Practice solo** gives a run alone for half Seeds.
+  - **Join** takes a friend's code.
+- **Tutorial:** a skippable 60-second scripted course that teaches one control at a time. It is offered on first
+  sign-in and is available later from the cap icon.
+- **Seeds:** the only currency. Earned by playing, never bought.
+- **Garage and Shop:** seven boats, from the starter rowboat to a jet boat and a cleanup tug. Each boat is a model
+  with a person aboard, and each has four stats: speed, net, cutter and boost. Pricier boats are modestly better, at
+  most 8 % faster than the starter.
+- **Daily reward:** a 7-day track. A missed day pauses the track instead of resetting it.
+- **River Road:** milestone rewards for runs completed, including two boats.
+- **Settings:** graphics quality and rebindable keys.
 
-Majority vote; a tie gets one re-vote, then the rotating tie-break player decides. The choice changes every later
-Puzzle and Expedition (proven by the test suite). Full rules: [docs/RULE_BOOK.md](docs/RULE_BOOK.md).
-
-## 6. Architecture
+## 4. Architecture
 
 ```
-Browser (Babylon.js 9, WebGPU → WebGL2 fallback)  ──HTTPS/WSS──  Rust server (Actix)  ──  PostgreSQL
-  client/  rendering, UI, input only                 crates/game-server  rooms, auth,      database/migrations
-                                                      persistence, broadcast
-                                                     crates/game-core   pure rules engine,
-                                                      level solver, campaign, votes
+Browser (Babylon.js 9, WebGPU → WebGL2)  ──HTTP + WebSocket──  Rust server (Actix)  ──  PostgreSQL
+  client/  scene, HUD, menus, input            crates/game-server  accounts, rooms, run loop,
+                                                 Seeds economy, persistence
+                                               crates/river-core   deterministic run simulation
 ```
+
+The server is authoritative. It steps each run at **30 Hz** and sends every player a snapshot 15 times a second.
+Clients only send inputs (steer, hop, action, signal, vote).
 
 | Folder | Contents |
 |---|---|
-| `crates/game-core` | Deterministic rules: board, species needs, connectivity under the Charter, pressure events, simulator, **A\* level solver/classifier**, campaign & votes, room roster rules. `bin/classify` prints the solver report. |
-| `crates/game-server` | Actix HTTP + WebSocket on one port, Argon2id accounts, revocable tokens, rate limiting, room hub, SQL persistence, restart recovery, optional TLS. |
-| `client/` | Vite + TypeScript + Babylon.js. Procedural diorama, vegetation and animals (no downloaded assets), HUD, screens. |
-| `content/` | Region, the ten levels, Field Journal (with sources). Compiled into the server. |
-| `database/migrations/` | Versioned SQL schema with integrity constraints and triggers. |
-| `docs/` | Game design, rule book, API, database. |
-| `scripts/` | Certificates, packaging, content formatting, remote dev helper. |
+| `crates/river-core` | The run: lanes, obstacles, pipes and gate codes, River Health, scoring, the two rule changes, boat stats, the tutorial course. No I/O; seeded and deterministic; unit-tested. |
+| `crates/game-server` | Actix HTTP and WebSocket on one port. Argon2id accounts, revocable tokens, rate limiting, rooms, the run loop (`river.rs`), the hub economy (`meta.rs`), SQL persistence, optional TLS. |
+| `crates/game-core` | The earlier turn-based board game. It is still compiled and tested, and its rooms code is reused, but the client no longer plays it. |
+| `client/` | Vite + TypeScript + Babylon.js. River scene, boats and crew (`src/river/`), HUD, tutorial coach, menus, River Nature theme (`src/ui/theme.css`), icons. |
+| `client/public/models/` | Kenney CC0 boat and character models, with their licence files. |
+| `content/` | Data for the earlier board game. |
+| `database/migrations/` | Versioned SQL schema. |
+| `docs/` | Rule book, game design, API, database. |
+| `scripts/` | Certificates, packaging, content formatting, remote development helper. |
 | `tests/e2e/` | Live two-client shared-room test. |
 
-## 7. Tested environment
+Internal names still use the earlier project name: the package `natures-thread`, the server binary
+`natures-thread-server`, the database `natures_thread` and the ZIP name. These are identifiers, not shown to players.
+
+## 5. Tested environment
 
 - Server: Ubuntu 22.04, Rust 1.94, PostgreSQL 17, Node 22, Python 3.10, OpenSSL 3.
-- Client development: Windows 11, Node 24, Chromium-based browser with WebGPU (Intel UHD 620 laptop GPU).
-- Players: any current Chrome/Edge (WebGPU or WebGL2) or Firefox/Safari (WebGL2).
+- Client development: Windows 11, Node 24, a Chromium-based browser with WebGPU, on an Intel UHD 620 laptop GPU.
+- Players: any current Chrome or Edge (WebGPU or WebGL2), or Firefox and Safari (WebGL2).
 
-## 8. Prerequisites
+## 6. Prerequisites
 
 | Tool | Version |
 |---|---|
@@ -81,23 +97,23 @@ Browser (Babylon.js 9, WebGPU → WebGL2 fallback)  ──HTTPS/WSS──  Rust 
 | Python 3 | 3.8+ (packaging) |
 | OpenSSL, curl, GNU make, bash | any recent |
 
-`make check-tools` verifies them.
+`make check-tools` checks for all of them.
 
-## 9. Get the code and install dependencies
+## 7. Get the code and install dependencies
 
 ```bash
-git clone <your-repo-url> natures-thread   # or unzip Natures-Thread.zip
-cd natures-thread
+git clone <your-repo-url> clearwater-run
+cd clearwater-run
 make setup
 ```
 
-## 10. Configure `.env`
+## 8. Configure `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`: set `DATABASE_URL` and a generated `JWT_SECRET`:
+Edit `.env` and set `DATABASE_URL` and a generated `JWT_SECRET`:
 
 ```bash
 openssl rand -hex 48
@@ -105,7 +121,7 @@ openssl rand -hex 48
 
 The server refuses to start with a missing, short or placeholder secret. `.env` is git-ignored and never packaged.
 
-## 11. Database
+## 9. Database
 
 ```bash
 createdb natures_thread
@@ -113,103 +129,199 @@ make db-check
 make db-migrate
 ```
 
-With local peer authentication you need no password: `DATABASE_URL=postgres:///natures_thread?host=/var/run/postgresql&user=<os_user>`.
-See [docs/DATABASE.md](docs/DATABASE.md).
+Migrations also run automatically when the server starts. See [docs/DATABASE.md](docs/DATABASE.md).
 
-## 12. Run the Rust server
+## 10. Run the server and the client
 
 ```bash
 make server-dev
 ```
 
-or the release build that also serves the built client:
-
-```bash
-make run
-```
-
-## 13. Run the Babylon.js client
-
 ```bash
 make client-dev
 ```
 
-Opens on <http://localhost:5173> and proxies `/api` and `/ws` to the server (`GAME_SERVER`, default
-`http://localhost:8070`). `make dev` runs server and client together.
+The client opens on <http://localhost:5173> and proxies `/api` and `/ws` to the server. The server address comes
+from `GAME_SERVER`, default `http://localhost:8070`. `make dev` runs both together.
 
-## 14. Play on several devices (LAN)
+`make run` runs the release server, which also serves the built client.
 
-1. Build and run on the server machine: `make build` then `make run`.
-2. **HTTPS for WebGPU** — browsers only enable WebGPU on secure pages:
+**Developing on Windows without a Rust toolchain:** `scripts/dev-remote.sh` copies the working tree to a scratch
+folder on a Linux build machine and runs a command there:
+
+```bash
+DEV_REMOTE=user@host bash scripts/dev-remote.sh "make test"
+```
+
+## 11. Play on several devices (LAN)
+
+1. Build and run on the server machine:
+   ```bash
+   make build
+   ```
+   ```bash
+   make run
+   ```
+2. **HTTPS for WebGPU.** Browsers only enable WebGPU on secure pages:
    ```bash
    make certs
    ```
-   This creates `certs/` with a local CA. Put `TLS_CERT=certs/server.crt` and `TLS_KEY=certs/server.key` in
-   `.env`, restart, and give each player `certs/natures-thread-ca.crt` to import once as a trusted root
-   (Windows: double-click → Install → Trusted Root Certification Authorities; Android/iOS: install profile).
-   Without it the game still works over plain HTTP using WebGL2.
-3. Open the firewall port once: `sudo ufw allow 8070/tcp`.
-4. Players open `https://<server-ip>:8070`, create accounts, and join with the code.
-5. Test with two browser tabs on one machine: each tab keeps its own sign-in, so two tabs are two players.
+   - This creates `certs/` with a local certificate authority.
+   - Add `TLS_CERT=certs/server.crt` and `TLS_KEY=certs/server.key` to `.env`, then restart the server.
+   - Each player imports `certs/natures-thread-ca.crt` once as a trusted root.
+   - Without HTTPS the game still works over plain HTTP, using WebGL2.
+3. Open the firewall port once:
+   ```bash
+   sudo ufw allow 8070/tcp
+   ```
+4. Players open `https://<server-ip>:8070`, create accounts, and either join with the code or press PLAY.
+5. To test alone, use two browser tabs. Each tab keeps its own sign-in, so two tabs are two players.
 
-## 15. Quality checks and builds
+### Public deployment (own domain, HTTPS on its own port)
+
+The game serves HTTPS itself on port **8081**, using a real certificate, so players need nothing installed. It leaves
+any other web server on the machine, and ports 80/443, alone. Players open
+`https://cleanwaterrun.work.gd:8081`.
+
+One-time setup:
+
+1. **Router:** forward external TCP port 8081 to the game server's port 8081 (the router only forwards 8081–8085; 8085 is already used on the server).
+2. **On the server (sudo):**
+   ```bash
+   sudo chown "$USER": /opt/Game
+   ```
+   ```bash
+   sudo ufw allow 8081/tcp
+   ```
+   ```bash
+   sudo loginctl enable-linger "$USER"
+   ```
+   The last command lets the game start at boot and keep running after you log out.
+3. **Certificate:** copy the full-chain certificate to `/opt/Game/certs/fullchain.cer` and its private key to
+   `/opt/Game/certs/server.key`. Never put them in the repository.
+
+Deploy, or update after a change, from a development machine:
+
+```bash
+DEPLOY_REMOTE=user@host bash scripts/deploy.sh
+```
+
+On each run the script:
+- copies the source and builds it on the server;
+- creates a production `.env` (fresh `JWT_SECRET`) and the database, the first time only;
+- applies migrations;
+- (re)starts the `clearwater-run` user service and checks `/health`.
+
+To manage the service on the server:
+- logs: `journalctl --user -u clearwater-run -f`
+- restart: `systemctl --user restart clearwater-run`
+
+**Certificate renewal.** The certificate comes from Let's Encrypt through acme.sh, installed in the server user's
+`~/.acme.sh`, and lasts 90 days. The current one expires on 10 February 2027. Its DNS uses manual mode, so renewing
+takes three steps on the server:
+
+1. Request a new challenge:
+   ```bash
+   ~/.acme.sh/acme.sh --issue --dns -d cleanwaterrun.work.gd --keylength 2048 --force --yes-I-know-dns-manual-mode-enough-go-ahead-please
+   ```
+2. Add the printed `TXT value` as a TXT record `_acme-challenge` in the DNS panel. Wait until this shows it:
+   ```bash
+   dig +short TXT _acme-challenge.cleanwaterrun.work.gd @ns10.dnsexit.com
+   ```
+3. Finish, install into `certs/` and restart:
+   ```bash
+   ~/.acme.sh/acme.sh --renew -d cleanwaterrun.work.gd --yes-I-know-dns-manual-mode-enough-go-ahead-please
+   ```
+   ```bash
+   ~/.acme.sh/acme.sh --install-cert -d cleanwaterrun.work.gd --fullchain-file /opt/Game/certs/fullchain.cer --key-file /opt/Game/certs/server.key
+   ```
+   ```bash
+   systemctl --user restart clearwater-run
+   ```
+
+Don't run `--renew` before the record is visible. A failed check cancels that challenge, and you have to start
+again from step 1.
+
+## 12. Quality checks and builds
 
 ```bash
 make fmt
+```
+
+```bash
 make lint
+```
+
+```bash
 make check
+```
+
+```bash
 make test
+```
+
+```bash
 make test-room
-make classify
+```
+
+```bash
 make build
 ```
 
-`make test` runs the Rust unit tests, the solver proofs for all ten levels under every Charter combination
-(≈4 minutes), the server room-logic tests and the client tests. `make test-room` runs 39 live checks with two
-clients (starts the server if it is not running).
+`make test` runs:
+- the river-core tests, covering determinism, crews, every obstacle, gate codes, River Health, exactly two
+  player-chosen rule changes, ties, the tutorial, boat stats and a bot-played run;
+- the server tests, including the Seeds reward rules;
+- the earlier board-game tests;
+- the client tests.
 
-## 16. Package the final ZIP
+`make test-room` runs live checks with two WebSocket clients: room capacity, joining, membership privacy, stale and
+invalid commands, and reconnection. It uses the earlier board levels as its scripted game.
+
+## 13. Package the final ZIP
 
 ```bash
 make package
+```
+
+```bash
 make verify-package
 ```
 
-`package` writes `dist/Natures-Thread.zip` and refuses to include `.env`, keys, certificates, `target/`,
-`node_modules/`, `.git/` or build output. `verify-package` extracts the actual ZIP into a temporary folder,
-checks every required file, then builds and tests from that clean copy.
+`package` writes `dist/Natures-Thread.zip`. It refuses to include:
+- `.env`, keys and certificates;
+- `target/`, `node_modules/` and `.git/`;
+- build output.
 
-## 17. Troubleshooting
+`verify-package` extracts the ZIP into a temporary folder, then builds and tests from that clean copy.
+
+## 14. Troubleshooting
 
 | Problem | Fix |
 |---|---|
 | `missing required variable(s): DATABASE_URL, JWT_SECRET` | Create `.env` from `.env.example`. |
-| `cannot connect to PostgreSQL` / `/ready` 503 | Start PostgreSQL; check `DATABASE_URL`; run `make db-check`. |
-| `database migration failed` | Read the message; fix the database; the migration is not marked applied, so re-run `make db-migrate`. |
-| Port already in use | Change `HTTP_PORT` in `.env` (client dev proxy: `GAME_SERVER`). |
-| Other devices cannot connect | Same network? Firewall: `sudo ufw allow <port>/tcp`. Use the server's LAN IP. |
+| `cannot connect to PostgreSQL`, or `/ready` returns 503 | Start PostgreSQL, check `DATABASE_URL`, then run `make db-check`. |
+| Port already in use | Change `HTTP_PORT` in `.env`; for the client dev proxy, change `GAME_SERVER`. |
+| Other devices cannot connect | Make sure they are on the same network. Run `sudo ufw allow <port>/tcp` and use the server's LAN IP. |
 | Corner label shows "WebGL2 · WebGPU needs HTTPS" | Use HTTPS (`make certs`) and import the CA on that device. |
-| Browser warns about the certificate | The CA was not imported on that device, or the IP changed — re-run `make certs`. |
-| "Connection lost — reconnecting" | The client retries automatically; your seat, turn and vote are kept. |
-| "The game client has not been built" | `make build-client`. |
-| Slow frame rate | Settings → Graphics quality → Low. |
-| `npm ci` fails | Node 22+ required; delete `node_modules/` and retry. |
+| "Connection lost — reconnecting" | The client retries automatically, and your seat is kept. |
+| "The game client has not been built" | Run `make build-client`. |
+| Boats appear as simple shapes for a moment | The 3D models are still loading. A built-in stand-in is shown until they arrive. |
+| Slow frame rate | Go to Settings → Graphics quality → Low. |
 
-## 18. Known limitations
+## 15. Known limitations
 
-- Balance values (costs, rounds, thresholds) are solver-verified as fair and winnable but **not yet playtested**;
-  in Level 6, Natural Succession is notably cheaper than Active Restoration.
-- One region (Forest Realm, ten levels) is implemented; the 1,000-level structure exists as data layout only.
-- The level 10 finale uses its own map rather than literally inheriting every earlier level's board; earlier
-  results are kept per level and shown on the campaign map.
-- The solver is exhaustive for the shipped levels; much larger custom levels may exceed its search budget
-  (it then reports "unknown" rather than guessing).
-- No single-player mode (the brief marks it optional); no audio yet.
-- Animals are procedural low-poly models; no third-party CC0 models are bundled.
+- Balance values (speeds, spawn rates, health changes, Seeds rewards) are not yet playtested.
+- Gamepad input is implemented (D-pad or stick to steer, A to hop, B or X to act), but it is untested and has no
+  settings screen yet.
+- The puzzle in the current build is the gate code only. Pipe routing and a word hunt are planned.
+- There is no audio yet.
 
-## 19. Security
+## 16. Security
 
-Never commit real secrets. `.env`, `certs/`, keys and certificates are git-ignored and excluded from the ZIP
-(the packager also scans for secrets). Passwords are stored only as Argon2id hashes; tokens are signed with
-`JWT_SECRET` from the environment and can be revoked; the server has no fallback secret. CORS is limited to
-`ALLOWED_ORIGINS`. Keep the local CA private key (`certs/natures-thread-ca.key`) on the server only.
+- Never commit real secrets. `.env`, `certs/`, keys and certificates are git-ignored and excluded from the ZIP, and
+  the packager scans for secrets.
+- Passwords are stored only as Argon2id hashes.
+- Tokens are signed with `JWT_SECRET` and can be revoked.
+- CORS is limited to `ALLOWED_ORIGINS`.
+- The economy has no real money and no paid randomness. Every purchase can be undone for 10 minutes.

@@ -1,5 +1,7 @@
 // How-to-play and Settings overlays.
 
+import { sound } from "../audio/sound";
+import { isTouch } from "../input/touch";
 import { h } from "./dom";
 import type { Quality } from "../render/engine";
 import { BIND_LABELS, bindings, GamepadInput, keyLabel, rebind, resetBindings, type Bindable } from "../input/controls";
@@ -78,9 +80,9 @@ export function howToPlay(): HTMLElement {
       { class: "htp-list" },
       row("🚤", "◀ ▶", "Switch lanes — your boat moves on its own"),
       row("🦘", "▲", "Hop over logs and debris waves"),
-      row("✂️", "▼", "Cut weed mats · plug sewage pipes"),
+      row("✂️", isTouch() ? "✂" : "▼", "Cut weed mats · plug sewage pipes"),
       row("♻️", "", "Grab plastic — it fills your boost"),
-      row("🔧", "1–6", "Type gate codes · signal your crew"),
+      row("🔧", isTouch() ? "Tap" : "1–6", "Type gate codes · signal your crew"),
       row("🌊", "", "River Health is shared — if it chokes, everyone loses half"),
       row("⚡", "", "Twice per run, players change the rules"),
     ),
@@ -107,6 +109,38 @@ export function settings(current: Quality, backend: string, reason: string, onQu
       ),
     ),
     h("p", { class: "muted small" }, "Changing quality reloads the game. Your room is kept on the server."),
+    audioSection(),
     controlsSection(),
+  );
+}
+
+function audioSection(): HTMLElement {
+  const slider = (label: string, key: "master" | "music" | "sfx") =>
+    h(
+      "label",
+      { class: "slider-row" },
+      h("span", null, label),
+      h("input", {
+        type: "range",
+        min: "0",
+        max: "100",
+        value: String(Math.round(sound.prefs[key] * 100)),
+        oninput: (e: Event) => sound.set({ [key]: Number((e.target as HTMLInputElement).value) / 100 }),
+        onchange: () => key !== "music" && sound.play("pickup"),
+      }),
+    );
+  return h(
+    "fieldset",
+    { class: "audio-settings" },
+    h("legend", null, "Sound"),
+    h(
+      "label",
+      { class: "radio" },
+      h("input", { type: "checkbox", checked: sound.prefs.muted, onchange: (e: Event) => sound.set({ muted: (e.target as HTMLInputElement).checked }) }),
+      " Mute all sound",
+    ),
+    slider("Volume", "master"),
+    slider("Music", "music"),
+    slider("Effects", "sfx"),
   );
 }

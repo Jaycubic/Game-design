@@ -1,4 +1,4 @@
-# Nature's Thread — build, test, database and packaging targets.
+# Clearwater Run — build, test, database and packaging targets.
 # Shell: bash (Linux / macOS / WSL / Git Bash). Run `make help` for the list.
 
 SHELL := /bin/bash
@@ -25,7 +25,7 @@ BASE_URL_CMD = echo "$(SCHEME)://localhost:$${HTTP_PORT:-8070}"
         db-reset build-client build-server build run health test-room package verify-package clean certs classify
 
 help: ## List targets
-	@echo "Nature's Thread — make targets"
+	@echo "Clearwater Run — make targets"
 	@echo "Prerequisites: Rust 1.82+ (cargo), Node 22+ (npm), PostgreSQL 14+ (psql), Python 3, OpenSSL"
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  make %-15s %s\n", $$1, $$2}'
 

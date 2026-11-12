@@ -1,83 +1,155 @@
-# Nature's Thread — HTTP & WebSocket API
+# Clearwater Run — HTTP & WebSocket API
 
-One listener serves everything (default port **8070**; HTTPS when `TLS_CERT`/`TLS_KEY` are set).
-All bodies are JSON. Errors are `{ "code": "<stable_code>", "message": "<safe explanation>" }`.
+One listener serves everything: the API, the WebSocket and the built client. The default port is **8070**; it uses
+HTTPS when `TLS_CERT` and `TLS_KEY` are set.
+
+All bodies are JSON. Errors look like `{ "code": "<stable_code>", "message": "<safe explanation>" }`.
 
 ## HTTP
+
+`Bearer` below means the header `Authorization: Bearer <token>`. The token is HS256-signed, and its `jti` is a row
+in `player_sessions`, so it can be revoked. Tokens are never stored in plain form or logged.
+
+### Health, accounts and rooms
 
 | Method & path | Auth | Purpose |
 |---|---|---|
 | `GET /health` | – | Liveness: `{status, service, version, rooms}` |
 | `GET /ready` | – | Readiness: 200 when PostgreSQL answers, 503 otherwise |
-| `GET /api/content` | – | Region, ten levels, Charter options, Field Journal. **Field Report clue texts are removed** (only `clue_count`). |
-| `POST /api/auth/register` | – | `{handle, display_name, password}` → 201 `{token, expires_at, player}`. Rate-limited (10/min/IP). |
+| `POST /api/auth/register` | – | `{handle, display_name, password}` → 201 `{token, expires_at, player}`. Rate-limited to 10 per minute per IP. |
 | `POST /api/auth/login` | – | `{handle, password}` → `{token, expires_at, player}`. Rate-limited. |
 | `POST /api/auth/logout` | Bearer | Revokes the session (204). |
 | `GET /api/me` | Bearer | `{id, handle, display_name}` |
-| `GET /api/me/progress` | Bearer | Leaf Mark totals, best marks per level, Field Journal discoveries |
-| `GET /api/me/rooms` | Bearer | Open rooms you belong to (for reconnecting) |
-| `POST /api/rooms` | Bearer | Create a room → 201 `{room_id, code, state}` |
-| `POST /api/rooms/join` | Bearer | `{code}` → `{room_id, code, state}`. 404 `room_not_found`, 409 `room_full`, 409 `level_in_progress`. Rate-limited (20/min/IP). |
-| `GET /api/rooms/{id}` | Bearer, member | Your view of the room (403 for non-members) |
-| `GET /api/rooms/{id}/results` | Bearer, member | Level results history |
+| `GET /api/me/rooms` | Bearer | Open rooms you belong to, for reconnecting |
+| `POST /api/rooms` | Bearer | Creates a room → 201 `{room_id, code, state}` |
+| `POST /api/rooms/join` | Bearer | `{code}` (case-insensitive) → `{room_id, code, state}`. 404 `room_not_found`, 409 `room_full`. Rate-limited to 20 per minute per IP. |
+| `GET /api/rooms/{id}` | Bearer, member | Your view of the room. Non-members get 403. |
 
-`Authorization: Bearer <token>` — HS256 token whose `jti` is a row in `player_sessions` (revocable). Tokens are never stored or logged.
+### Hub economy (Seeds, boats, rewards)
 
-## WebSocket — `GET /ws?room=<room_id>`
+| Method & path | Auth | Purpose |
+|---|---|---|
+| `GET /api/me/profile` | Bearer | Everything the hub shows (see below). |
+| `POST /api/me/daily` | Bearer | Collects today's reward → `{reward}`. 409 `already_claimed`. |
+| `POST /api/me/road` | Bearer | `{runs}` (the milestone) → `{seeds, item}`. Errors: `not_reached`, 409 `already_claimed`. |
+| `POST /api/shop/buy` | Bearer | `{item}` → `{item, spent, seeds}`. Errors: `not_enough_seeds`, 409 `already_owned`. |
+| `POST /api/shop/undo` | Bearer | `{item}` → `{refunded}`, within 10 minutes of buying. Error: `not_refundable`. |
+| `POST /api/garage/equip` | Bearer | `{item}` → `{equipped}`. Error: `not_owned`. |
 
-Envelope (both directions):
+The profile response contains:
+
+```json
+{
+  "seeds": 0, "runs": 0, "wins": 0, "best_score": 0, "equipped": "boat_sun",
+  "owned": ["boat_sun"], "refundable": [],
+  "catalog": [{ "key", "name", "colour", "price", "source", "model", "blurb",
+                "stats": { "speed", "net", "cutter", "boost" } }],
+  "daily": { "claims", "claimed_today", "track": [20,25,30,40,50,60,100], "next" },
+  "road": [{ "runs", "seeds", "item", "reached", "claimed" }],
+  "rules": { "win_bonus_per_day": 3, "refund_minutes": 10 }
+}
+```
+
+Every economy change runs in one database transaction. Seeds can never go below zero.
+
+### Earlier board game
+
+These endpoints serve the earlier turn-based board game. They still work, but the client no longer uses them:
+- `GET /api/content`
+- `GET /api/me/progress`
+- `GET /api/rooms/{id}/results`
+
+## WebSocket: `GET /ws?room=<room_id>`
+
+Messages in both directions use the same envelope:
 
 ```json
 { "v": 1, "id": "<message id>", "type": "<message type>", "payload": { } }
 ```
 
-Server messages also carry `room`, `seq` (the authoritative state **version**) and `ts`.
+Server messages also carry `room`, `seq` and `ts`. In room messages `seq` is the room's state version; in run
+messages it is the simulation tick.
 
-1. **Authenticate first** (within 10 s): `{"type":"auth","payload":{"token":"…"}}`. Failure → `error` `unauthorized` and close.
-2. Server replies **`room.joined`** with `payload.state` (your view).
-3. Every accepted change is broadcast to each member with their own view: `{ events: [...], state }`.
-   The envelope `type` is the last event's name.
+1. **Authenticate first**, within 10 s: `{"type":"auth","payload":{"token":"…"}}`. On failure the server sends an
+   `error` with `unauthorized` and closes.
+2. The server replies **`room.joined`** with `payload.state`, your view of the room.
+3. Every accepted room change is broadcast to each member as `{ events: [...], state }`.
 
-### Client → server commands
+Every command sent with an `id` gets an `ack`, or an `error` whose `ref` is that id. A repeated `id` is answered
+with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
+
+### Room commands (client → server)
 
 | type | payload | Notes |
 |---|---|---|
 | `room.ready` | `{ready: bool}` | Lobby only |
-| `level.start` | – | Host; needs 2–4 connected players, all ready |
-| `level.replay` | `{level}` | Host; any unlocked level, between levels |
-| `player.action` | `{action, base_version}` | `action` is one of `plant`/`restore`/`protect`/`bridge`/`grove` `{at:[x,y]}`, `place_species {species, at}`, `remove_species {species}`, `revert {at}` (puzzles), `answer {candidate}` (deduction), `end_round` (puzzle check). Expeditions: only the seat whose turn it is. |
-| `turn.pass` | `{base_version}` | Expeditions; the round resolves when every connected seat has passed or capacity reaches 0 |
-| `charter.vote` | `{choice: "A"\|"B"}` | During a vote; may change until all have voted |
-| `level.continue` | – | Host, after a result: next level, Charter vote, retry, or region complete |
-| `hint.request` | – | Solver's next optimal step, broadcast as `game.hint` |
-| `room.leave` | – | Leave permanently (host passes to the next seat) |
-| `ping` | – | → `pong` |
+| `room.leave` | – | Leave permanently. The host role passes to the next seat. |
+| `ping` | – | Answered with `pong` |
 
-Every command with an `id` gets an `ack` (or an `error` with `ref` = that id). A repeated `id` is answered with `{duplicate: true}` and not applied again.
+### Run commands (client → server)
 
-**Concurrency:** commands for a room are applied one at a time. `base_version` must equal the current version, otherwise `error stale_state` and the latest state is pushed to you — so two players acting on the same version cannot both succeed. Nothing changes unless the database write succeeds (`database_unavailable` otherwise).
+| type | payload | Notes |
+|---|---|---|
+| `run.start` | `{practice?: bool, tutorial?: bool}` | Host only, from the lobby. A normal run needs at least 2 connected, ready players. `practice` lets the host play alone for half Seeds; `tutorial` starts the 60-second scripted course, which pays no Seeds. Errors: `not_host`, `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players`. |
+| `run.input` | `{steer?: -1\|0\|1, hop?: bool, action?: bool, glyph?: 0–5}` | Applied on the next tick. A `glyph` sent while plugging is a gate-code entry; otherwise it is a signal ping. |
+| `run.choose` | `{option}` | Twist vote (0–2) or Finale pick (0–1). Only the trailing crew may pick the Finale. |
 
-### Server → client events
+### Run messages (server → client)
 
-`room.joined`, `room.member_joined`, `room.member_left`, `room.member_disconnected`, `room.member_reconnected`,
-`room.ready_changed`, `level.started`, `player.action_submitted`, `turn.passed`, `environment.event_revealed`,
-`game.round_resolved`, `game.check_failed`, `game.answered`, `game.state_updated`, `game.hint`,
-`player.clue_assigned` (**private** — only to the clue holder), `charter.vote_opened`, `charter.vote_submitted`,
-`charter.revote`, `charter.tie_break`, `charter.amendment_applied`, `level.completed`, `level.failed`,
-`campaign.progress_updated`, `campaign.region_complete`, `room.expired`, `error`, `ack`, `pong`.
+| type | payload |
+|---|---|
+| `run.started` | `{seed, boats: [{seat, crew}], names: {seat: name}, skins: {seat: boat_key}, practice, tutorial}` |
+| `run.snapshot` | `{snapshot, you, skins}`, 15 times a second, filtered for each viewer (see below) |
+| `run.events` | `{events: [...]}`, sent on each tick that has events |
+| `run.rewards` | `{seeds, practice}` after a run finishes (not after the tutorial) |
 
-### Error codes (WebSocket and HTTP)
+**Snapshot fields:**
 
-`unauthorized`, `bad_message`, `unknown_command`, `not_member`, `not_host`, `room_not_found`, `room_full`,
-`not_enough_players`, `not_all_ready`, `level_in_progress`, `stale_state`, `not_your_turn`, `use_pass`,
-`wrong_terrain`, `not_a_site`, `not_allowed_by_charter`, `not_enough_capacity`, `not_threatened`,
-`already_protected`, `not_a_slot`, `slot_taken`, `no_such_token`, `nothing_to_revert`, `level_over`,
-`no_vote_open`, `not_eligible`, `not_tie_breaker`, `too_many_amendments`, `amendment_already_applied`,
-`level_locked`, `database_unavailable`, `rate_limited`, `invalid_handle`, `weak_password`, `handle_taken`,
-`invalid_credentials`, `invalid_code`.
+| Field | Contents |
+|---|---|
+| Timing | `tick`, `duration`, `tutorial`, `t` |
+| `phase` | One of `countdown`, `running`, `warning`, `choosing`, `reveal` or `finished`, plus its `left` and the details of the change |
+| River | `health`, `choked`, `lanes` |
+| Rule changes | `twist`, `finale`, `finale_crew`, `changes`, `votes: [[seat, option]]` |
+| `boats` | Per boat: `seat`, `crew`, `lane`, `z`, `speed`, `hop`, `capsize`, `slow`, `boost`, `boosting`, `plastic` and `plugging` |
+| `crews` | `[[id, score, plastic, pipes, banks]]` |
+| `objs` | Only the stretch of river near the boats |
+| `plugs` | Only gate codes this viewer is involved in, each with `code`, `clear`, `entered` and `left`. `clear` is true only for crewmates, or briefly for a lone boat. |
+| `results` | `{scores, winner, health, choked, revived}` once the run is finished |
 
-### The state view (`payload.state`)
+**Run event types:**
+- collecting and missing: `collected`, `missed`, `cut`;
+- boat state: `slowed`, `capsized`, `bumped`, `boost`;
+- pipes: `plug_started`, `plugged`, `plug_failed`;
+- signals and waves: `ping`, `wave_incoming`;
+- river: `rule_changed {change, choice}`, `choked`.
 
-`{ id, code, version, status, phase, my_seat, members[], min_players, max_players, campaign{current_level, connectivity, recovery, best, insights, restored, vote}, play{level, rules, state{board, round, capacity_left, spent, protected, placements, attempts, status}, turn_seat, passed, threatened, round_capacity, events, evaluation, preview, last_report, par, my_clues, clue_counts}, result }`
+When a run ends, every member's Ready flag resets and the room returns to the lobby.
 
-`play.preview` is the server's Restoration Preview: what would happen if the round ended now (pressure, erosion, regrowth). `my_clues` contains only your own Field Report clues.
+### Room events (server → client)
+
+- `room.joined`
+- `room.member_joined`, `room.member_left`
+- `room.member_disconnected`, `room.member_reconnected`
+- `room.ready_changed`
+- `room.expired`
+- `game.state_updated`
+- `error`, `ack`, `pong`
+
+The earlier board game's commands are still accepted, but the client doesn't send them:
+- `level.start`, `level.replay`, `level.continue`
+- `player.action`, `turn.pass`
+- `charter.vote`, `hint.request`
+
+They produce the `level.*`, `game.*`, `charter.*` and `campaign.*` events. `tests/e2e/room.mjs` uses them as its
+scripted game.
+
+### Common error codes
+
+| Area | Codes |
+|---|---|
+| Messages and access | `unauthorized`, `bad_message`, `unknown_command`, `not_member`, `not_host`, `rate_limited` |
+| Rooms | `room_not_found`, `room_full`, `invalid_code`, `stale_state`, `database_unavailable` |
+| Accounts | `invalid_handle`, `weak_password`, `handle_taken`, `invalid_credentials` |
+| Runs | `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players` |
+| Economy | `already_claimed`, `not_reached`, `not_enough_seeds`, `already_owned`, `not_refundable`, `not_owned` |

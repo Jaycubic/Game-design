@@ -1,117 +1,153 @@
-# Nature's Thread — Game Design Document
+# Clearwater Run — Game Design Document
 
-*Reconnect the Living World* · Cooperative ecological puzzle and restoration game · 2–4 players · browser, LAN
+*A crew boat race to keep a river alive.* Multiplayer arcade racing with a cooperative twist · 2–4 players · browser,
+local network · 3-minute runs.
 
 ## 1. Concept
 
-Nature's Thread is a cooperative game about **biodiversity loss caused by habitat degradation and fragmentation**, set in the **Western Ghats** of India — a UNESCO World Heritage Site and global biodiversity hotspot whose rainforests have been split by roads, plantations and clearings. Players never read a lecture: they discover *why* a lion-tailed macaque cannot cross a tea estate, *why* a hornbill needs a fig near its nest, and *why* frogs vanish when streamside trees are cut, by trying to fix a living landscape together.
+Players race small cleanup boats down a polluted river. The game has to be fun within ten seconds: the boat moves on
+its own, and there are only three controls (steer, hop, act). The environmental message lives in the **rules, not
+in text**:
+- every piece of plastic you miss hurts the river;
+- every open sewage pipe drains it;
+- the river's health decides everyone's result, whichever crew is ahead.
 
-The issue is addressed **indirectly**: the rules themselves embody ecology (routes, habitat needs, regrowth, invasive spread), so winning requires understanding it.
+**Issue addressed:** plastic waste and untreated sewage choking urban rivers, and the "tragedy of the commons"
+behind them: each group gains from ignoring the shared river until the river fails everyone. The game names no real
+places; the real-world case is shown in the presentation.
 
-## 2. Design pillars
+## 2. How the assignment brief is met
 
-| Pillar | How the game delivers it |
+| Requirement | How Clearwater Run meets it |
 |---|---|
-| Discover | Puzzle levels teach one idea at a time; Field Journal entries unlock after play. |
-| Restore | Expeditions turn knowledge into shared action on a 3D landscape. |
-| Adapt | The Environmental Pressure Engine changes the situation; the Living Charter changes the rules twice. |
-| Witness | Every Expedition shows current state, restoration preview and resulting state; the regional map keeps the results. |
-| Progress | Ten levels reveal mechanics gradually; level 10 combines everything. |
+| Environmental awareness, addressed indirectly | River Health is a shared resource. Missed plastic and open pipes damage it; a choked river halves every score; a revived river rewards every crew. Players learn the lesson by losing points, not by reading. |
+| Players change the rules dynamically, exactly twice | Every run has a **Twist** vote by all players at about 35 % of the run, and a **Finale** pick by the trailing crew at about 78 %. Both are player-chosen; a spin settles only ties and missing choices. The engine enforces exactly two changes, and a test proves it. |
+| Cooperation | Crewmates share a score; 2 players form one co-op crew; all crews share River Health and the "revived" bonus. |
+| Communication | Gate codes: the plugging player sees the symbols scrambled, and only a crewmate sees the real order. |
+| Negotiation and bluffing | The Twist vote has to be argued out in the room. Signal glyphs are visible to the rival crew, so crews invent shorthand or send decoys. The Finale makes the trailing crew choose between chasing points (Second Wind) and helping everyone (Clean Sweep). |
+| Puzzles | The gate code is a cooperative logic puzzle under time pressure. Solo players get a memory version: the code shows for 1.5 s. |
+| Simple rules | Three controls, one score formula, one shared bar. A 60-second scripted tutorial teaches everything. |
+| Limited number of players | 2–4 per room, enforced by the server and the database. |
 
 ## 3. The elements of game design
 
 ### 3.1 Players
-2–4 cooperating **Nature Guardians**, each on their own device in a shared online room on the local network. No hidden roles, no sabotage, no player elimination. Seats give turn order in Expeditions and receive private clues in Field Report puzzles. *Role:* players are a team whose communication is part of the play.
+- 2–4 players, each on their own device, in a shared room.
+- 3–4 players split into two rival crews, alternating by seat. 2 players form one co-op crew.
+- Practice solo and the tutorial are single-player.
+- No player elimination: a capsize costs 2 seconds, never the run.
 
-### 3.2 Goals
-- **Level goals:** explicit objectives such as "canopy route West ↔ East", "hornbill nest with a live fig in reach", "forest beside the stream for the frogs", "26 healthy forest cells".
-- **Mastery goals:** three Leaf Marks per level — objective, efficiency (spend no more than the solver-proven optimum), optional ecological challenge.
-- **Regional goal:** complete all ten levels and restore the Forest Realm.
-*Role:* goals translate ecological outcomes (connectivity, habitat suitability, forest cover) into clear win conditions.
+### 3.2 Objectives
+- **Crew:** a higher score than the rival crew.
+- **Shared:** finish with River Health at 60 or more ("River revived", +20 for every crew).
+- **Avoid:** River Health reaching 0 ("River choked", every score halved).
+- **Long term:** earn Seeds to unlock and upgrade boats; complete River Road milestones.
 
-### 3.3 Rules
-- Interventions: plant (1), restore (1/2), clear Lantana (1), canopy bridge (2), stepping-stone grove (2).
-- Connectivity: orthogonal links through habitat suitable for the species.
-- Species needs: macaque (fig + 6 connected forest), squirrel (4 connected forest), hornbill (nest tree + fig ≤ 3 cells), frog (forest beside a stream), tahr (grassland linked to cliffs).
-- Pressure events resolve at round end; then natural regrowth if the rules allow.
-- **Dynamic rules:** two Living Charter amendments (Connectivity after level 2, Recovery after level 4), chosen by majority vote, permanent for the region.
-Full player rules: [RULE_BOOK.md](RULE_BOOK.md). *Role:* rules model ecological cause and effect simply enough to reason about.
+### 3.3 Procedures
+Steer between three lanes, hop, press one context action (cut weed or start plugging), type gate codes, send signal
+glyphs, and vote. Plastic is collected by contact.
 
-### 3.4 Space
-Three nested scales: **World map** (ecosystem families) → **Forest Realm map** (six areas: North Canopy, West Woodland, Central Clearing, East Woodland, South Shola Meadow, River Edge) → **level board**, a grid diorama of 30–110 cells. Puzzles are viewed top-down like a board game; Expeditions use a free 3D camera over the same diorama. *Role:* adjacency **is** connectivity — the spatial layout is the puzzle.
+### 3.4 Rules
+See the [Rule Book](RULE_BOOK.md). The core rules — controls, score formula, win condition — never change. Only the
+two player-chosen rule changes alter the river.
 
-### 3.5 Time
-Puzzles: a single planning phase with up to 3 checks. Expeditions: 3–5 rounds, each with reveal → discuss → act → resolve. Pressure events are scheduled per round; natural regrowth happens between rounds. *Role:* time creates urgency (erosion before the monsoon, Lantana before it spreads) and makes "wait for regrowth" a real but limited strategy.
+### 3.5 Resources
+- **River Health:** shared, contested and visible to everyone.
+- **Boost:** personal, charged by plastic.
+- **Pipe multiplier:** per crew, raised by each plugged pipe.
+- **Seeds:** the meta currency, earned only by playing.
 
-### 3.6 Resources
-One shared resource: **Restoration Capacity**, refreshed each round (reduced by dry spells). No currencies or trading economy. *Role:* scarcity forces negotiation — there is always more to fix than capacity allows.
+### 3.6 Conflict
+- The river is the opponent: logs, weed, debris waves and pipes.
+- The rival crew competes on score.
+- The real tension is between scoring for your crew and spending time on pipes that protect everyone.
+- There is no violence and no attacks. Running into the boat ahead only slows you for a moment.
 
-### 3.7 Conflict
-The opponent is the **Environmental Pressure Engine**: Lantana spread, dry spells, monsoon run-off, and the critical-deterioration threshold. Internal tension comes from **competing priorities** (route vs. hornbill vs. frog vs. forest cover) and from **voting** on rule changes. *Role:* conflict without violence or villains.
+### 3.7 Boundaries
+One river course, generated from a seed, three lanes wide (two under Dry Season), 3 minutes long.
 
-## 4. Social mechanics
+### 3.8 Outcome
+- A results screen shows crew scores, final River Health, whether the river was revived or choked, and the Seeds
+  each player earned.
 
-| Mechanic | Where |
+## 4. The two rule changes
+
+| | Twist (~1:03) | Finale (~2:20) |
+|---|---|---|
+| Who chooses | Every player votes (15 s) | The trailing crew picks (10 s) |
+| Options | Monsoon Surge, Dry Season, Volunteer Day | Second Wind, Clean Sweep |
+| Tie or no choice | Visible spin among the tied options | Visible spin |
+| Purpose | A collective, negotiated change to the river | Comeback help that can be selfish or shared |
+
+Every option has an upside and a cost, so no choice is free. Both changes go through the same ceremony: a 5 s
+warning, a pause, a full-screen card, a HUD badge, then 3 s of grace.
+
+## 5. Meta-structure (the hub)
+
+The hub follows the mobile pattern of a big PLAY button, side tiles and a currency chip, without the predatory parts.
+
+| Feature | Design |
 |---|---|
-| Cooperation / teamwork | Shared capacity, shared objectives, one landscape. |
-| Cryptic communication | Level 5 Field Reports: each player holds different clues; only the combination identifies the site. |
-| Negotiation | Spending scarce capacity; Living Charter votes with revote and rotating tie-break. |
-| Logical puzzles | Habitat connection, niche matching, deduction, ecosystem logic, blueprint planning. |
-| Bluffing | Deliberately excluded: the design removed the hidden "Polluter" role so conflict comes from the environment. |
-| Trading | Not used; one shared pool keeps the game simple. |
+| Seeds | The only currency. Earned in runs (score ÷ 5, up to 60; +20 for a win, first 3 wins a day; +10 if revived). Practice pays half. |
+| Garage and Shop | Seven boats with four stats each. Upgrades are capped and modest (at most +8 % speed). |
+| Daily reward | A 7-day track. A missed day pauses it rather than resetting it: no streak anxiety. |
+| River Road | Milestones for runs completed, unlocking two boats. |
+| Fair-play rules | No real money, no loot boxes or paid randomness, a 10-minute undo on purchases, and a daily cap on the win bonus. |
 
-## 5. Level plan (Western Ghats Forest Realm)
+## 6. Look and feel
 
-| # | Mode | Title | New idea | Solver-proven minimum capacity |
-|---|---|---|---|---|
-| 1 | Puzzle | The Missing Connection | Planting a corridor | 3 |
-| 2 | Expedition | Restore the Forest | Rounds, shared capacity, Lantana | 4 |
-| — | Charter | Amendment 1: Connectivity | Continuous Corridors vs Stepping-Stone Networks | |
-| 3 | Puzzle | Who Belongs Here? | Species needs (4 species) | 2 / 2 |
-| 4 | Expedition | A Forest in Balance | Competing priorities | CC 6 / SS 5 |
-| — | Charter | Amendment 2: Recovery | Natural Succession vs Active Restoration | |
-| 5 | Puzzle | The Missing Clue | Private clues, cooperative deduction | answer depends on connectivity rule |
-| 6 | Expedition | Under Pressure | Dry spell + two Lantana fronts | see `classify` |
-| 7 | Puzzle | The Ecosystem Puzzle | All four forest species + route | see `classify` |
-| 8 | Expedition | Nature Under Threat | Erosion, multi-zone | see `classify` |
-| 9 | Puzzle | The Final Blueprint | Capstone plan | see `classify` |
-| 10 | Expedition | A Living Forest | Full regional map, every mechanic | see `classify` |
-
-Exact per-ruleset values live in each level file's `par` field and are re-verified by the test suite. Run `make classify` for the full report.
-
-## 6. The level classifier
-
-`crates/game-core` contains an exhaustive A* solver. For every level and every Living Charter combination it:
-
-- proves the level winnable (or reports why not);
-- finds the true minimum capacity — the efficiency Leaf Mark target;
-- labels every possible move as *optimal*, *still winnable* or *dead end* — used for hints;
-- checks that the two amendment options produce **different optimal solutions** (no cosmetic choices);
-- checks Field Report clues: combined clues identify exactly one answer, and no single player's hand does, for 2, 3 and 4 players.
+- **Theme "River Nature":**
+  - moss-green boards in wooden frames;
+  - honey-gold buttons with a pressable 3D edge;
+  - the rounded Fredoka typeface;
+  - one consistent SVG icon set (no emoji in menus).
+- **3D models:** Kenney CC0 boats, each with a seated character (rowing or driving), on a code-built river and banks.
+- **Rendering:** WebGPU where available, otherwise WebGL2.
+- **Graphics quality setting:** keeps the game playable on an integrated laptop GPU.
+- **Tutorial:** teaches one control at a time with a coach card (steer, grab plastic, hop, cut weed, plug the pipe).
+  It can be skipped at any point.
 
 ## 7. Emerging strategies
 
-Corridor-first, species-first, prevention-first (clear Lantana before it lands), recovery-first (restore cells that unlock free regrowth under Succession), intervention-first (Active Restoration on clustered damage), information-first (talk through clues before guessing). The solver confirms most levels have several optimal first moves.
+- **Pipe-first crews** take the multiplier early.
+- **Plastic sweepers** fill boost and chain surges.
+- **The signaller:** one crewmate reads codes while the other plugs.
+- **Decoy signalling** confuses the rival crew.
+- **Lane-splitting** within a crew covers more plastic.
+- **Voting tactics:** Volunteer Day suits a plastic-heavy crew; Dry Season punishes crews that ignore pipes.
 
-## 8. Loopholes considered
+## 8. Design thinking process
 
-See the Rule Book §11. Key safeguards: marks come from objectives not clicks; only species-suitable routes count; round limits stop infinite waiting; groves only on open ground; seat-order turns; persisted votes with absent-voter removal; best-result-only rewards.
-
-## 9. Conclusion of the game
-
-Each level ends with explicit success or failure and a visible landscape change. The region ends when level 10 is won: the full Forest Realm map shows the restored corridors and the two rules the team chose, with the team's Leaf Marks and Journal discoveries. Failure always offers a replay with no loss of campaign progress.
-
-## 10. Design thinking process
-
-1. **Empathise / research:** global and local readings on fragmentation; Western Ghats species chosen for clear, real habitat needs.
-2. **Define:** "make players *want* to reconnect habitat" — not "teach facts".
-3. **Ideate:** early concept with a hidden Polluter was dropped in favour of an environmental opponent.
-4. **Prototype:** rules engine + solver first, so every level is provably fair before art.
-5. **Test:** automated (solver, unit, integration, two-client room tests) and playtests with new players (see the plan below).
-6. **Refine:** solver-driven rebalancing already changed the regrowth threshold (2 → 3 neighbours) and redesigned levels 3, 5, 6, 8, 9 and 10 when the classifier found shortcuts or rule choices that did not matter.
+1. **Empathise:** players wanted something immediately fun, like a casual racer or runner, not a "3D website".
+2. **Define:** "Make players *feel* the cost of a shared, polluted river" — not "teach facts".
+3. **Ideate:**
+   - The first version was a turn-based cooperative board game about forest corridors (`crates/game-core`).
+   - It was rigorous, with a solver-verified level set, but slow to learn and slow to play.
+   - Research into casual multiplayer, runner and party games led to the river-run concept.
+4. **Prototype:**
+   - The deterministic simulation (`crates/river-core`) came first, so rules could be tested without graphics.
+   - Then came the server loop, the 3D scene, the HUD, and the hub economy.
+5. **Test:** automated tests (simulation, rule changes, rewards, client, live room test), plus the playtest plan
+   below.
+6. **Refine:**
+   - A scripted tutorial was added.
+   - Keys can be rebound.
+   - The UI moved to a premium "River Nature" theme.
+   - Boats became 3D models with crew and upgrade stats.
+   - An airboat was replaced because its fan blocked the camera.
 
 ### Playtest plan
-First-time players, no briefing: can they read the level 1 goal, explain Restoration Capacity, explain what changed after each amendment, and explain why a connection was or was not suitable? Rate Puzzle and Expedition enjoyment separately. Balance values (costs, rounds, thresholds) remain open to change after playtesting.
+Give first-time players no briefing, then check:
+- Can they play within 10 seconds?
+- Can they explain River Health after one run?
+- Do crews actually signal codes, and does anyone bluff?
+- Do Twist votes cause discussion?
+- Does the trailing crew ever choose Clean Sweep?
 
-## 11. Known balance notes
-- Natural Succession is cheaper than Active Restoration on several Expeditions; Active finishes sooner on clustered damage. Both are always winnable; efficiency targets are per-rule. Confirm in playtests whether the choice feels balanced.
+Rate fun and clarity separately for 2-player and 4-player rooms.
+
+## 9. Known balance questions
+
+- Spawn rates, health changes and Seeds rewards are untested with players.
+- The boat upgrades are small on purpose. Confirm that new players never feel outclassed.
+- Dry Season may be too harsh on crews that start far behind on pipes.

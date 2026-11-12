@@ -1,8 +1,10 @@
 // Menu screens: title → sign in → hub → crew lobby.
 
+import { isTouch } from "../input/touch";
 import type { AppState } from "../store";
 import type { RoomView } from "../types";
 import { h } from "./dom";
+import { icon, logoMark, type IconName } from "./icons";
 
 export const GAME_TITLE = "Clearwater Run";
 export const GAME_TAGLINE = "Keep the river alive";
@@ -28,7 +30,7 @@ function logo() {
   return h(
     "div",
     { class: "logo-block" },
-    h("div", { class: "logo-mark", "aria-hidden": "true" }, "🌊"),
+    logoMark(),
     h("h1", { class: "logo-title" }, GAME_TITLE),
     h("p", { class: "logo-tag" }, GAME_TAGLINE),
   );
@@ -40,7 +42,7 @@ export function titleScreen(onStart: () => void): HTMLElement {
     "main",
     { class: "screen title-screen", tabindex: 0, onclick: onStart, onkeydown: (e: KeyboardEvent) => (e.preventDefault(), onStart()) },
     logo(),
-    h("div", { class: "press-start" }, "Press any key to start"),
+    h("div", { class: "press-start" }, isTouch() ? "Tap to start" : "Press any key to start"),
     h("div", { class: "title-foot" }, "2–4 players · each on their own device · same Wi-Fi"),
   );
   setTimeout(() => el.focus(), 0);
@@ -108,11 +110,11 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
     }
   };
   const p = s.profile;
-  const tile = (kind: "garage" | "shop" | "daily" | "road", icon: string, name: string, note: string, alert = false) =>
+  const tile = (kind: "garage" | "shop" | "daily" | "road", ic: IconName, name: string, note: string, alert = false) =>
     h(
       "button",
       { class: "hub-tile" + (alert ? " alert" : ""), onclick: () => a.openPanel(kind) },
-      h("span", { class: "hub-tile-icon" }, icon),
+      h("span", { class: "hub-tile-icon" }, icon(ic)),
       h("span", { class: "hub-tile-name" }, name),
       h("span", { class: "hub-tile-note" }, note),
     );
@@ -123,32 +125,32 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
     h(
       "header",
       { class: "hub-top" },
-      h("div", { class: "hub-brand" }, "🌊 ", GAME_TITLE),
+      h("div", { class: "hub-brand" }, logoMark(), h("span", null, GAME_TITLE)),
       h(
         "div",
         { class: "hub-player" },
-        h("span", { class: "seeds-chip", title: "Seeds — earned by playing" }, "🌱 ", String(s.profile?.seeds ?? 0)),
+        h("span", { class: "seeds-chip", title: "Seeds — earned by playing" }, icon("sprout"), h("b", null, String(s.profile?.seeds ?? 0))),
         h("span", { class: "hub-avatar" }, (s.player?.display_name ?? "?").slice(0, 1).toUpperCase()),
         h("span", null, s.player?.display_name ?? ""),
-        h("button", { class: "icon-btn", title: "Tutorial", "aria-label": "Tutorial", onclick: () => void a.tutorial() }, "🎓"),
-        h("button", { class: "icon-btn", title: "How to play", "aria-label": "How to play", onclick: () => a.openHowTo() }, "?"),
-        h("button", { class: "icon-btn", title: "Settings", "aria-label": "Settings", onclick: () => a.openSettings() }, "⚙"),
-        h("button", { class: "icon-btn", title: "Sign out", "aria-label": "Sign out", onclick: () => a.logout() }, "⏻"),
+        h("button", { class: "icon-btn", title: "Tutorial", "aria-label": "Tutorial", onclick: () => void a.tutorial() }, icon("cap")),
+        h("button", { class: "icon-btn", title: "How to play", "aria-label": "How to play", onclick: () => a.openHowTo() }, icon("help")),
+        h("button", { class: "icon-btn", title: "Settings", "aria-label": "Settings", onclick: () => a.openSettings() }, icon("gear")),
+        h("button", { class: "icon-btn", title: "Sign out", "aria-label": "Sign out", onclick: () => a.logout() }, icon("power")),
       ),
     ),
     h(
       "aside",
       { class: "hub-rail" },
-      tile("garage", "🚤", "Garage", "Your boats"),
-      tile("shop", "🛒", "Shop", "Spend your Seeds"),
-      tile("daily", "📅", "Daily", p && !p.daily.claimed_today ? `🌱 ${p.daily.next} waiting!` : "Come back tomorrow", !!p && !p.daily.claimed_today),
-      tile("road", "🗺️", "River Road", roadReady ? "Reward ready!" : `${p?.runs ?? 0} runs`, roadReady),
+      tile("garage", "boat", "Garage", "Your boats"),
+      tile("shop", "shop", "Shop", "Spend your Seeds"),
+      tile("daily", "calendar", "Daily", p && !p.daily.claimed_today ? `${p.daily.next} Seeds waiting!` : "Come back tomorrow", !!p && !p.daily.claimed_today),
+      tile("road", "road", "River Road", roadReady ? "Reward ready!" : `${p?.runs ?? 0} runs`, roadReady),
     ),
     h(
       "section",
       { class: "hub-play" },
-      h("button", { class: "play-btn", "data-autofocus": true, onclick: guard(a.play) }, h("span", { class: "play-main" }, "PLAY"), h("span", { class: "play-sub" }, "Crew run · 2–4 players")),
-      h("button", { class: "btn ghost wide", onclick: guard(a.practice) }, "Practice solo"),
+      h("button", { class: "play-btn", "data-autofocus": true, onclick: guard(a.play) }, h("span", { class: "play-main" }, icon("play"), "PLAY"), h("span", { class: "play-sub" }, "Crew run · 2–4 players")),
+      h("button", { class: "btn ghost wide", onclick: guard(a.practice) }, icon("solo"), "Practice solo"),
       h("form", { class: "join-row", onsubmit: (e: Event) => (e.preventDefault(), guard(() => a.joinRoom(code.value))()) }, code, h("button", { class: "btn", type: "submit" }, "Join")),
       err,
       rooms.length
@@ -192,7 +194,7 @@ export function lobbyScreen(room: RoomView, a: UiActions): HTMLElement {
     h(
       "section",
       { class: "panel lobby-card" },
-      h("div", { class: "lobby-head" }, h("h2", null, "Your crew's dock"), h("button", { class: "icon-btn", title: "How to play", onclick: () => a.openHowTo() }, "?")),
+      h("div", { class: "lobby-head" }, h("h2", null, "Your crew's dock"), h("button", { class: "icon-btn", title: "How to play", onclick: () => a.openHowTo() }, icon("help"))),
       h(
         "div",
         { class: "invite" },
@@ -218,11 +220,11 @@ export function lobbyScreen(room: RoomView, a: UiActions): HTMLElement {
         "div",
         { class: "lobby-buttons" },
         h("button", { class: "btn " + (me?.ready ? "" : "primary"), "data-autofocus": true, onclick: () => a.ready(!me?.ready) }, me?.ready ? "Not ready" : "I'm ready"),
-        host ? h("button", { class: "btn primary big", disabled: !allReady, title: why, onclick: () => a.startRun(false) }, "▶ Start the run") : null,
+        host ? h("button", { class: "btn primary big", disabled: !allReady, title: why, onclick: () => a.startRun(false) }, icon("play"), "Start the run") : null,
         host ? h("button", { class: "btn ghost", onclick: () => a.startRun(true) }, "Practice solo") : null,
       ),
       h("p", { class: "muted small", role: "status" }, why || (host ? "Everyone's ready — start when you like." : "The host starts the run.")),
-      h("div", { class: "footer-links" }, h("button", { class: "link", onclick: () => a.leaveRoom() }, "← Back to hub")),
+      h("div", { class: "footer-links" }, h("button", { class: "link", onclick: () => a.leaveRoom() }, icon("back"), "Back to hub")),
     ),
   );
 }

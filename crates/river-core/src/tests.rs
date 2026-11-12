@@ -328,3 +328,26 @@ fn tutorial_is_short_scripted_and_has_no_rule_changes() {
     assert!((r.t - TUTORIAL_SECONDS).abs() < 0.1);
     assert!(r.results.is_some());
 }
+
+#[test]
+fn better_boats_are_faster_and_a_wide_net_reaches_the_next_lane() {
+    assert_eq!(boat_stats("boat_sun"), Stats::default());
+    let mut r = Run::new(9, &[0, 1]);
+    r.objs.clear();
+    r.phase = Phase::Running;
+    r.equip(1, boat_stats("boat_night"));
+    r.equip(0, boat_stats("boat_lotus"));
+    r.boats[0].lane = 0;
+    r.boats[1].lane = 1;
+    let (z0, z1) = (r.boats[0].z, r.boats[1].z);
+    // Plastic one lane over from the wide-net boat.
+    r.spawn(Kind::Plastic, -1, r.boats[0].z + 3.0);
+    for _ in 0..30 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert!(r.boats[1].z - z1 > r.boats[0].z - z0, "Night Heron (speed 4) outruns Lotus (speed 3)");
+    assert_eq!(r.boats[0].plastic, 1, "level-5 net grabs plastic in the next lane");
+    // The upgrade is modest: at most +12 % speed.
+    assert!(boat_stats("boat_night").speed_mult() <= 1.12);
+}

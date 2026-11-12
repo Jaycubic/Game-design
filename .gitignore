@@ -18,6 +18,7 @@ node_modules/
 *.pem
 *.key
 *.crt
+*.cer
 
 # Packaging / scratch
 /dist/

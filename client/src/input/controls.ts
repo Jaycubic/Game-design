@@ -1,6 +1,8 @@
 // Keyboard bindings (rebindable, saved per browser) and gamepad polling.
 // Arrow keys always work; each action also has one custom key.
 
+import { isTouch } from "./touch";
+
 export type Bindable = "left" | "right" | "hop" | "action";
 export type Intent =
   | { type: "steer"; dir: -1 | 1 }
@@ -13,6 +15,8 @@ export const BIND_LABELS: Record<Bindable, string> = { left: "Steer left", right
 const FIXED: Record<Bindable, string> = { left: "arrowleft", right: "arrowright", hop: "arrowup", action: "arrowdown" };
 const DEFAULTS: Record<Bindable, string> = { left: "a", right: "d", hop: "w", action: "s" };
 const KEY = "nt.keys";
+/** On phones the HUD names the on-screen buttons instead of keys. */
+const TOUCH_HINTS: Record<Bindable, string> = { left: "◀", right: "▶", hop: "▲", action: "✂" };
 
 let custom: Record<Bindable, string> = load();
 
@@ -58,6 +62,7 @@ export function keyLabel(k: string): string {
 
 /** "◀ / A" style label for HUD hints. */
 export function hint(a: Bindable): string {
+  if (isTouch()) return TOUCH_HINTS[a];
   return custom[a] ? `${keyLabel(FIXED[a])} / ${keyLabel(custom[a])}` : keyLabel(FIXED[a]);
 }
 

@@ -2,7 +2,7 @@
   "name": "natures-thread",
   "private": true,
   "version": "0.1.0",
-  "description": "Nature's Thread — cooperative ecological restoration game (Babylon.js client)",
+  "description": "Clearwater Run — a crew boat race to keep a river alive (Babylon.js client)",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -19,7 +19,8 @@
     "test:room": "node tests/e2e/room.mjs"
   },
   "dependencies": {
-    "@babylonjs/core": "9.32.1"
+    "@babylonjs/core": "9.32.1",
+    "@babylonjs/loaders": "9.32.1"
   },
   "devDependencies": {
     "typescript": "6.0.3",

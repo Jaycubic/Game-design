@@ -45,7 +45,7 @@ Gate codes (mental/logic, cooperative) in the slice. Pipe routing and a word hun
 - `crates/river-core`: deterministic fixed-step simulation (30 Hz), seeded course generator, rule changes, scoring.
   Unit-tested; no I/O.
 - Server: a room's "run" phase steps the sim on a timer, takes player inputs over the existing WebSocket, broadcasts
-  snapshots at 20 Hz. Lanes are discrete, so no client prediction is needed on a LAN; the client animates lane
+  snapshots at 15 Hz. Lanes are discrete, so no client prediction is needed on a LAN; the client animates lane
   changes smoothly. Existing accounts, rooms, lobby and persistence are reused.
 - Client: new Babylon river scene (scrolling river, banks, procedural boats/props, chase camera), minimal HUD
   (timer, score, River Health, boost, ping wheel), rule-change cards, results. Keyboard first; gamepad later.
@@ -53,3 +53,10 @@ Gate codes (mental/logic, cooperative) in the slice. Pipe routing and a word hun
 ## Not in this slice
 Hub/shop/economy, title/loading polish, market trading, word hunt, gamepad settings, multi-stretch shows.
 The old board game stays in the repo, unused by the client for now.
+
+## Status (built since this spec)
+- Done: the run as specified above; hub with Seeds, Garage, Shop, Daily reward and River Road; a skippable
+  60-second tutorial; rebindable keys; the "River Nature" UI theme; Kenney CC0 boats with a crew member aboard
+  and upgrade stats (speed, net, cutter, boost).
+- Still open: gamepad settings (input is implemented but untested), pipe routing and word hunt puzzles, audio,
+  market trading, final game name. Current rules: docs/RULE_BOOK.md.

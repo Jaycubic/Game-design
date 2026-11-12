@@ -1,0 +1,122 @@
+/* Phones and tablets. Loaded last so it overrides the desktop sizes.
+   Breakpoints: ≤760px wide (phone portrait / small tablet), ≤500px tall (phone landscape). */
+
+/* ── Whole page: no rubber-band scroll, no double-tap zoom, respect notches ── */
+html, body { height: 100dvh; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#app { inset: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0); }
+button, .tc-btn { -webkit-user-select: none; user-select: none; }
+
+/* ── Touch controls (only exist on touch devices) ── */
+.touch-controls { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.tc-btn {
+  pointer-events: auto; touch-action: none;
+  display: grid; place-items: center;
+  border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.55);
+  background: rgba(10, 30, 40, 0.45); color: #fff;
+  font: 900 1.9rem/1 inherit; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.06s, background 0.06s;
+}
+.tc-btn:active { transform: scale(0.92) translateY(2px); background: rgba(255, 210, 63, 0.55); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); }
+.tc-left, .tc-right { position: absolute; bottom: calc(14px + env(safe-area-inset-bottom, 0)); display: flex; gap: 14px; align-items: flex-end; }
+.tc-left { left: calc(14px + env(safe-area-inset-left, 0)); }
+.tc-right { right: calc(14px + env(safe-area-inset-right, 0)); }
+.tc-steer { width: 76px; height: 76px; }
+.tc-hop { width: 92px; height: 92px; background: rgba(255, 170, 30, 0.5); border-color: #ffd23f; }
+.tc-act { width: 70px; height: 70px; margin-bottom: 26px; background: rgba(80, 180, 110, 0.45); }
+.tc-glyphs { position: absolute; right: calc(10px + env(safe-area-inset-right, 0)); top: 50%; transform: translateY(-50%); display: grid; gap: 8px; }
+.tc-glyph { width: 46px; height: 46px; font-size: 1.4rem; border-width: 2px; border-radius: 14px; }
+
+/* While playing on a touch device: the keyboard hint is noise, and the boost
+   bar / code card must clear the thumb buttons. */
+.touch-run .rh-keys { display: none; }
+.touch-run .rh-bottom { bottom: calc(118px + env(safe-area-inset-bottom, 0)); }
+.touch-run .rh-code { bottom: calc(150px + env(safe-area-inset-bottom, 0)); }
+.touch-run .rh-glyph kbd, .touch-run .rh-card kbd { display: none; }
+/* Votes, the rule reveal and results take the screen: hide the thumb pad so it can't cover a card. */
+body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
+
+/* ── Phone portrait / narrow screens ── */
+@media (max-width: 760px) {
+  body { font-size: 15px; }
+
+  /* Menus */
+  .title-card, .lobby-card { padding: 18px 16px; }
+  .title-block h1 { font-size: 2rem; }
+  .hub { padding: 10px; gap: 10px; grid-template-rows: auto auto 1fr; overflow-y: auto; }
+  .hub-top { flex-wrap: wrap; gap: 8px; }
+  .hub-player { flex-wrap: wrap; justify-content: flex-end; }
+  .hub-rail { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hub-tile { padding: 8px 10px; }
+  .hub-play { align-self: end; }
+  .play-main { font-size: 2rem; }
+  .modal-backdrop { padding: 8px; align-items: end; }
+  .modal { max-height: calc(100dvh - 16px); }
+  .modal-body { padding: 12px 14px 16px; }
+  .boat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .daily-track { grid-template-columns: repeat(4, 1fr) !important; }
+  .lobby { grid-template-columns: 1fr; }
+
+  /* Run HUD: stack the top row, shrink the big numbers */
+  .rh-top { top: 8px; left: 8px; right: 8px; grid-template-columns: 1fr auto; gap: 6px; }
+  .rh-clock { grid-column: 2; grid-row: 1; }
+  .rh-scores { grid-column: 1; grid-row: 1; flex-wrap: wrap; gap: 6px; }
+  .rh-health { grid-column: 1 / -1; justify-self: stretch; width: auto; padding: 4px 10px; }
+  .rh-crew { padding: 4px 10px; }
+  .rh-score { font-size: 1.4rem; }
+  .rh-time { font-size: 1.7rem; padding: 0 12px; }
+  .rh-big { font-size: 6rem; }
+  .rh-warning { font-size: 1.1rem; padding: 8px 14px; margin-top: -20vh; }
+  .rh-warning strong { font-size: 1.6rem; }
+  .rh-choice { padding: 12px; }
+  .rh-choice-title { font-size: 1.2rem; }
+  .rh-cards, .rh-cards.two { grid-template-columns: 1fr; gap: 8px; }
+  .rh-card { display: grid; grid-template-columns: auto 1fr; text-align: left; align-items: center; column-gap: 12px; padding: 10px 12px; }
+  .rh-card-icon, .rh-card-icon.big { font-size: 2.2rem; grid-row: span 3; }
+  .rh-card-name { font-size: 1.1rem; margin: 0; }
+  .rh-card-line { font-size: 0.85rem; }
+  .rh-voters { justify-content: flex-start; margin-top: 4px; }
+  .rh-boost { width: min(240px, 60vw); }
+  .rh-code-card { max-width: 92vw; padding: 10px 12px; }
+  .rh-glyph { font-size: 1.9rem; padding: 2px 8px; }
+  .rh-banner { font-size: 1.1rem; top: 26%; white-space: normal; max-width: 90vw; text-align: center; }
+  .rh-results { padding: 18px 16px; }
+  .rh-results-title { font-size: 1.9rem; }
+  .rh-result-crew strong { font-size: 1.8rem; }
+
+  /* Smaller thumbs on narrow phones */
+  .tc-steer { width: 64px; height: 64px; }
+  .tc-hop { width: 78px; height: 78px; }
+  .tc-act { width: 60px; height: 60px; margin-bottom: 20px; }
+  .tc-glyphs { top: auto; bottom: calc(190px + env(safe-area-inset-bottom, 0)); transform: none; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .tc-glyph { width: 40px; height: 40px; font-size: 1.2rem; }
+  .touch-run .rh-bottom { bottom: calc(100px + env(safe-area-inset-bottom, 0)); }
+}
+
+/* ── Phone landscape: very little height ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hub { grid-template-columns: 200px 1fr; grid-template-rows: auto 1fr; overflow-y: auto; }
+  .hub-rail { grid-template-columns: 1fr; }
+  .modal { max-height: calc(100dvh - 12px); }
+  .rh-top { top: 6px; }
+  .rh-score { font-size: 1.3rem; }
+  .rh-time { font-size: 1.6rem; }
+  .rh-health { width: min(240px, 28vw); }
+  .rh-choice { max-height: 92dvh; overflow: auto; padding: 10px 14px; }
+  .rh-card { padding: 8px 10px; }
+  .rh-card-icon { font-size: 2rem; }
+  .rh-card-icon.big { font-size: 2.6rem; }
+  .rh-big { font-size: 5rem; }
+  .tc-steer { width: 66px; height: 66px; }
+  .tc-hop { width: 80px; height: 80px; }
+  .tc-glyphs { grid-template-columns: repeat(3, 1fr); top: 84px; transform: none; gap: 6px; }
+  .tc-glyph { width: 40px; height: 40px; font-size: 1.2rem; }
+  .touch-run .rh-bottom { bottom: 10px; }
+  .touch-run .rh-code { bottom: 70px; }
+}
+
+/* Portrait phone in a run: suggest turning sideways (the river reads better wide). */
+.rotate-hint { display: none; }
+@media (max-width: 760px) and (orientation: portrait) {
+  .touch-run .rotate-hint { display: block; position: absolute; left: 50%; top: 34%; transform: translateX(-50%); background: rgba(10, 30, 40, 0.75); color: #fff; border-radius: 12px; padding: 6px 12px; font-size: 0.85rem; pointer-events: none; animation: rh-fadeout 0.6s 4s forwards; white-space: nowrap; }
+}

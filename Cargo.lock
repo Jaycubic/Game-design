@@ -1369,6 +1369,7 @@ dependencies = [
  "jsonwebtoken",
  "natures-thread-core",
  "rand 0.8.8",
+ "river-core",
  "rustls",
  "rustls-pemfile",
  "serde",
@@ -1709,6 +1710,14 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "river-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

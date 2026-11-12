@@ -1,7 +1,7 @@
-//! Hub economy: earned-only Seeds, cosmetic boats, daily rewards, River Road.
+//! Hub economy: earned-only Seeds, boats, daily rewards, River Road.
 //!
-//! Fair-play rules: no real money, no paid randomness; the shop is cosmetic
-//! only (every boat handles the same); a missed day pauses the daily track
+//! Fair-play rules: no real money, no paid randomness; boats are modest,
+//! capped upgrades (see river_core::boat_stats); a missed day pauses the daily track
 //! instead of resetting it; the win bonus counts only the first 3 wins a day;
 //! every purchase can be undone for 10 minutes. All changes are transactional.
 
@@ -21,18 +21,21 @@ pub struct Boat {
     pub colour: &'static str,
     pub price: i32,
     pub source: &'static str,
+    /// 3D model file in client/public/models/boats (Kenney Watercraft Kit, CC0).
+    pub model: &'static str,
+    pub blurb: &'static str,
 }
 
 pub const DEFAULT_BOAT: &str = "boat_sun";
 
 pub const BOATS: &[Boat] = &[
-    Boat { key: "boat_sun", name: "Sunrise", colour: "#f2c14e", price: 0, source: "default" },
-    Boat { key: "boat_sky", name: "Kingfisher", colour: "#4fb3ff", price: 0, source: "road" },
-    Boat { key: "boat_coral", name: "Coral", colour: "#ff7a59", price: 120, source: "shop" },
-    Boat { key: "boat_lilac", name: "Lilac", colour: "#9b6bff", price: 120, source: "shop" },
-    Boat { key: "boat_leaf", name: "Mangrove", colour: "#3fbf7f", price: 200, source: "shop" },
-    Boat { key: "boat_night", name: "Night Heron", colour: "#3a4f8a", price: 300, source: "shop" },
-    Boat { key: "boat_lotus", name: "Lotus", colour: "#ff8fc8", price: 0, source: "road" },
+    Boat { key: "boat_sun", name: "Driftwood", colour: "#f2c14e", price: 0, source: "default", model: "boat-row-small", blurb: "A trusty rowboat. Every crew starts here." },
+    Boat { key: "boat_sky", name: "Kingfisher", colour: "#4fb3ff", price: 0, source: "road", model: "boat-fishing-small", blurb: "A fishing boat with a wider net." },
+    Boat { key: "boat_coral", name: "Coral Skiff", colour: "#ff7a59", price: 120, source: "shop", model: "boat-speed-c", blurb: "Quick, and charges boost fast." },
+    Boat { key: "boat_lilac", name: "Bluefin", colour: "#9b6bff", price: 120, source: "shop", model: "boat-speed-a", blurb: "Quick, with a wider net." },
+    Boat { key: "boat_leaf", name: "Mangrove", colour: "#3fbf7f", price: 200, source: "shop", model: "boat-speed-f", blurb: "A well-rounded cleanup cruiser." },
+    Boat { key: "boat_night", name: "Night Heron", colour: "#3a4f8a", price: 300, source: "shop", model: "boat-speed-g", blurb: "A sleek jet boat: the fastest on the river." },
+    Boat { key: "boat_lotus", name: "River Keeper", colour: "#ff8fc8", price: 0, source: "road", model: "boat-tug-c", blurb: "A cleanup tug whose net sweeps two lanes." },
 ];
 
 /// River Road: (runs completed, Seeds, optional boat).
@@ -119,7 +122,11 @@ pub async fn profile(state: web::Data<AppState>, player: AuthPlayer) -> ApiResul
         "seeds": seeds, "runs": runs, "wins": wins, "best_score": best, "equipped": equipped,
         "owned": owned,
         "refundable": items.iter().filter(|(_, _, r)| *r).map(|(k, _, _)| k).collect::<Vec<_>>(),
-        "catalog": BOATS.iter().map(|b| json!({ "key": b.key, "name": b.name, "colour": b.colour, "price": b.price, "source": b.source })).collect::<Vec<_>>(),
+        "catalog": BOATS.iter().map(|b| {
+            let st = river_core::boat_stats(b.key);
+            json!({ "key": b.key, "name": b.name, "colour": b.colour, "price": b.price, "source": b.source, "model": b.model, "blurb": b.blurb,
+                    "stats": { "speed": st.speed, "net": st.net, "cutter": st.cutter, "boost": st.boost } })
+        }).collect::<Vec<_>>(),
         "daily": { "claims": claims, "claimed_today": claimed_today, "track": DAILY, "next": DAILY[(claims % 7) as usize] },
         "road": ROAD.iter().map(|(r, s, item)| json!({ "runs": r, "seeds": s, "item": item, "reached": runs >= *r, "claimed": road_claimed.contains(r) })).collect::<Vec<_>>(),
         "rules": { "win_bonus_per_day": WIN_BONUS_PER_DAY, "refund_minutes": REFUND_MINUTES },
@@ -300,7 +307,7 @@ pub async fn claim_road(
     Ok(HttpResponse::Ok().json(json!({ "seeds": seeds, "item": item })))
 }
 
-/// Equipped boat colour for each player (default colour when unknown).
+/// Equipped boat key for each player (players without a wallet get the default).
 pub async fn skins(db: &PgPool, players: &[Uuid]) -> HashMap<Uuid, String> {
     let rows: Vec<(Uuid, String)> =
         sqlx::query_as("SELECT player_id, equipped FROM player_wallets WHERE player_id = ANY($1)")
@@ -308,7 +315,7 @@ pub async fn skins(db: &PgPool, players: &[Uuid]) -> HashMap<Uuid, String> {
             .fetch_all(db)
             .await
             .unwrap_or_default();
-    rows.into_iter().filter_map(|(p, k)| boat(&k).map(|b| (p, b.colour.to_string()))).collect()
+    rows.into_iter().filter_map(|(p, k)| boat(&k).map(|b| (p, b.key.to_string()))).collect()
 }
 
 /// Record a finished run for each player and pay out Seeds. Returns seat → Seeds.

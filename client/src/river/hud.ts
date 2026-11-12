@@ -2,6 +2,7 @@
 
 import { h } from "../ui/dom";
 import { hint } from "../input/controls";
+import { isTouch } from "../input/touch";
 import {
   CREW_NAMES,
   FINALE_INFO,
@@ -69,7 +70,8 @@ export class RunHud {
     let prompt = "";
     if (me && pipe && !me.plugging && (s.phase.phase === "running" || s.phase.phase === "warning")) {
       const side = pipe.lane < 0 ? "LEFT" : "RIGHT";
-      prompt = me.lane === pipe.lane ? (pipe.z - me.z < 7 ? "🔧 Press ▼ now to plug the pipe!" : `🔧 Pipe ahead on the ${side} — get ready to press ▼`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and press ▼`;
+      const act = isTouch() ? "tap ✂" : "press ▼";
+      prompt = me.lane === pipe.lane ? (pipe.z - me.z < 7 ? `🔧 ${isTouch() ? "Tap ✂" : "Press ▼"} now to plug the pipe!` : `🔧 Pipe ahead on the ${side} — get ready to ${act}`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and ${act}`;
     }
     if (this.promptEl.textContent !== prompt) {
       this.promptEl.textContent = prompt;
@@ -149,7 +151,7 @@ export class RunHud {
               { class: "rh-code-glyphs" },
               pv.code.map((g, i) => h("span", { class: "rh-glyph" + (i < pv.entered ? " done" : "") }, GLYPHS[g], h("kbd", null, String(g + 1)))),
             ),
-            h("div", { class: "rh-code-hint" }, own ? (pv.clear ? "Type it in order with keys 1–6." : "Right symbols, wrong order. Your crewmate sees the real order — watch their signals.") : "Only your crew sees this order. Signal it with keys 1–6 — the other crew can see your signals too."),
+            h("div", { class: "rh-code-hint" }, own ? (pv.clear ? (isTouch() ? "Tap the symbols in order." : "Type it in order with keys 1–6.") : "Right symbols, wrong order. Your crewmate sees the real order — watch their signals.") : `Only your crew sees this order. Signal it with ${isTouch() ? "the symbol buttons" : "keys 1–6"} — the other crew can see your signals too.`),
             h("div", { class: "rh-code-time" }, `${Math.ceil(pv.left)} s`),
           ),
         );

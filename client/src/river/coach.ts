@@ -2,6 +2,7 @@
 // actually does. Skip is always available.
 
 import { h } from "../ui/dom";
+import { isTouch } from "../input/touch";
 import { hint } from "../input/controls";
 import type { Intent } from "../input/controls";
 import type { RunEvent, Snapshot } from "./types";
@@ -33,7 +34,7 @@ export class Coach {
     { title: "Cut weed", keys: () => hint("action"), text: "Press just before a weed mat to cut it. Cut weed greens the bank.", done: (c) => c.cut },
     {
       title: "Plug the pipe",
-      keys: () => `${hint("action")} then 1–6`,
+      keys: () => `${hint("action")} then ${isTouch() ? "tap the symbols" : "1–6"}`,
       text: "Pull up beside the sewage pipe, press the action key, then type the 3-symbol gate code.",
       done: (c) => c.plugged || c.pluggingFailed,
     },

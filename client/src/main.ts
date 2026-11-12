@@ -1,6 +1,8 @@
 import "./styles.css";
 import "./river/run.css";
 import "./ui/menus.css";
+import "./ui/theme.css";
+import "./ui/mobile.css";
 import { api, auth, ApiError } from "./net/api";
 import { RoomSocket } from "./net/socket";
 import { store } from "./store";
@@ -8,10 +10,12 @@ import type { Envelope, RoomView } from "./types";
 import { createEngine, loadQuality, qualitySettings, saveQuality, type EngineInfo, type Quality } from "./render/engine";
 import { clear, h, ModalStack, toast } from "./ui/dom";
 import { authScreen, hubScreen, lobbyScreen, titleScreen, type UiActions } from "./ui/screens";
+import { icon } from "./ui/icons";
 import { howToPlay, settings } from "./ui/panels";
 import { MenuBackdrop } from "./river/backdrop";
 import { RunMode } from "./river/mode";
 import { hubPanel, loadProfile, PANEL_TITLES } from "./ui/hub";
+import { sound } from "./audio/sound";
 
 const uiRoot = document.getElementById("ui")!;
 const canvas = document.getElementById("scene") as HTMLCanvasElement;
@@ -25,6 +29,9 @@ let runMode: RunMode | null = null;
 let runNames: Record<string, string> = {};
 let socket: RoomSocket | null = null;
 let myRooms: { room_id: string; code: string; status: string }[] = [];
+
+sound.install();
+sound.music("hub");
 let started = false;
 let authError: string | null = null;
 let pendingPractice = false;
@@ -95,6 +102,9 @@ function openRun() {
   backdrop?.dispose();
   backdrop = null;
   uiRoot.classList.add("hidden");
+  sound.music("race");
+  sound.river(true);
+  sound.preload(["pickup", "hop", "cut", "capsize", "countdown", "go"]);
   runMode = new RunMode(
     engineInfo.engine,
     room?.my_seat ?? 0,
@@ -115,6 +125,8 @@ function closeRun() {
   void loadProfile();
   runMode?.dispose();
   runMode = null;
+  sound.river(false);
+  sound.music("hub");
   backdrop = new MenuBackdrop(engineInfo.engine);
   uiRoot.classList.remove("hidden");
   render(true);
@@ -257,7 +269,7 @@ function offerTutorial() {
       h(
         "div",
         { class: "row" },
-        h("button", { class: "btn primary big", "data-autofocus": true, onclick: () => void ui.tutorial() }, "🎓 Quick tutorial"),
+        h("button", { class: "btn primary big", "data-autofocus": true, onclick: () => void ui.tutorial() }, icon("cap"), "Quick tutorial"),
         h(
           "button",
           {
