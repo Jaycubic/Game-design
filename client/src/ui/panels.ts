@@ -1,6 +1,8 @@
 // How-to-play and Settings overlays.
 
 import { sound } from "../audio/sound";
+import { feel } from "./feel";
+import { GLYPHS, GLYPH_NAMES } from "../river/types";
 import { isTouch } from "../input/touch";
 import { h } from "./dom";
 import type { Quality } from "../render/engine";
@@ -86,7 +88,24 @@ export function howToPlay(): HTMLElement {
       row("🌊", "", "River Health is shared — if it chokes, everyone loses half"),
       row("⚡", "", "Twice per run, players change the rules"),
     ),
+    h("h3", null, "Signals"),
+    h(
+      "p",
+      { class: "small" },
+      "The six signals have no fixed meaning — your crew invents its own code. When a crewmate plugs a pipe, you see the real gate code and they see it scrambled: send them the symbols in order. The other crew sees your signals too, so you can bluff.",
+    ),
+    h(
+      "div",
+      { class: "htp-signals" },
+      GLYPHS.map((g, i) => h("span", { class: "htp-signal" }, h("b", null, g), h("small", null, `${i + 1} ${signalName(i)}`))),
+    ),
   );
+}
+
+/** "Leaf", "Drop", … */
+export function signalName(i: number): string {
+  const n = GLYPH_NAMES[i] ?? "";
+  return n.charAt(0).toUpperCase() + n.slice(1);
 }
 
 export function settings(current: Quality, backend: string, reason: string, onQuality: (q: Quality) => void): HTMLElement {
@@ -110,7 +129,34 @@ export function settings(current: Quality, backend: string, reason: string, onQu
     ),
     h("p", { class: "muted small" }, "Changing quality reloads the game. Your room is kept on the server."),
     audioSection(),
+    comfortSection(),
     controlsSection(),
+  );
+}
+
+function comfortSection(): HTMLElement {
+  return h(
+    "fieldset",
+    { class: "audio-settings" },
+    h("legend", null, "Comfort"),
+    h(
+      "label",
+      { class: "slider-row" },
+      h("span", null, "Screen shake"),
+      h("input", {
+        type: "range",
+        min: "0",
+        max: "100",
+        value: String(Math.round(feel.prefs.shake * 100)),
+        oninput: (e: Event) => feel.set({ shake: Number((e.target as HTMLInputElement).value) / 100 }),
+      }),
+    ),
+    h(
+      "label",
+      { class: "radio" },
+      h("input", { type: "checkbox", checked: feel.prefs.reduceFlash, onchange: (e: Event) => feel.set({ reduceFlash: (e.target as HTMLInputElement).checked }) }),
+      " Reduce flashing (no blinking boats or red flashes)",
+    ),
   );
 }
 

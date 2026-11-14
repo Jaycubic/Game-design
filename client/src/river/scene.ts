@@ -80,7 +80,19 @@ export interface BoatPose {
   roll: number;
   yaw: number;
   boosting: boolean;
+  /** Protected after a capsize: the boat blinks. */
+  ghost?: boolean;
 }
+
+/** The local boat, for danger hints on the water. */
+export interface Viewer {
+  lane: number;
+  z: number;
+  speed: number;
+}
+
+/** Logs closer than this (seconds at current speed) get a warning shadow. */
+const WARN_SECONDS = 1.5;
 
 export class RiverScene {
   readonly scene: Scene;
@@ -170,7 +182,22 @@ export class RiverScene {
     const plume = MeshBuilder.CreateDisc("plume", { radius: 1, tessellation: 20 }, scene);
     plume.rotation.x = Math.PI / 2;
     plume.bakeCurrentTransformIntoVertices();
+    const disc = (name: string, colour: Color3, alpha: number) => {
+      const d = MeshBuilder.CreateDisc(name, { radius: 1, tessellation: 24 }, scene);
+      d.rotation.x = Math.PI / 2;
+      d.bakeCurrentTransformIntoVertices();
+      const m = new StandardMaterial(name + "-mat", scene);
+      m.diffuseColor = colour;
+      m.emissiveColor = colour.scale(0.6);
+      m.specularColor = Color3.Black();
+      m.alpha = alpha;
+      m.disableDepthWrite = true;
+      d.material = m;
+      return d;
+    };
     this.objBatches = {
+      danger: new Batch(disc("danger", new Color3(0.35, 0.05, 0.04), 0.5)),
+      gap: new Batch(disc("gap", new Color3(0.45, 1, 0.6), 0.35)),
       bottle: new Batch(withMat(bottleMesh(scene, "#9fd3e8", 1))),
       bottle2: new Batch(withMat(bottleMesh(scene, "#7fbf7a", 2))),
       bag: new Batch(withMat(bagMesh(scene))),
@@ -346,7 +373,7 @@ export class RiverScene {
   }
 
   /** Per-frame render of world objects (positions come from the server snapshot). */
-  renderObjects(objs: RunObj[], dry: boolean) {
+  renderObjects(objs: RunObj[], dry: boolean, me: Viewer | null = null) {
     const t = this.time;
     for (const bt of Object.values(this.objBatches)) bt.begin();
     const ob = this.objBatches;
@@ -364,10 +391,21 @@ export class RiverScene {
           if (o.alive) ob.weed.add(x, -0.03 + bob * 0.4, o.z, o.id, 1.5);
           break;
         case "log":
-          if (o.alive) ob.log.add(x, 0.02 + bob, o.z, 0.15 * Math.sin(o.id), 1);
+          if (!o.alive) break;
+          ob.log.add(x, 0.02 + bob, o.z, 0.15 * Math.sin(o.id), 1);
+          if (me && o.lane === me.lane) {
+            // A dark shadow grows under a log in your lane as it gets close.
+            const secs = (o.z - me.z) / Math.max(me.speed, 1);
+            if (secs > 0 && secs < WARN_SECONDS) {
+              const k = 1 - secs / WARN_SECONDS;
+              ob.danger.add(x, -0.02, o.z, 0, 1, 0, 0, 0.8 + 0.5 * k, 1.4 + 0.8 * k);
+            }
+          }
           break;
         case "wave":
           if (!o.alive) break;
+          // The gap lane glows so it can be found at a glance.
+          ob.gap.add(this.laneX(o.lane), -0.02, o.z, 0, 1, 0, 0, 1.1 + 0.1 * Math.sin(t * 6), 3.5);
           for (const lane of dry ? [-1, 0] : [-1, 0, 1]) if (lane !== o.lane) ob.debris.add(this.laneX(lane), 0.05 + bob, o.z, 0, 1);
           break;
         case "pipe": {
@@ -432,7 +470,7 @@ export class RiverScene {
       const m = this.boatFor(p.seat);
       m.position.set(p.x, -0.12 + p.y + Math.sin(this.time * 3 + p.seat) * 0.03, p.z);
       m.rotation.set(Math.sin(this.time * 2.3 + p.seat) * 0.03, p.yaw, p.roll);
-      seen.add(p.seat);
+      if (!p.ghost || Math.floor(this.time * 10) % 2 === 0) seen.add(p.seat);
     }
     for (const [seat, m] of this.boats) m.setEnabled(seen.has(seat));
 
@@ -443,12 +481,17 @@ export class RiverScene {
       const desired = new Vector3(focus.x * 0.7, 4.3, focus.z - 8.5);
       Vector3.LerpToRef(cam.position, desired, Math.min(1, dt * 6), cam.position);
       cam.position.z = desired.z; // never lag behind on the forward axis
-      if (this.shake > 0) {
-        cam.position.x += (Math.random() - 0.5) * this.shake;
-        cam.position.y += (Math.random() - 0.5) * this.shake;
-        this.shake = Math.max(0, this.shake - dt * 1.6);
-      }
       cam.setTarget(target);
+      if (this.shake > 0) {
+        // Trauma shake: strength is trauma², smooth summed sines, decays in real time.
+        const k = this.shake * this.shake * this.shakeScale;
+        const tt = this.time * 30;
+        cam.position.x += 0.6 * k * Math.sin(tt * 1.7);
+        cam.position.y += 0.4 * k * Math.sin(tt * 2.3);
+        target.x += 0.25 * k * Math.sin(tt * 1.1);
+        cam.setTarget(target);
+        this.shake = Math.max(0, this.shake - dt * 1.4);
+      }
       this.fovBoost += ((focus.boosting ? 1 : 0) - this.fovBoost) * Math.min(1, dt * 4);
       cam.fov = 0.95 + this.fovBoost * 0.18;
       this.water.position.set(0, -0.05, Math.floor(focus.z / 6) * 6 + 170);
@@ -466,8 +509,12 @@ export class RiverScene {
     this.splash.manualEmitCount = count;
   }
 
+  /** Player's shake setting, 0–1. */
+  shakeScale = 1;
+
+  /** Add camera trauma (0–1); hits stack, they don't reset. */
   kick(amount: number) {
-    this.shake = Math.max(this.shake, amount);
+    this.shake = Math.min(1, this.shake + amount);
   }
 
   worldToScreen(p: Vector3): { x: number; y: number; visible: boolean } {

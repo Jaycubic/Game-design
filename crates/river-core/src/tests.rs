@@ -100,6 +100,49 @@ fn logs_capsize_unless_hopped() {
 }
 
 #[test]
+fn capsize_is_short_spills_plastic_and_protects_briefly() {
+    let mut r = Run::new(9, &[0]);
+    r.objs.clear();
+    r.phase = Phase::Running;
+    r.boats[0].plastic = 5;
+    r.crews[0].plastic = 5;
+    let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+    r.spawn(Kind::Log, lane, z + 1.0);
+    // a second log right behind the first would hit again without protection
+    r.spawn(Kind::Log, lane, z + 12.0);
+    let i = idle(&r);
+    r.step(&i);
+    assert!((r.boats[0].capsize - CAPSIZE_TIME).abs() < 0.05);
+    assert_eq!(r.boats[0].plastic, 2, "three pieces spill");
+    assert_eq!(r.crews[0].plastic, 2);
+    assert!(r.drain_events().iter().any(|e| matches!(e, Event::Capsized { seat: 0, dropped: 3 })));
+    let spilled = r.objs.iter().filter(|o| o.kind == Kind::Plastic && o.alive && o.z > r.boats[0].z).count();
+    assert_eq!(spilled, 3, "spilled plastic floats just ahead");
+    // Stopped for 1.2 s, then protected for 1 s while it reaches the second log.
+    let mut capsizes = 0;
+    for _ in 0..(TICK_HZ as usize * 2) {
+        let i = idle(&r);
+        r.step(&i);
+        capsizes += r.drain_events().iter().filter(|e| matches!(e, Event::Capsized { .. })).count();
+    }
+    assert_eq!(capsizes, 0, "no second capsize during protection");
+    assert!(r.boats[0].z > z + 5.0, "moving again after 1.2 s");
+}
+
+#[test]
+fn capsize_with_no_plastic_spills_nothing() {
+    let mut r = Run::new(9, &[0]);
+    r.objs.clear();
+    r.phase = Phase::Running;
+    let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+    r.spawn(Kind::Log, lane, z + 1.0);
+    let i = idle(&r);
+    r.step(&i);
+    assert!(r.boats[0].capsize > 0.0);
+    assert_eq!(r.objs.iter().filter(|o| o.kind == Kind::Plastic).count(), 0);
+}
+
+#[test]
 fn weed_slows_unless_cut_and_cutting_greens_a_bank() {
     let mut r = Run::new(11, &[0, 1]);
     r.objs.clear();

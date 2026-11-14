@@ -22,6 +22,8 @@ export interface RunBoat {
   speed: number;
   hop: number;
   capsize: number;
+  /** Seconds of protection left after a capsize (includes the capsize itself). */
+  immune: number;
   slow: number;
   boost: number;
   boosting: number;
@@ -80,7 +82,7 @@ export type RunEvent =
   | { type: "missed"; id: number }
   | { type: "cut"; seat: number; id: number }
   | { type: "slowed"; seat: number }
-  | { type: "capsized"; seat: number }
+  | { type: "capsized"; seat: number; dropped: number }
   | { type: "bumped"; seat: number; by: number }
   | { type: "boost"; seat: number }
   | { type: "plug_started"; seat: number; pipe: number }

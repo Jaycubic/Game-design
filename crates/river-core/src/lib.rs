@@ -24,7 +24,11 @@ pub const BASE_SPEED: f32 = 14.0;
 pub const BOOST_MULT: f32 = 1.5;
 pub const SLOW_MULT: f32 = 0.55;
 pub const HOP_TIME: f32 = 0.75;
-pub const CAPSIZE_TIME: f32 = 2.0;
+pub const CAPSIZE_TIME: f32 = 1.2;
+/// After a capsize, obstacles pass through the boat for this long.
+pub const IMMUNE_TIME: f32 = 1.0;
+/// Plastic a capsized boat spills back into the river.
+pub const CAPSIZE_DROP: u32 = 3;
 pub const SLOW_TIME: f32 = 1.0;
 pub const BOOST_TIME: f32 = 2.5;
 pub const HIT_WINDOW: f32 = 0.9;
@@ -197,6 +201,9 @@ pub struct Boat {
     pub z: f32,
     pub hop: f32,
     pub capsize: f32,
+    /// Seconds of protection left (counts the capsize itself plus IMMUNE_TIME).
+    #[serde(default)]
+    pub immune: f32,
     pub slow: f32,
     pub boost: f32,
     pub boosting: f32,
@@ -280,7 +287,12 @@ pub enum Event {
     Missed { id: u32 },
     Cut { seat: u8, id: u32 },
     Slowed { seat: u8 },
-    Capsized { seat: u8 },
+    Capsized {
+        seat: u8,
+        /// Plastic spilled back into the river.
+        #[serde(default)]
+        dropped: u32,
+    },
     Bumped { seat: u8, by: u8 },
     Boost { seat: u8 },
     PlugStarted { seat: u8, pipe: u32 },
@@ -361,6 +373,7 @@ impl Run {
                 z: -(i as f32) * 2.5,
                 hop: 0.0,
                 capsize: 0.0,
+                immune: 0.0,
                 slow: 0.0,
                 boost: 0.0,
                 boosting: 0.0,
@@ -789,6 +802,7 @@ impl Run {
         for (i, b) in self.boats.iter_mut().enumerate() {
             b.hop = (b.hop - DT).max(0.0);
             b.capsize = (b.capsize - DT).max(0.0);
+            b.immune = (b.immune - DT).max(0.0);
             b.slow = (b.slow - DT).max(0.0);
             b.boosting = (b.boosting - DT).max(0.0);
             if let Some(p) = &mut b.plug {
@@ -866,11 +880,8 @@ impl Run {
                         }
                     }
                     Kind::Log | Kind::Wave => {
-                        if !self.boats[bi].airborne() && self.boats[bi].capsize <= 0.0 {
-                            self.boats[bi].capsize = CAPSIZE_TIME;
-                            self.boats[bi].boosting = 0.0;
-                            self.boats[bi].plug = None;
-                            self.events.push(Event::Capsized { seat });
+                        if !self.boats[bi].airborne() && self.boats[bi].immune <= 0.0 {
+                            self.capsize(bi);
                         }
                     }
                     Kind::Pipe => {}
@@ -887,6 +898,28 @@ impl Run {
         // Old objects far behind are dropped to keep snapshots small.
         let cutoff = last - 40.0;
         self.objs.retain(|o| o.z > cutoff || (o.kind == Kind::Pipe && !o.plugged));
+    }
+
+    /// A short stop, then a moment of protection; the boat spills some of its
+    /// plastic just ahead, spread over nearby lanes, where anyone can net it again.
+    fn capsize(&mut self, bi: usize) {
+        let (seat, crew, lane, z) = (self.boats[bi].seat, self.boats[bi].crew, self.boats[bi].lane, self.boats[bi].z);
+        let b = &mut self.boats[bi];
+        b.capsize = CAPSIZE_TIME;
+        b.immune = CAPSIZE_TIME + IMMUNE_TIME;
+        b.boosting = 0.0;
+        b.plug = None;
+        let dropped = CAPSIZE_DROP.min(b.plastic);
+        b.plastic -= dropped;
+        let c = self.crew_mut(crew);
+        c.plastic = c.plastic.saturating_sub(dropped);
+        let lanes = self.lanes();
+        let (min, max) = (*lanes.first().unwrap(), *lanes.last().unwrap());
+        for k in 0..dropped {
+            let l = (lane + [0i8, -1, 1][k as usize % 3]).clamp(min, max);
+            self.spawn(Kind::Plastic, l, z + 7.0 + k as f32 * 3.0);
+        }
+        self.events.push(Event::Capsized { seat, dropped });
     }
 
     fn pressure(&mut self) {
@@ -988,6 +1021,7 @@ pub struct BoatView {
     pub speed: f32,
     pub hop: f32,
     pub capsize: f32,
+    pub immune: f32,
     pub slow: f32,
     pub boost: f32,
     pub boosting: f32,
@@ -1082,6 +1116,7 @@ impl Run {
                     speed: b.speed(),
                     hop: b.hop,
                     capsize: b.capsize,
+                    immune: b.immune,
                     slow: b.slow,
                     boost: b.boost,
                     boosting: b.boosting,

@@ -3,6 +3,7 @@
 import { h } from "../ui/dom";
 import { hint } from "../input/controls";
 import { isTouch } from "../input/touch";
+import { signalName } from "../ui/panels";
 import {
   CREW_NAMES,
   FINALE_INFO,
@@ -52,7 +53,29 @@ export class RunHud {
       this.bottom,
       this.fx,
       this.promptEl,
-      h("div", { class: "rh-keys" }, `${hint("left")} ${hint("right")} steer · ${hint("hop")} hop · ${hint("action")} cut / plug · 1–6 signal`),
+      h(
+        "div",
+        { class: "rh-keys" },
+        h("span", { "data-tut": "steer" }, `${hint("left")} ${hint("right")} steer`),
+        " · ",
+        h("span", { "data-tut": "hop" }, `${hint("hop")} hop`),
+        " · ",
+        h("span", { "data-tut": "action" }, `${hint("action")} cut / plug`),
+      ),
+      // Desktop signal bar: the six symbols with their key and name (touch has its own buttons).
+      h(
+        "div",
+        { class: "rh-signals", role: "group", "aria-label": "Signals", "data-tut": "signals" },
+        GLYPHS.map((g, i) =>
+          h(
+            "button",
+            { class: "rh-sig", title: `Signal ${i + 1}: ${signalName(i)}`, onclick: () => this.cb.glyph(i) },
+            h("kbd", null, String(i + 1)),
+            h("b", null, g),
+            h("small", null, signalName(i)),
+          ),
+        ),
+      ),
     );
     host.appendChild(this.root);
   }
@@ -116,7 +139,7 @@ export class RunHud {
         ),
         h(
           "div",
-          { class: "rh-health" + (hp < 30 ? " low" : "") },
+          { class: "rh-health" + (hp < 30 ? " low" : ""), "data-tut": "health" },
           h("span", { class: "rh-health-label" }, s.choked ? "River choked" : "River health"),
           h("div", { class: "rh-bar" }, h("div", { class: "rh-fill", style: `width:${hp}%` })),
           h("span", { class: "rh-hp" }, `${hp}%`),
@@ -144,15 +167,16 @@ export class RunHud {
         this.code.replaceChildren(
           h(
             "div",
-            { class: "rh-code-card" + (pv.clear ? " clear" : " scrambled") },
+            { class: "rh-code-card" + (pv.clear ? " clear" : " scrambled"), "data-tut": "code" },
             h("div", { class: "rh-code-title" }, own ? (pv.clear ? "Memorise the gate code!" : "Gate code — scrambled!") : `${this.name(seat)} is plugging a pipe`),
             h(
               "div",
               { class: "rh-code-glyphs" },
-              pv.code.map((g, i) => h("span", { class: "rh-glyph" + (i < pv.entered ? " done" : "") }, GLYPHS[g], h("kbd", null, String(g + 1)))),
+              pv.code.map((g, i) => h("span", { class: "rh-glyph" + (i < pv.entered ? " done" : "") }, GLYPHS[g], h("kbd", null, String(g + 1)), h("small", { class: "rh-glyph-name" }, signalName(g)))),
             ),
             h("div", { class: "rh-code-hint" }, own ? (pv.clear ? (isTouch() ? "Tap the symbols in order." : "Type it in order with keys 1–6.") : "Right symbols, wrong order. Your crewmate sees the real order — watch their signals.") : `Only your crew sees this order. Signal it with ${isTouch() ? "the symbol buttons" : "keys 1–6"} — the other crew can see your signals too.`),
             h("div", { class: "rh-code-time" }, `${Math.ceil(pv.left)} s`),
+            this.signalTip(),
           ),
         );
       }
@@ -166,12 +190,28 @@ export class RunHud {
       this.bottom.replaceChildren(
         h(
           "div",
-          { class: "rh-boost" + (me?.boosting ? " on" : "") },
+          { class: "rh-boost" + (me?.boosting ? " on" : ""), "data-tut": "boost" },
           h("span", null, me?.boosting ? "BOOST!" : "Boost"),
           h("div", { class: "rh-bar" }, h("div", { class: "rh-fill", style: `width:${Math.round(boost * 100)}%` })),
         ),
       );
     }
+  }
+
+  /** Shown the first time a gate code ever appears on this device. */
+  private tipShown = false;
+  private signalTip(): HTMLElement | null {
+    if (this.tipShown) return h("div", { class: "rh-code-tip" }, "Your crewmate sees the real order. Tap the symbols to tell them — the other crew sees your signals too.");
+    let seen = false;
+    try {
+      seen = localStorage.getItem("nt.tip.signals") === "1";
+      localStorage.setItem("nt.tip.signals", "1");
+    } catch {
+      /* private mode: show once per run */
+    }
+    if (seen) return null;
+    this.tipShown = true;
+    return this.signalTip();
   }
 
   private centerContent(s: Snapshot, myCrew: number): (HTMLElement | null)[] {
@@ -289,6 +329,13 @@ export class RunHud {
     const el = h("div", { class: "rh-bubble", style: `left:${x}px;top:${y}px;border-color:${SEAT_COLOURS[seat % 4]}` }, GLYPHS[glyph]);
     this.fx.appendChild(el);
     setTimeout(() => el.remove(), 1600);
+  }
+
+  /** Edge vignette on your own capsize: a red pulse, or a steady tint with reduced flashing. */
+  hit(reduceFlash: boolean) {
+    const el = h("div", { class: "rh-hit" + (reduceFlash ? " calm" : "") });
+    this.fx.appendChild(el);
+    setTimeout(() => el.remove(), 700);
   }
 
   banner(text: string, kind = "") {

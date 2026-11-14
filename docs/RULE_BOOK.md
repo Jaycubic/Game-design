@@ -45,8 +45,8 @@ The river has **three lanes**.
 |---|---|---|
 | **Plastic** (bottles, bags) | Scores 1 point for your crew, fills your boost and heals the river a little. Plastic you miss hurts the river. | Drive into it. |
 | **Weed mat** | Slows you for a second. | Press **Action** just before it to cut it. Each cut greens a bank: +5 crew score and the river heals. |
-| **Log** | Capsizes you for 2 seconds. | **Hop** over it. |
-| **Debris wave** (every 30 s) | Covers every lane but one and capsizes you. | Steer to the gap, or hop. |
+| **Log** | Capsizes you: you stop for about a second and spill 3 plastic, which floats just ahead for anyone to net. Then you're safe from obstacles for 1 second. A red shadow under a log in your lane means hop now. | **Hop** over it. |
+| **Debris wave** (every 30 s) | Covers every lane but one and capsizes you. The gap lane glows. | Steer to the gap, or hop. |
 | **Sewage pipe** (on a bank) | Pours murk that drains River Health every second until it is plugged. | Pull up beside it, press **Action**, then type its gate code (§5). |
 
 **Other boats:** if you run into the back of a boat in your lane, you slow down for a moment. Hop or change lanes

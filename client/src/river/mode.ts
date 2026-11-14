@@ -8,6 +8,7 @@ import { Coach } from "./coach";
 import { GamepadInput, intentForKey, type Intent } from "../input/controls";
 import { TouchControls, isTouch } from "../input/touch";
 import { sound } from "../audio/sound";
+import { feel } from "../ui/feel";
 import { LANE_W, type RunEvent, type RunResults, type Snapshot } from "./types";
 
 export interface RunSender {
@@ -21,7 +22,8 @@ interface Smooth {
 }
 
 const HOP_TIME = 0.75;
-const CAPSIZE_TIME = 2.0;
+const CAPSIZE_TIME = 1.2;
+const HIT_STOP_MS = 90;
 
 export class RunMode {
   private scene: RiverScene;
@@ -38,6 +40,8 @@ export class RunMode {
   private coach: Coach | null = null;
   private touch: TouchControls | null = null;
   private lastBeat = "";
+  /** Client-only freeze-frame after your own capsize; the server never pauses. */
+  private freezeUntil = 0;
 
   constructor(
     private engine: AbstractEngine,
@@ -148,10 +152,13 @@ export class RunMode {
           break;
         case "capsized":
           sound.play("capsize", { volume: mine ? 1 : 0.45 });
-          if (pose) this.scene.burst(pose.x, pose.z, 40);
+          if (pose) this.scene.burst(pose.x, pose.z, mine ? 60 : 30);
           if (mine) {
-            this.scene.kick(0.6);
-            this.hud.banner("Capsized!", "bad");
+            this.freezeUntil = performance.now() + HIT_STOP_MS;
+            this.scene.kick(0.75);
+            this.hud.hit(feel.prefs.reduceFlash);
+            if (e.dropped && scr?.visible) this.hud.popup(scr.x, scr.y - 30, `−${e.dropped} ♻`, "bad");
+            this.hud.banner(e.dropped ? "Capsized! Net your plastic back" : "Capsized!", "bad");
           }
           break;
         case "slowed":
@@ -224,6 +231,12 @@ export class RunMode {
       return;
     }
     for (const it of this.pad.poll(s.phase.phase === "choosing")) this.apply(it);
+    if (now < this.freezeUntil) {
+      // Hit-stop: hold the picture for a moment; input still goes to the server.
+      this.scene.scene.render();
+      return;
+    }
+    this.scene.shakeScale = feel.prefs.shake;
     const paused = ["countdown", "choosing", "reveal", "finished"].includes(s.phase.phase);
     const since = paused ? 0 : Math.min(0.25, (now - this.snapAt) / 1000);
     const poses: BoatPose[] = [];
@@ -239,14 +252,19 @@ export class RunMode {
       const hopLeft = Math.max(0, b.hop - since);
       const y = hopLeft > 0 ? Math.sin(Math.PI * (1 - hopLeft / HOP_TIME)) * 1.1 : 0;
       const capLeft = Math.max(0, b.capsize - since);
-      const roll = capLeft > 0 ? Math.sin(Math.PI * (1 - capLeft / CAPSIZE_TIME)) * 1.3 : (targetX - sm.x) * -0.12;
-      const pose: BoatPose = { seat: b.seat, x: sm.x, y, z: sm.z, roll, yaw: (targetX - sm.x) * 0.08, boosting: b.boosting > 0 };
+      // Capsize: the boat rolls all the way over and rights itself.
+      const cp = capLeft > 0 ? 1 - capLeft / CAPSIZE_TIME : 0;
+      const roll = capLeft > 0 ? Math.PI * 2 * cp * cp * (3 - 2 * cp) : (targetX - sm.x) * -0.12;
+      const ghost = capLeft <= 0 && Math.max(0, (b.immune ?? 0) - since) > 0 && !feel.prefs.reduceFlash;
+      const pose: BoatPose = { seat: b.seat, x: sm.x, y, z: sm.z, roll, yaw: (targetX - sm.x) * 0.08, boosting: b.boosting > 0, ghost };
       poses.push(pose);
       if (b.seat === this.mySeat) me = pose;
     }
     const dry = s.twist === "dry_season";
     this.scene.frame(dt, poses, me, dry);
-    this.scene.renderObjects(s.objs, dry);
+    const mine = s.boats.find((b) => b.seat === this.mySeat);
+    const viewer = mine && me ? { lane: this.predictedLane ?? mine.lane, z: me.z, speed: mine.speed || 14 } : null;
+    this.scene.renderObjects(s.objs, dry, viewer);
     this.scene.scene.render();
     for (const p of poses) {
       const scr = this.scene.worldToScreen(new Vector3(p.x, p.y + 1.6, p.z));

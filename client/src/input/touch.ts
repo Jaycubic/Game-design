@@ -4,6 +4,7 @@
 
 import { h } from "../ui/dom";
 import { GLYPHS } from "../river/types";
+import { signalName } from "../ui/panels";
 import type { Intent } from "./controls";
 
 /** True on phones/tablets (coarse pointer or any touch points). */
@@ -40,7 +41,7 @@ export class TouchControls {
     private surface: HTMLElement,
     private emit: (it: Intent) => void,
   ) {
-    const btn = (cls: string, label: string, it: Intent, aria: string) =>
+    const btn = (cls: string, label: string | Node[], it: Intent, aria: string) =>
       h(
         "button",
         {
@@ -60,12 +61,14 @@ export class TouchControls {
     this.root = h(
       "div",
       { class: "touch-controls" },
-      h("div", { class: "tc-left" }, btn("tc-steer", "◀", { type: "steer", dir: -1 }, "Steer left"), btn("tc-steer", "▶", { type: "steer", dir: 1 }, "Steer right")),
-      h("div", { class: "tc-right" }, btn("tc-act", "✂", { type: "action" }, "Cut weed or plug pipe"), btn("tc-hop", "▲", { type: "hop" }, "Hop")),
+      h("div", { class: "tc-left", "data-tut": "steer" }, btn("tc-steer", "◀", { type: "steer", dir: -1 }, "Steer left"), btn("tc-steer", "▶", { type: "steer", dir: 1 }, "Steer right")),
+      h("div", { class: "tc-right" }, btn("tc-act tut-action", "✂", { type: "action" }, "Cut weed or plug pipe"), btn("tc-hop tut-hop", "▲", { type: "hop" }, "Hop")),
       h(
         "div",
-        { class: "tc-glyphs", role: "group", "aria-label": "Signals and gate code" },
-        GLYPHS.map((g, i) => btn("tc-glyph", g, { type: "glyph", g: i }, `Signal ${i + 1}`)),
+        { class: "tc-glyphs", role: "group", "aria-label": "Signals and gate code", "data-tut": "signals" },
+        GLYPHS.map((g, i) =>
+          btn("tc-glyph", [h("b", null, g), h("small", null, signalName(i)), h("i", null, String(i + 1))], { type: "glyph", g: i }, `Signal ${i + 1}: ${signalName(i)}`),
+        ),
       ),
       h("div", { class: "rotate-hint" }, "↻ Turn your phone sideways for a wider river"),
     );

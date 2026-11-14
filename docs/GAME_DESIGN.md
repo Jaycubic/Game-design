@@ -35,7 +35,7 @@ places; the real-world case is shown in the presentation.
 - 2–4 players, each on their own device, in a shared room.
 - 3–4 players split into two rival crews, alternating by seat. 2 players form one co-op crew.
 - Practice solo and the tutorial are single-player.
-- No player elimination: a capsize costs 2 seconds, never the run.
+- No player elimination: a capsize stops the boat for 1.2 s and spills 3 plastic just ahead (anyone can net it back), then gives 1 s of protection. A brief freeze-frame, camera shake and a red edge flash sell the hit; both can be reduced in Settings → Comfort.
 
 ### 3.2 Objectives
 - **Crew:** a higher score than the rival crew.

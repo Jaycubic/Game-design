@@ -111,7 +111,7 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 | `phase` | One of `countdown`, `running`, `warning`, `choosing`, `reveal` or `finished`, plus its `left` and the details of the change |
 | River | `health`, `choked`, `lanes` |
 | Rule changes | `twist`, `finale`, `finale_crew`, `changes`, `votes: [[seat, option]]` |
-| `boats` | Per boat: `seat`, `crew`, `lane`, `z`, `speed`, `hop`, `capsize`, `slow`, `boost`, `boosting`, `plastic` and `plugging` |
+| `boats` | Per boat: `seat`, `crew`, `lane`, `z`, `speed`, `hop`, `capsize`, `immune` (protection left after a capsize), `slow`, `boost`, `boosting`, `plastic` and `plugging` |
 | `crews` | `[[id, score, plastic, pipes, banks]]` |
 | `objs` | Only the stretch of river near the boats |
 | `plugs` | Only gate codes this viewer is involved in, each with `code`, `clear`, `entered` and `left`. `clear` is true only for crewmates, or briefly for a lone boat. |
@@ -119,7 +119,7 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 
 **Run event types:**
 - collecting and missing: `collected`, `missed`, `cut`;
-- boat state: `slowed`, `capsized`, `bumped`, `boost`;
+- boat state: `slowed`, `capsized` (with `dropped`, the plastic spilled), `bumped`, `boost`;
 - pipes: `plug_started`, `plugged`, `plug_failed`;
 - signals and waves: `ping`, `wave_incoming`;
 - river: `rule_changed {change, choice}`, `choked`.

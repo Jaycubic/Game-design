@@ -26,6 +26,10 @@ button, .tc-btn { -webkit-user-select: none; user-select: none; }
 .tc-act { width: 70px; height: 70px; margin-bottom: 26px; background: rgba(80, 180, 110, 0.45); }
 .tc-glyphs { position: absolute; right: calc(10px + env(safe-area-inset-right, 0)); top: 50%; transform: translateY(-50%); display: grid; gap: 8px; }
 .tc-glyph { width: 46px; height: 46px; font-size: 1.4rem; border-width: 2px; border-radius: 14px; }
+.tc-glyph { position: relative; display: grid; place-items: center; align-content: center; gap: 0; height: 52px; padding: 0; }
+.tc-glyph b { font-size: 1.3rem; line-height: 1.1; font-weight: 400; }
+.tc-glyph small { font-size: 0.55rem; line-height: 1; opacity: 0.85; }
+.tc-glyph i { position: absolute; top: -5px; left: -5px; font-style: normal; font-size: 0.6rem; background: #4fb3ff; color: #00121c; border-radius: 6px; padding: 0 4px; }
 
 /* While playing on a touch device: the keyboard hint is noise, and the boost
    bar / code card must clear the thumb buttons. */
@@ -89,7 +93,7 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .tc-hop { width: 78px; height: 78px; }
   .tc-act { width: 60px; height: 60px; margin-bottom: 20px; }
   .tc-glyphs { top: auto; bottom: calc(190px + env(safe-area-inset-bottom, 0)); transform: none; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .tc-glyph { width: 40px; height: 40px; font-size: 1.2rem; }
+  .tc-glyph { width: 42px; height: 46px; font-size: 1.2rem; }
   .touch-run .rh-bottom { bottom: calc(100px + env(safe-area-inset-bottom, 0)); }
 }
 
@@ -110,9 +114,24 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .tc-steer { width: 66px; height: 66px; }
   .tc-hop { width: 80px; height: 80px; }
   .tc-glyphs { grid-template-columns: repeat(3, 1fr); top: 84px; transform: none; gap: 6px; }
-  .tc-glyph { width: 40px; height: 40px; font-size: 1.2rem; }
+  .tc-glyph { width: 42px; height: 46px; font-size: 1.2rem; }
   .touch-run .rh-bottom { bottom: 10px; }
   .touch-run .rh-code { bottom: 70px; }
+  /* Tutorial: a slim coach strip at the top so the river and the spotlight stay clear. */
+  .coach { top: 6px; width: min(320px, 42vw); padding: 4px 10px 6px; border-width: 2px; }
+  .coach-dots { margin-bottom: 2px; }
+  .coach-title { font-size: 1.05rem; }
+  .coach-keys { font-size: 0.85rem; padding: 0 6px; }
+  .coach-text { font-size: 0.78rem; margin: 2px 0 4px; line-height: 1.25; }
+  .coach-skip { min-height: 26px; font-size: 0.75rem; }
+  .spot-tip { font-size: 0.82rem; padding: 7px 10px; }
+  .spot-tip strong { font-size: 0.95rem; }
+}
+
+@media (max-width: 760px) and (orientation: portrait) {
+  .coach { top: 120px; width: calc(100vw - 24px); padding: 6px 10px; }
+  .coach-title { font-size: 1.15rem; }
+  .coach-text { font-size: 0.85rem; }
 }
 
 /* Portrait phone in a run: suggest turning sideways (the river reads better wide). */
