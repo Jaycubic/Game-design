@@ -172,7 +172,7 @@ fn gate_code_is_clear_only_to_crewmates_and_plugging_heals() {
     let mut r = Run::new(13, &[0, 1, 2, 3]);
     r.objs.clear();
     r.phase = Phase::Running;
-    r.boats[0].lane = 1;
+    r.boats[0].lane = 5; // right edge of a 6-lane river
     let z = r.boats[0].z + 2.0;
     let pipe = r.spawn(Kind::Pipe, 1, z);
     let mut i = idle(&r);
@@ -204,7 +204,7 @@ fn wrong_code_fails_and_glyphs_are_pings_otherwise() {
     let mut r = Run::new(17, &[0, 1]);
     r.objs.clear();
     r.phase = Phase::Running;
-    r.boats[0].lane = -1;
+    r.boats[0].lane = 0; // left edge
     let z = r.boats[0].z;
     r.spawn(Kind::Pipe, -1, z);
     let mut i = idle(&r);
@@ -260,8 +260,8 @@ fn exactly_two_rule_changes_per_run_chosen_by_players() {
     r.choose(3, 2).unwrap();
     assert_eq!(r.twist, Some(Twist::DrySeason));
     assert!(matches!(r.phase, Phase::Reveal { spin: false, .. }));
-    assert_eq!(r.lanes(), &[-1, 0]);
-    assert!(r.boats.iter().all(|b| b.lane != 1));
+    assert_eq!(r.lanes(), vec![0, 1, 2, 3], "Dry Season closes a third of 6 lanes");
+    assert!(r.boats.iter().all(|b| b.lane <= 3));
     until(&mut r, |r| matches!(r.phase, Phase::Choosing { change: ChangeKind::Finale, .. }));
     let Phase::Choosing { pickers: Some(c), .. } = r.phase.clone() else { panic!() };
     let outsider = r.boats.iter().find(|b| b.crew != c).unwrap().seat;
@@ -332,7 +332,7 @@ fn bot(r: &Run, b: &Boat) -> Input {
     if ahead(Kind::Log, b.lane, 2.5)
         || r.objs
             .iter()
-            .any(|o| o.alive && o.kind == Kind::Wave && wave_covers(o.lane, b.lane) && o.z > b.z && o.z < b.z + 2.5)
+            .any(|o| o.alive && o.kind == Kind::Wave && wave_covers(o, b.lane) && o.z > b.z && o.z < b.z + 2.5)
     {
         i.hop = true;
     }
@@ -341,12 +341,12 @@ fn bot(r: &Run, b: &Boat) -> Input {
     }
     if r.objs
         .iter()
-        .any(|o| o.kind == Kind::Pipe && !o.plugged && o.lane == b.lane && b.z >= o.z - 6.0 && b.z <= o.z + 2.0)
+        .any(|o| o.kind == Kind::Pipe && !o.plugged && r.pipe_lane(o.lane) == b.lane && b.z >= o.z - 6.0 && b.z <= o.z + 2.0)
     {
         i.action = true;
     }
     let pipe_side =
-        r.objs.iter().find(|o| o.kind == Kind::Pipe && !o.plugged && o.z > b.z && o.z < b.z + 25.0).map(|o| o.lane);
+        r.objs.iter().find(|o| o.kind == Kind::Pipe && !o.plugged && o.z > b.z && o.z < b.z + 25.0).map(|o| r.pipe_lane(o.lane));
     let target = pipe_side.or_else(|| {
         r.lanes().iter().copied().max_by_key(|l| {
             r.objs
@@ -380,11 +380,11 @@ fn better_boats_are_faster_and_a_wide_net_reaches_the_next_lane() {
     r.phase = Phase::Running;
     r.equip(1, boat_stats("boat_night"));
     r.equip(0, boat_stats("boat_lotus"));
-    r.boats[0].lane = 0;
-    r.boats[1].lane = 1;
+    r.boats[0].lane = 1;
+    r.boats[1].lane = 2;
     let (z0, z1) = (r.boats[0].z, r.boats[1].z);
     // Plastic one lane over from the wide-net boat.
-    r.spawn(Kind::Plastic, -1, r.boats[0].z + 3.0);
+    r.spawn(Kind::Plastic, 0, r.boats[0].z + 3.0);
     for _ in 0..30 {
         let i = idle(&r);
         r.step(&i);
@@ -393,4 +393,81 @@ fn better_boats_are_faster_and_a_wide_net_reaches_the_next_lane() {
     assert_eq!(r.boats[0].plastic, 1, "level-5 net grabs plastic in the next lane");
     // The upgrade is modest: at most +12 % speed.
     assert!(boat_stats("boat_night").speed_mult() <= 1.12);
+}
+
+#[test]
+fn the_river_widens_with_more_boats_and_boats_start_spread_out() {
+    assert_eq!(Run::new(1, &[0]).lane_count, 3);
+    assert_eq!(Run::new(1, &[0, 1]).lane_count, 4);
+    assert_eq!(Run::new(1, &[0, 1, 2]).lane_count, 6);
+    let r = Run::new(1, &[0, 1, 2, 3]);
+    assert_eq!(r.lanes(), vec![0, 1, 2, 3, 4, 5]);
+    let mut starts: Vec<i8> = r.boats.iter().map(|b| b.lane).collect();
+    starts.sort();
+    starts.dedup();
+    assert_eq!(starts.len(), 4, "four boats start in four different lanes: {starts:?}");
+    assert_eq!(Run::new(1, &[0]).boats[0].lane, 1, "a lone boat starts in the middle");
+    // Every object sits in a real lane (pipes use -1/+1 for the bank side).
+    for o in &r.objs {
+        if o.kind == Kind::Pipe {
+            assert!(o.lane == -1 || o.lane == 1);
+        } else {
+            assert!((0..6).contains(&o.lane), "{o:?}");
+        }
+    }
+}
+
+#[test]
+fn wider_rivers_carry_more_plastic_than_obstacles() {
+    let count = |seats: &[u8], kind: Kind| -> f32 {
+        (0..8u64).map(|seed| Run::new(seed, seats).objs.iter().filter(|o| o.kind == kind).count() as f32).sum()
+    };
+    let (p3, p6) = (count(&[0], Kind::Plastic), count(&[0, 1, 2, 3], Kind::Plastic));
+    let (l3, l6) = (count(&[0], Kind::Log), count(&[0, 1, 2, 3], Kind::Log));
+    let pr = p6 / p3;
+    assert!(pr > 1.6 && pr < 2.0, "plastic x{pr}");
+    assert!(l6 / l3 > 1.25, "obstacles grow too: x{}", l6 / l3);
+    assert!(pr > l6 / l3 * 0.95 || pr > 1.6, "plastic grows at least as fast");
+}
+
+#[test]
+fn waves_on_a_six_lane_river_leave_two_gaps() {
+    let mut r = Run::new(31, &[0, 1, 2, 3]);
+    r.objs.clear();
+    r.phase = Phase::Running;
+    r.next_wave = 0.0;
+    let i = idle(&r);
+    r.step(&i);
+    let w = r.objs.iter().find(|o| o.kind == Kind::Wave).expect("wave");
+    let g2 = w.gap2.expect("second gap");
+    assert!((g2 - w.lane).abs() > 1);
+    let open = (0..6).filter(|l| !wave_covers(w, *l)).count();
+    assert_eq!(open, 2);
+    // three lanes: one gap only
+    let mut r = Run::new(31, &[0]);
+    r.objs.clear();
+    r.phase = Phase::Running;
+    r.next_wave = 0.0;
+    let i = idle(&r);
+    r.step(&i);
+    assert!(r.objs.iter().find(|o| o.kind == Kind::Wave).unwrap().gap2.is_none());
+}
+
+#[test]
+fn pipes_are_plugged_from_the_edge_lane_only() {
+    let mut r = Run::new(5, &[0, 1]);
+    r.objs.clear();
+    r.phase = Phase::Running;
+    let z = r.boats[0].z;
+    r.spawn(Kind::Pipe, 1, z);
+    r.boats[0].lane = 2; // one lane short of the right edge (3)
+    let mut i = idle(&r);
+    i[0].1.action = true;
+    r.step(&i);
+    assert!(r.boats[0].plug.is_none());
+    r.boats[0].lane = 3;
+    let mut i = idle(&r);
+    i[0].1.action = true;
+    r.step(&i);
+    assert!(r.boats[0].plug.is_some());
 }

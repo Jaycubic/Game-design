@@ -1,6 +1,6 @@
 # Clearwater Run — depth and replay (design, round 2)
 
-Status: **approved** 2026-11-14 (with the guided tutorial added in §3.1) · step 1 built
+Status: **approved** 2026-11-14 (with the guided tutorial added in §3.1) · steps 1–2 built
 
 ## Why
 
@@ -55,8 +55,8 @@ Hit-stop and shake are visual only; the server's simulation never pauses. A **"R
 - **Dry Season** removes a third of the lanes (6 → 4, 4 → 3, 3 → 2) instead of exactly one.
 - **Debris waves** leave one gap lane per 3 lanes, so 6 lanes have 2 gaps.
 - **Starting lanes** are spread across the river.
-- **Camera:** it frames about 4 lanes around your own boat. On a phone, the other lanes are still visible at the
-  edges.
+- **Camera:** the chase camera keeps following your boat; at the current field of view the whole 6-lane river
+  stays in view, so no extra zoom was needed (builder's call after a visual check).
 - **Code:** lanes become a simple count (`lanes: u8`) instead of the fixed −1 / 0 / +1.
 
 ## 3. Signals people understand

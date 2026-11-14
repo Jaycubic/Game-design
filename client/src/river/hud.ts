@@ -93,8 +93,10 @@ export class RunHud {
     let prompt = "";
     if (me && pipe && !me.plugging && (s.phase.phase === "running" || s.phase.phase === "warning")) {
       const side = pipe.lane < 0 ? "LEFT" : "RIGHT";
+      // Pipes are plugged from the outermost open lane on their bank.
+      const edge = pipe.lane < 0 ? s.lanes[0] : s.lanes[s.lanes.length - 1];
       const act = isTouch() ? "tap ✂" : "press ▼";
-      prompt = me.lane === pipe.lane ? (pipe.z - me.z < 7 ? `🔧 ${isTouch() ? "Tap ✂" : "Press ▼"} now to plug the pipe!` : `🔧 Pipe ahead on the ${side} — get ready to ${act}`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and ${act}`;
+      prompt = me.lane === edge ? (pipe.z - me.z < 7 ? `🔧 ${isTouch() ? "Tap ✂" : "Press ▼"} now to plug the pipe!` : `🔧 Pipe ahead on the ${side} — get ready to ${act}`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and ${act}`;
     }
     if (this.promptEl.textContent !== prompt) {
       this.promptEl.textContent = prompt;

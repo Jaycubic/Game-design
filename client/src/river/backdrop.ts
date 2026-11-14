@@ -23,7 +23,7 @@ export class MenuBackdrop {
     for (let k = 0; k < 30; k++) {
       const z = start + k * 9;
       const id = Math.floor(z / 9);
-      const lane = ((id * 7) % 3) - 1;
+      const lane = (id * 7) % 3;
       const kind = id % 11 === 0 ? "weed" : id % 17 === 0 ? "log" : "plastic";
       out.push({ id, kind, lane, z: z + 20, alive: true, plugged: false });
     }
@@ -46,8 +46,8 @@ export class MenuBackdrop {
       boosting: false,
     }));
     const me = { ...poses[0], x: poses[0].x * 0.4 };
-    this.scene.frame(dt, poses, me, false);
-    this.scene.renderObjects(this.litter(), false);
+    this.scene.frame(dt, poses, me, 3);
+    this.scene.renderObjects(this.litter(), [0, 1, 2]);
     this.scene.scene.render();
   }
 

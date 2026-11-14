@@ -109,11 +109,11 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 |---|---|
 | Timing | `tick`, `duration`, `tutorial`, `t` |
 | `phase` | One of `countdown`, `running`, `warning`, `choosing`, `reveal` or `finished`, plus its `left` and the details of the change |
-| River | `health`, `choked`, `lanes` |
+| River | `health`, `choked`, `lanes` (open lanes, numbered from 0 on the left), `lane_count` (3, 4 or 6) |
 | Rule changes | `twist`, `finale`, `finale_crew`, `changes`, `votes: [[seat, option]]` |
 | `boats` | Per boat: `seat`, `crew`, `lane`, `z`, `speed`, `hop`, `capsize`, `immune` (protection left after a capsize), `slow`, `boost`, `boosting`, `plastic` and `plugging` |
 | `crews` | `[[id, score, plastic, pipes, banks]]` |
-| `objs` | Only the stretch of river near the boats |
+| `objs` | Only the stretch of river near the boats. Each has `id`, `kind`, `lane` (for pipes: the bank side, -1 or +1), `z`, `alive`, `plugged`, and for waves on a 6-lane river `gap2`, the second gap lane |
 | `plugs` | Only gate codes this viewer is involved in, each with `code`, `clear`, `entered` and `left`. `clear` is true only for crewmates, or briefly for a lone boat. |
 | `results` | `{scores, winner, health, choked, revived}` once the run is finished |
 

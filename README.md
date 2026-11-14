@@ -25,7 +25,7 @@ The game uses no real place names; the real-world link belongs in the presentati
 | Time | What happens |
 |---|---|
 | 0:00 | 3-second countdown, then the boats move forward on their own. |
-| 0:00–1:03 | Steer between 3 lanes, collect plastic, hop logs, cut weed, plug pipes. A debris wave every 30 s. |
+| 0:00–1:03 | Steer between 3–6 lanes (wider with more boats), collect plastic, hop logs, cut weed, plug pipes. A debris wave every 30 s. |
 | ≈1:03 | **Rule change 1 – Twist:** everyone votes for one of three river modifiers (15 s). |
 | ≈2:20 | **Rule change 2 – Finale:** the trailing crew picks one of two options (10 s). |
 | 3:00 | Results: crew scores, River Health, Seeds earned. |

@@ -44,7 +44,7 @@ places; the real-world case is shown in the presentation.
 - **Long term:** earn Seeds to unlock and upgrade boats; complete River Road milestones.
 
 ### 3.3 Procedures
-Steer between three lanes, hop, press one context action (cut weed or start plugging), type gate codes, send signal
+Steer between lanes (3, 4 or 6, by boat count), hop, press one context action (cut weed or start plugging), type gate codes, send signal
 glyphs, and vote. Plastic is collected by contact.
 
 ### 3.4 Rules
@@ -64,7 +64,10 @@ two player-chosen rule changes alter the river.
 - There is no violence and no attacks. Running into the boat ahead only slows you for a moment.
 
 ### 3.7 Boundaries
-One river course, generated from a seed, three lanes wide (two under Dry Season), 3 minutes long.
+One river course, generated from a seed, 3 minutes long. Its width depends on the boats in the run: 1 boat → 3
+lanes, 2 → 4, 3–4 → 6. Wider rivers spawn plastic ×1.3 / ×1.8 and obstacles ×1.15 / ×1.4, so plastic grows
+faster than danger and there is enough to go round. Dry Season closes a third of the lanes on the right. Debris
+waves leave one gap per 3 lanes. Pipes are plugged from the outermost open lane on their bank.
 
 ### 3.8 Outcome
 - A results screen shows crew scores, final River Health, whether the river was revived or choked, and the Seeds

@@ -12,6 +12,8 @@ export interface RunObj {
   z: number;
   alive: boolean;
   plugged: boolean;
+  /** Waves on a wide river: a second gap lane. */
+  gap2?: number;
 }
 
 export interface RunBoat {
@@ -68,7 +70,10 @@ export interface Snapshot {
   finale_crew: number | null;
   changes: number;
   votes: [number, number][];
+  /** Open lanes (0 = leftmost). */
   lanes: number[];
+  /** Lanes in the full-width river: 3, 4 or 6. */
+  lane_count: number;
   boats: RunBoat[];
   /** [crew id, score, plastic, pipes, banks] */
   crews: [number, number, number, number, number][];
@@ -101,7 +106,7 @@ export const GLYPH_NAMES = ["leaf", "drop", "fish", "bridge", "arrow", "star"];
 
 export const TWIST_INFO: Record<Twist, { icon: string; name: string; line: string }> = {
   monsoon_surge: { icon: "🌧️", name: "Monsoon Surge", line: "Debris waves every 15 s — but twice the plastic to collect." },
-  dry_season: { icon: "☀️", name: "Dry Season", line: "The river shrinks to two lanes and pipes pour twice as fast." },
+  dry_season: { icon: "☀️", name: "Dry Season", line: "The river loses a third of its lanes and pipes pour twice as fast." },
   volunteer_day: { icon: "🙌", name: "Volunteer Day", line: "Plastic counts double — but weed mats keep spreading." },
 };
 export const TWIST_ORDER: Twist[] = ["monsoon_surge", "dry_season", "volunteer_day"];

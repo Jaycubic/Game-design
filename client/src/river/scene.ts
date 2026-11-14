@@ -42,7 +42,10 @@ import {
 } from "./props";
 import { LANE_W, SEAT_COLOURS, type RunObj } from "./types";
 
-export const HALF = LANE_W * 1.5 + 1.0; // water edge (x)
+/** Water edge (x) for a river of `lanes` lanes. */
+const halfFor = (lanes: number) => (LANE_W * lanes) / 2 + 1.0;
+const HALF3 = halfFor(3);
+const HALF_MAX = halfFor(6);
 const CHUNK = 40;
 const AHEAD = 9;
 
@@ -156,13 +159,13 @@ export class RiverScene {
     this.bankMat.backFaceCulling = false;
 
     // Water: one plane that follows the camera; colour tracks River Health.
-    this.water = MeshBuilder.CreateGround("water", { width: HALF * 2 + 2, height: 420, subdivisions: 1 }, scene);
+    this.water = MeshBuilder.CreateGround("water", { width: HALF_MAX * 2 + 2, height: 420, subdivisions: 1 }, scene);
     this.waterMat = new StandardMaterial("waterMat", scene);
     this.waterMat.specularColor = new Color3(0.9, 0.95, 1);
     this.waterMat.specularPower = 80;
     this.waterMat.alpha = 0.92;
     this.waterTex = waterNormals(scene);
-    this.waterTex.uScale = (HALF * 2 + 2) / 6;
+    this.waterTex.uScale = (HALF_MAX * 2 + 2) / 6;
     this.waterTex.vScale = 420 / 6;
     this.waterMat.bumpTexture = this.waterTex;
     this.water.material = this.waterMat;
@@ -220,7 +223,7 @@ export class RiverScene {
       fig: new Batch(withMat(flora.fig.clone("fig"))),
       rock: new Batch(withMat(flora.rock.clone("rk"))),
       grass: new Batch(withMat(flora.grass.clone("gr"))),
-      footbridge: new Batch(withMat(bridgeMesh(scene, HALF * 2 + 4))),
+      footbridge: new Batch(withMat(bridgeMesh(scene, HALF3 * 2 + 4))),
     };
     for (const m of Object.values(flora)) m.dispose();
 
@@ -263,8 +266,25 @@ export class RiverScene {
     dome.isPickable = false;
   }
 
+  private laneCount = 3;
+  private half = HALF3;
+
+  /** World x of a lane's centre (lanes are numbered from 0 on the left). */
   laneX(lane: number) {
-    return lane * LANE_W;
+    return (lane - (this.laneCount - 1) / 2) * LANE_W;
+  }
+
+  /** Set the river width (3, 4 or 6 lanes): water, banks and bridges follow. */
+  setLanes(count: number) {
+    if (count === this.laneCount || count < 1) return;
+    this.laneCount = count;
+    this.half = halfFor(count);
+    const w = this.half * 2 + 2;
+    this.water.scaling.x = w / (HALF_MAX * 2 + 2);
+    this.waterTex.uScale = w / 6;
+    for (const m of this.chunkMeshes.values()) m.dispose();
+    this.chunkMeshes.clear();
+    this.chunkKey = "";
   }
 
   /** River Health 0..100 → water colour and murk. */
@@ -280,9 +300,9 @@ export class RiverScene {
   }
 
   /** Rebuild bank chunks around the camera when it moves into a new chunk. */
-  private banks(camZ: number, dry: boolean) {
+  private banks(camZ: number, open: number) {
     const first = Math.floor((camZ - 30) / CHUNK);
-    const key = `${first}:${dry}`;
+    const key = `${first}:${open}`;
     if (key === this.chunkKey) return;
     this.chunkKey = key;
     const wanted = new Set<number>();
@@ -295,7 +315,7 @@ export class RiverScene {
     }
     for (const i of wanted) if (!this.chunkMeshes.has(i)) this.chunkMeshes.set(i, this.bankChunk(i));
     for (const b of Object.values(this.bankBatches)) b.begin();
-    for (const i of wanted) this.decorate(i, dry);
+    for (const i of wanted) this.decorate(i, open);
     for (const b of Object.values(this.bankBatches)) b.commit();
   }
 
@@ -312,7 +332,7 @@ export class RiverScene {
         for (let s = 0; s <= 8; s++) {
           const z = z0 + (s / 8) * CHUNK;
           const n = fbm(z * 0.05 + side * 7, k * 1.3);
-          row.push(new Vector3(side * (HALF + xs[k]), ys[k] + (k > 1 ? (n - 0.5) * 0.4 : 0), z));
+          row.push(new Vector3(side * (this.half + xs[k]), ys[k] + (k > 1 ? (n - 0.5) * 0.4 : 0), z));
           const base = k <= 1 ? new Color3(0.55, 0.5, 0.42) : k === 2 ? new Color3(0.62, 0.56, 0.44) : new Color3(0.38, 0.5, 0.26);
           const c = base.scale(0.85 + n * 0.3);
           colors.push(new Color4(c.r, c.g, c.b, 1));
@@ -336,10 +356,11 @@ export class RiverScene {
     return m;
   }
 
-  private decorate(i: number, dry: boolean) {
+  private decorate(i: number, open: number) {
     const r = seeded(i * 7919 + 13);
     const z0 = i * CHUNK;
     const b = this.bankBatches;
+    const HALF = this.half;
     for (const side of [-1, 1]) {
       const edge = side * (HALF + 0.9);
       // Riverside stairs and lamps
@@ -365,20 +386,21 @@ export class RiverScene {
       for (let k = 0; k < 4; k++) b.grass.add(side * (HALF + 2 + r() * 8), 0.62, z0 + r() * CHUNK, r() * 6, 2);
       if (r() > 0.7) b.rock.add(side * (HALF + 0.7), 0.1, z0 + r() * CHUNK, r() * 6, 2 + r());
     }
-    if (dry) {
-      // Dry season: the right lane becomes a mud flat with rocks
-      for (let k = 0; k < 6; k++) b.rock.add(LANE_W + (r() - 0.5) * 1.6, -0.15, z0 + r() * CHUNK, r() * 6, 2.5 + r() * 2);
+    // Dry season: the closed lanes on the right become mud flats with rocks.
+    for (let lane = open; lane < this.laneCount; lane++) {
+      for (let k = 0; k < 6; k++) b.rock.add(this.laneX(lane) + (r() - 0.5) * 1.6, -0.15, z0 + r() * CHUNK, r() * 6, 2.5 + r() * 2);
     }
-    if (i % 6 === 3) b.footbridge.add(0, 0, z0 + 20);
+    if (i % 6 === 3) b.footbridge.add(0, 0, z0 + 20, 0, 1, 0, 0, (HALF * 2 + 4) / (HALF3 * 2 + 4), 1);
   }
 
   /** Per-frame render of world objects (positions come from the server snapshot). */
-  renderObjects(objs: RunObj[], dry: boolean, me: Viewer | null = null) {
+  renderObjects(objs: RunObj[], open: number[], me: Viewer | null = null) {
+    const HALF = this.half;
     const t = this.time;
     for (const bt of Object.values(this.objBatches)) bt.begin();
     const ob = this.objBatches;
     for (const o of objs) {
-      if (dry && o.lane === 1 && o.kind !== "pipe") continue;
+      if (o.kind !== "pipe" && o.kind !== "wave" && !open.includes(o.lane)) continue;
       const x = this.laneX(o.lane);
       const bob = Math.sin(t * 2.2 + o.id) * 0.06;
       switch (o.kind) {
@@ -405,8 +427,8 @@ export class RiverScene {
         case "wave":
           if (!o.alive) break;
           // The gap lane glows so it can be found at a glance.
-          ob.gap.add(this.laneX(o.lane), -0.02, o.z, 0, 1, 0, 0, 1.1 + 0.1 * Math.sin(t * 6), 3.5);
-          for (const lane of dry ? [-1, 0] : [-1, 0, 1]) if (lane !== o.lane) ob.debris.add(this.laneX(lane), 0.05 + bob, o.z, 0, 1);
+          for (const g of [o.lane, o.gap2]) if (g !== undefined && g !== null) ob.gap.add(this.laneX(g), -0.02, o.z, 0, 1, 0, 0, 1.1 + 0.1 * Math.sin(t * 6), 3.5);
+          for (const lane of open) if (lane !== o.lane && lane !== o.gap2) ob.debris.add(this.laneX(lane), 0.05 + bob, o.z, 0, 1);
           break;
         case "pipe": {
           const px = o.lane * (HALF + 0.9);
@@ -463,7 +485,7 @@ export class RiverScene {
   }
 
   /** Place boats, move camera and water. `me` is the local player's pose. */
-  frame(dt: number, poses: BoatPose[], me: BoatPose | null, dry: boolean) {
+  frame(dt: number, poses: BoatPose[], me: BoatPose | null, open: number) {
     this.time += dt;
     const seen = new Set<number>();
     for (const p of poses) {
@@ -497,7 +519,7 @@ export class RiverScene {
       this.water.position.set(0, -0.05, Math.floor(focus.z / 6) * 6 + 170);
       this.waterTex.vOffset -= dt * 0.12;
       this.waterTex.uOffset = Math.sin(this.time * 0.3) * 0.02;
-      this.banks(focus.z, dry);
+      this.banks(focus.z, open);
       this.wake.emitter = new Vector3(focus.x, 0.05, focus.z - 1.1);
       this.wake.emitRate = focus.boosting ? 160 : 55;
     }

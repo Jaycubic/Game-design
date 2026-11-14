@@ -9,7 +9,7 @@ import { GamepadInput, intentForKey, type Intent } from "../input/controls";
 import { TouchControls, isTouch } from "../input/touch";
 import { sound } from "../audio/sound";
 import { feel } from "../ui/feel";
-import { LANE_W, type RunEvent, type RunResults, type Snapshot } from "./types";
+import type { RunEvent, RunResults, Snapshot } from "./types";
 
 export interface RunSender {
   input(i: { steer?: number; hop?: boolean; action?: boolean; glyph?: number }): void;
@@ -120,8 +120,9 @@ export class RunMode {
     this.snap = s;
     this.snapAt = performance.now();
     this.scene.setHealth(s.health);
+    this.scene.setLanes(s.lane_count ?? 3);
     this.beats(s);
-    if (first) for (const b of s.boats) this.smooth.set(b.seat, { x: b.lane * LANE_W, z: b.z });
+    if (first) for (const b of s.boats) this.smooth.set(b.seat, { x: this.scene.laneX(b.lane), z: b.z });
     const me = s.boats.find((b) => b.seat === this.mySeat);
     if (me && this.predictedLane !== null && (me.lane === this.predictedLane || performance.now() > this.predictedUntil)) this.predictedLane = null;
     if (s.tutorial && !this.coach) this.coach = new Coach(document.getElementById("run-ui")!, () => this.onLeave());
@@ -243,7 +244,7 @@ export class RunMode {
     let me: BoatPose | null = null;
     for (const b of s.boats) {
       const lane = b.seat === this.mySeat && this.predictedLane !== null ? this.predictedLane : b.lane;
-      const targetX = lane * LANE_W;
+      const targetX = this.scene.laneX(lane);
       const targetZ = b.z + b.speed * since;
       const sm = this.smooth.get(b.seat) ?? { x: targetX, z: targetZ };
       sm.x += (targetX - sm.x) * Math.min(1, dt * 12);
@@ -260,11 +261,10 @@ export class RunMode {
       poses.push(pose);
       if (b.seat === this.mySeat) me = pose;
     }
-    const dry = s.twist === "dry_season";
-    this.scene.frame(dt, poses, me, dry);
+    this.scene.frame(dt, poses, me, s.lanes.length);
     const mine = s.boats.find((b) => b.seat === this.mySeat);
     const viewer = mine && me ? { lane: this.predictedLane ?? mine.lane, z: me.z, speed: mine.speed || 14 } : null;
-    this.scene.renderObjects(s.objs, dry, viewer);
+    this.scene.renderObjects(s.objs, s.lanes, viewer);
     this.scene.scene.render();
     for (const p of poses) {
       const scr = this.scene.worldToScreen(new Vector3(p.x, p.y + 1.6, p.z));

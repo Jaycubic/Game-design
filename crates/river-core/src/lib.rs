@@ -1,6 +1,7 @@
 //! River run simulation — deterministic, fixed-step, no I/O.
 //!
-//! Boats move forward on their own along a three-lane river. Players steer,
+//! Boats move forward on their own along a river of 3, 4 or 6 lanes (wider
+//! with more boats, lanes numbered from 0 on the left). Players steer,
 //! hop and press one context action. Plastic is collected on contact, weed mats
 //! are cut, logs and debris waves must be hopped, and sewage pipes on the banks
 //! drain the shared River Health until a crew plugs them with a gate code that
@@ -47,6 +48,28 @@ pub const REVIVED_BONUS: i32 = 20;
 
 pub const GLYPHS: u8 = 6; // leaf, drop, fish, bridge, arrow, star
 
+/// Lanes for a number of boats: more boats get a wider river.
+pub fn lane_count_for(boats: usize) -> u8 {
+    match boats {
+        0 | 1 => 3,
+        2 => 4,
+        _ => 6,
+    }
+}
+
+/// (plastic, obstacle) spawn multipliers for a river of `lanes` lanes.
+pub fn spawn_mults(lanes: u8) -> (f32, f32) {
+    match lanes {
+        0..=3 => (1.0, 1.0),
+        4 | 5 => (1.3, 1.15),
+        _ => (1.8, 1.4),
+    }
+}
+
+fn three() -> u8 {
+    3
+}
+
 // ── deterministic RNG ────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -84,7 +107,8 @@ pub enum Kind {
     Weed,
     Log,
     Wave,
-    /// A sewage pipe on the bank beside lane `lane` (always -1 or +1).
+    /// A sewage pipe on a bank: `lane` is the side, -1 (left) or +1 (right).
+    /// It is plugged from the outermost open lane on that side.
     Pipe,
 }
 
@@ -98,6 +122,9 @@ pub struct Obj {
     /// Pipes: plugged.
     #[serde(default)]
     pub plugged: bool,
+    /// Debris waves on wide rivers leave a second gap lane.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gap2: Option<i8>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -105,7 +132,7 @@ pub struct Obj {
 pub enum Twist {
     /// Debris waves every 15 s, but extra plastic appears.
     MonsoonSurge,
-    /// The river narrows to two lanes and pipes pour twice as fast.
+    /// The river loses a third of its lanes and pipes pour twice as fast.
     DrySeason,
     /// Plastic counts double, but weed mats spread.
     VolunteerDay,
@@ -355,6 +382,9 @@ pub struct Run {
     /// Scripted 60-second tutorial course: no rule changes, no debris waves.
     #[serde(default)]
     pub tutorial: bool,
+    /// Lanes in the full-width river (3, 4 or 6).
+    #[serde(default = "three")]
+    pub lane_count: u8,
 }
 
 pub const TUTORIAL_SECONDS: f32 = 60.0;
@@ -363,13 +393,18 @@ impl Run {
     /// Seats are assigned to crews alternately (0,1,0,1). Two players = one crew.
     pub fn new(seed: u64, seats: &[u8]) -> Run {
         let two_crews = seats.len() >= 3;
+        let lane_count = lane_count_for(seats.len());
+        let k = seats.len().max(1) as f32;
+        // Spread the starting boats across the river.
+        let start =
+            |i: usize| (((i as f32 + 0.5) * lane_count as f32 / k - 0.5).round() as i8).clamp(0, lane_count as i8 - 1);
         let boats: Vec<Boat> = seats
             .iter()
             .enumerate()
             .map(|(i, &seat)| Boat {
                 seat,
                 crew: if two_crews { (i % 2) as u8 } else { 0 },
-                lane: [0i8, -1, 1, 0][i % 4],
+                lane: start(i),
                 z: -(i as f32) * 2.5,
                 hop: 0.0,
                 capsize: 0.0,
@@ -406,6 +441,7 @@ impl Run {
             events: Vec::new(),
             results: None,
             tutorial: false,
+            lane_count,
         };
         run.generate_course();
         run
@@ -421,21 +457,21 @@ impl Run {
         run.next_wave = f32::MAX;
         // 1–2: steer and collect (plastic on both side lanes)
         for k in 0..6 {
-            run.spawn(Kind::Plastic, if k < 3 { -1 } else { 1 }, 40.0 + k as f32 * 4.0);
+            run.spawn(Kind::Plastic, if k < 3 { 0 } else { 2 }, 40.0 + k as f32 * 4.0);
         }
         for k in 0..5 {
-            run.spawn(Kind::Plastic, 0, 110.0 + k as f32 * 3.0);
+            run.spawn(Kind::Plastic, 1, 110.0 + k as f32 * 3.0);
         }
         // 3: hop — logs across every lane, so hopping is the only way through
         for (i, z) in [190.0, 250.0, 310.0].into_iter().enumerate() {
-            for lane in [-1, 0, 1] {
+            for lane in 0..3 {
                 run.spawn(Kind::Log, lane, z);
             }
-            run.spawn(Kind::Plastic, (i as i8) - 1, z + 8.0);
+            run.spawn(Kind::Plastic, i as i8, z + 8.0);
         }
         // 4: cut — weed mats in every lane
         for (i, z) in [380.0, 440.0].into_iter().enumerate() {
-            for lane in [-1, 0, 1] {
+            for lane in 0..3 {
                 run.spawn(Kind::Weed, lane, z);
                 run.spawn(Kind::Plastic, lane, z + 5.0 + i as f32);
             }
@@ -445,7 +481,7 @@ impl Run {
         run.spawn(Kind::Pipe, 1, 610.0);
         // then a relaxed run-out with plastic to finish
         for k in 0..20 {
-            run.spawn(Kind::Plastic, [-1, 0, 1][k % 3], 660.0 + k as f32 * 7.0);
+            run.spawn(Kind::Plastic, (k % 3) as i8, 660.0 + k as f32 * 7.0);
         }
         run
     }
@@ -458,27 +494,42 @@ impl Run {
         }
     }
 
-    pub fn lanes(&self) -> &'static [i8] {
-        if self.twist == Some(Twist::DrySeason) {
-            &[-1, 0]
+    /// The open lanes, 0 = leftmost. Dry Season closes a third of them on the right.
+    pub fn lanes(&self) -> Vec<i8> {
+        let n = self.lane_count;
+        let open = if self.twist == Some(Twist::DrySeason) { n - n / 3 } else { n };
+        (0..open as i8).collect()
+    }
+
+    /// The lane a boat must be in to plug a pipe on `side` (-1 left, +1 right).
+    pub fn pipe_lane(&self, side: i8) -> i8 {
+        let lanes = self.lanes();
+        if side < 0 {
+            lanes[0]
         } else {
-            &[-1, 0, 1]
+            *lanes.last().unwrap()
         }
     }
 
     fn spawn(&mut self, kind: Kind, lane: i8, z: f32) -> u32 {
         let id = self.next_id;
         self.next_id += 1;
-        self.objs.push(Obj { id, kind, lane, z, alive: true, plugged: false });
+        self.objs.push(Obj { id, kind, lane, z, alive: true, plugged: false, gap2: None });
         id
     }
 
     /// Hand-shaped random patterns along the whole course.
+    /// Wider rivers get denser rows (the obstacle multiplier) plus extra loose
+    /// plastic (to reach the plastic multiplier).
     fn generate_course(&mut self) {
+        let n = self.lane_count as i8;
+        let all: Vec<i8> = (0..n).collect();
+        let (plastic_mult, obstacle_mult) = spawn_mults(self.lane_count);
+        // A row holds about 2.6 plastic on average; top it up so plastic grows faster than obstacles.
+        let extra_plastic = (plastic_mult / obstacle_mult - 1.0) * 2.6;
         let mut z = 45.0;
         let mut next_pipe = 120.0;
         while z < COURSE_LEN {
-            let all = [-1i8, 0, 1];
             match self.rng.range(10) {
                 0..=3 => {
                     // a line of plastic to follow
@@ -496,15 +547,16 @@ impl Run {
                     }
                 }
                 6..=7 => {
-                    // logs across one or two lanes, plastic reward in the gap
-                    let gap = self.rng.lane(&all);
-                    let two = self.rng.range(2) == 0;
-                    for l in all {
-                        if l != gap && (two || l == -gap || gap == 0 && l == 1) {
-                            self.spawn(Kind::Log, l, z);
-                        }
+                    // a run of logs across 1-2 lanes (up to 3 on a wide river), plastic beside it
+                    let extra = if n >= 6 { self.rng.range(2) as i8 } else { 0 };
+                    let c = (1 + self.rng.range(2) as i8 + extra).min(n - 1);
+                    let start = self.rng.range((n - c + 1) as u32) as i8;
+                    for l in start..start + c {
+                        self.spawn(Kind::Log, l, z);
                     }
-                    self.spawn(Kind::Plastic, gap, z);
+                    let left = start > 0 && (start + c >= n || self.rng.range(2) == 0);
+                    let reward = if left { start - 1 } else { start + c };
+                    self.spawn(Kind::Plastic, reward, z);
                 }
                 _ => {
                     // scattered plastic
@@ -515,12 +567,20 @@ impl Run {
                     }
                 }
             }
+            if extra_plastic > 0.0 {
+                let count = extra_plastic.floor() as u32 + u32::from(self.rng.unit() < extra_plastic.fract());
+                for _ in 0..count {
+                    let lane = self.rng.lane(&all);
+                    let dz = 4.0 + self.rng.unit() * 8.0;
+                    self.spawn(Kind::Plastic, lane, z + dz);
+                }
+            }
             if z >= next_pipe {
                 let side = if self.rng.range(2) == 0 { -1 } else { 1 };
                 self.spawn(Kind::Pipe, side, z + 6.0);
                 next_pipe += 190.0 + self.rng.unit() * 60.0;
             }
-            z += 16.0 + self.rng.unit() * 10.0;
+            z += (16.0 + self.rng.unit() * 10.0) / obstacle_mult;
         }
     }
 
@@ -595,10 +655,9 @@ impl Run {
             self.next_wave = self.next_wave.min(self.t + 15.0);
         }
         if twist == Twist::DrySeason {
+            let max = *self.lanes().last().unwrap();
             for b in &mut self.boats {
-                if b.lane == 1 {
-                    b.lane = 0;
-                }
+                b.lane = b.lane.min(max);
             }
         }
         self.events.push(Event::RuleChanged { change: ChangeKind::Twist, choice: name_of(&twist) });
@@ -762,14 +821,18 @@ impl Run {
             self.events.push(Event::Cut { seat, id });
             return;
         }
-        // 2) start plugging a pipe beside this lane
-        if lane == 0 {
+        // 2) start plugging a pipe beside this lane (only from an edge lane)
+        let side = if lane == self.pipe_lane(-1) {
+            -1
+        } else if lane == self.pipe_lane(1) {
+            1
+        } else {
             return;
-        }
+        };
         let pipe = self
             .objs
             .iter()
-            .find(|o| o.kind == Kind::Pipe && !o.plugged && o.lane == lane && z >= o.z - 7.0 && z <= o.z + 3.0)
+            .find(|o| o.kind == Kind::Pipe && !o.plugged && o.lane == side && z >= o.z - 7.0 && z <= o.z + 3.0)
             .map(|o| o.id);
         if let Some(pipe) = pipe {
             let code = [
@@ -840,12 +903,12 @@ impl Run {
     }
 
     fn collide(&mut self) {
-        let dry = self.twist == Some(Twist::DrySeason);
+        let open = self.lanes();
         let plastic_value = if self.twist == Some(Twist::VolunteerDay) { 2 } else { 1 };
         let last = self.last_z();
         for oi in 0..self.objs.len() {
             let o = self.objs[oi].clone();
-            if !o.alive || o.kind == Kind::Pipe || (dry && o.lane == 1) {
+            if !o.alive || o.kind == Kind::Pipe || (o.kind != Kind::Wave && !open.contains(&o.lane)) {
                 continue;
             }
             for bi in 0..self.boats.len() {
@@ -858,7 +921,7 @@ impl Run {
                 } else if (o.z - b.z).abs() > HIT_WINDOW || (o.kind != Kind::Wave && o.lane != b.lane) {
                     continue;
                 }
-                if o.kind == Kind::Wave && !wave_covers(o.lane, b.lane) {
+                if o.kind == Kind::Wave && !wave_covers(&o, b.lane) {
                     continue;
                 }
                 let seat = b.seat;
@@ -938,8 +1001,16 @@ impl Run {
         // Debris waves.
         if self.t >= self.next_wave {
             let lanes = self.lanes();
-            let gap = self.rng.lane(lanes);
+            let gap = self.rng.lane(&lanes);
             let id = self.spawn(Kind::Wave, gap, leader + 70.0);
+            // One gap per 3 lanes: wide rivers get a second one, away from the first.
+            if lanes.len() >= 6 {
+                let others: Vec<i8> = lanes.iter().copied().filter(|l| (l - gap).abs() > 1).collect();
+                let g2 = self.rng.lane(&others);
+                if let Some(w) = self.objs.iter_mut().find(|o| o.id == id) {
+                    w.gap2 = Some(g2);
+                }
+            }
             self.events.push(Event::WaveIncoming { id });
             self.next_wave = self.t + if self.twist == Some(Twist::MonsoonSurge) { 15.0 } else { 30.0 };
         }
@@ -950,11 +1021,15 @@ impl Run {
             self.spawn_timer = 0.75;
             let lanes = self.lanes();
             if self.twist == Some(Twist::MonsoonSurge) {
-                let l = self.rng.lane(lanes);
-                self.spawn(Kind::Plastic, l, leader + 55.0);
+                let (pm, _) = spawn_mults(self.lane_count);
+                let count = 1 + u32::from(self.rng.unit() < pm - 1.0);
+                for _ in 0..count {
+                    let l = self.rng.lane(&lanes);
+                    self.spawn(Kind::Plastic, l, leader + 55.0);
+                }
             }
             if self.twist == Some(Twist::VolunteerDay) && self.rng.range(4) == 0 {
-                let l = self.rng.lane(lanes);
+                let l = self.rng.lane(&lanes);
                 self.spawn(Kind::Weed, l, leader + 60.0);
             }
             if self.second_wind_left > 0.0 {
@@ -1001,9 +1076,9 @@ impl Run {
     }
 }
 
-/// A wave blocks every lane except its gap lane.
-pub fn wave_covers(gap: i8, lane: i8) -> bool {
-    lane != gap
+/// A wave blocks every lane except its gap lane(s).
+pub fn wave_covers(wave: &Obj, lane: i8) -> bool {
+    lane != wave.lane && Some(lane) != wave.gap2
 }
 
 pub fn name_of<T: Serialize>(v: &T) -> String {
@@ -1054,6 +1129,8 @@ pub struct Snapshot {
     pub changes: u8,
     pub votes: Vec<(u8, u8)>,
     pub lanes: Vec<i8>,
+    /// Lanes in the full-width river (the open ones are `lanes`).
+    pub lane_count: u8,
     pub boats: Vec<BoatView>,
     pub crews: Vec<(u8, i32, u32, u32, u32)>,
     pub objs: Vec<Obj>,
@@ -1104,7 +1181,8 @@ impl Run {
             finale_crew: self.finale_crew,
             changes: self.changes,
             votes: self.votes.clone(),
-            lanes: self.lanes().to_vec(),
+            lanes: self.lanes(),
+            lane_count: self.lane_count,
             boats: self
                 .boats
                 .iter()
