@@ -58,6 +58,7 @@ fn boats_move_forward_on_their_own_after_countdown() {
 fn plastic_is_collected_on_contact_and_fills_boost() {
     let mut r = Run::new(7, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     r.boats[0].lane = 0;
     let z = r.boats[0].z + 3.0;
@@ -75,6 +76,7 @@ fn plastic_is_collected_on_contact_and_fills_boost() {
 fn logs_capsize_unless_hopped() {
     let mut r = Run::new(9, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     let z = r.boats[0].z + 4.0;
     r.spawn(Kind::Log, r.boats[0].lane, z);
@@ -86,6 +88,7 @@ fn logs_capsize_unless_hopped() {
 
     let mut r = Run::new(9, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     let z = r.boats[0].z + 4.0;
     r.spawn(Kind::Log, r.boats[0].lane, z);
@@ -103,6 +106,7 @@ fn logs_capsize_unless_hopped() {
 fn capsize_is_short_spills_plastic_and_protects_briefly() {
     let mut r = Run::new(9, &[0]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     r.boats[0].plastic = 5;
     r.crews[0].plastic = 5;
@@ -133,6 +137,7 @@ fn capsize_is_short_spills_plastic_and_protects_briefly() {
 fn capsize_with_no_plastic_spills_nothing() {
     let mut r = Run::new(9, &[0]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     let (lane, z) = (r.boats[0].lane, r.boats[0].z);
     r.spawn(Kind::Log, lane, z + 1.0);
@@ -146,6 +151,7 @@ fn capsize_with_no_plastic_spills_nothing() {
 fn weed_slows_unless_cut_and_cutting_greens_a_bank() {
     let mut r = Run::new(11, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     let z = r.boats[0].z + 3.0;
     r.spawn(Kind::Weed, r.boats[0].lane, z);
@@ -157,6 +163,7 @@ fn weed_slows_unless_cut_and_cutting_greens_a_bank() {
 
     let mut r = Run::new(11, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     let z = r.boats[0].z + 3.0;
     r.spawn(Kind::Weed, r.boats[0].lane, z);
@@ -171,6 +178,7 @@ fn weed_slows_unless_cut_and_cutting_greens_a_bank() {
 fn gate_code_is_clear_only_to_crewmates_and_plugging_heals() {
     let mut r = Run::new(13, &[0, 1, 2, 3]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     r.boats[0].lane = 5; // right edge of a 6-lane river
     let z = r.boats[0].z + 2.0;
@@ -203,6 +211,7 @@ fn gate_code_is_clear_only_to_crewmates_and_plugging_heals() {
 fn wrong_code_fails_and_glyphs_are_pings_otherwise() {
     let mut r = Run::new(17, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     r.boats[0].lane = 0; // left edge
     let z = r.boats[0].z;
@@ -229,6 +238,7 @@ fn wrong_code_fails_and_glyphs_are_pings_otherwise() {
 fn unplugged_pipes_drain_shared_health_and_choking_halves_scores() {
     let mut r = Run::new(19, &[0, 1, 2]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     for k in 0..20 {
         r.spawn(Kind::Pipe, if k % 2 == 0 { 1 } else { -1 }, -50.0 - k as f32);
@@ -377,6 +387,7 @@ fn better_boats_are_faster_and_a_wide_net_reaches_the_next_lane() {
     assert_eq!(boat_stats("boat_sun"), Stats::default());
     let mut r = Run::new(9, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     r.equip(1, boat_stats("boat_night"));
     r.equip(0, boat_stats("boat_lotus"));
@@ -420,7 +431,13 @@ fn the_river_widens_with_more_boats_and_boats_start_spread_out() {
 #[test]
 fn wider_rivers_carry_more_plastic_than_obstacles() {
     let count = |seats: &[u8], kind: Kind| -> f32 {
-        (0..8u64).map(|seed| Run::new(seed, seats).objs.iter().filter(|o| o.kind == kind).count() as f32).sum()
+        (0..8u64)
+            .map(|seed| {
+                let mut r = Run::new(seed, seats);
+                r.generate_to(COURSE_LEN);
+                r.objs.iter().filter(|o| o.kind == kind).count() as f32
+            })
+            .sum()
     };
     let (p3, p6) = (count(&[0], Kind::Plastic), count(&[0, 1, 2, 3], Kind::Plastic));
     let (l3, l6) = (count(&[0], Kind::Log), count(&[0, 1, 2, 3], Kind::Log));
@@ -434,6 +451,7 @@ fn wider_rivers_carry_more_plastic_than_obstacles() {
 fn waves_on_a_six_lane_river_leave_two_gaps() {
     let mut r = Run::new(31, &[0, 1, 2, 3]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     r.next_wave = 0.0;
     let i = idle(&r);
@@ -446,6 +464,7 @@ fn waves_on_a_six_lane_river_leave_two_gaps() {
     // three lanes: one gap only
     let mut r = Run::new(31, &[0]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     r.next_wave = 0.0;
     let i = idle(&r);
@@ -457,6 +476,7 @@ fn waves_on_a_six_lane_river_leave_two_gaps() {
 fn pipes_are_plugged_from_the_edge_lane_only() {
     let mut r = Run::new(5, &[0, 1]);
     r.objs.clear();
+    r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
     let z = r.boats[0].z;
     r.spawn(Kind::Pipe, 1, z);
@@ -470,4 +490,89 @@ fn pipes_are_plugged_from_the_edge_lane_only() {
     i[0].1.action = true;
     r.step(&i);
     assert!(r.boats[0].plug.is_some());
+}
+
+fn full_course(seed: u64, d: f32) -> Run {
+    let mut r = Run::with_difficulty(seed, &[0], d);
+    r.generate_to(COURSE_LEN);
+    r
+}
+
+#[test]
+fn harder_rivers_have_more_obstacles_and_less_plastic() {
+    let count = |d: f32, kind: Kind| -> usize {
+        (0..6u64).map(|seed| full_course(seed, d).objs.iter().filter(|o| o.kind == kind).count()).sum()
+    };
+    let (easy_logs, hard_logs) = (count(0.8, Kind::Log), count(1.2, Kind::Log));
+    let (easy_plastic, hard_plastic) = (count(0.8, Kind::Plastic), count(1.2, Kind::Plastic));
+    assert!(hard_logs as f32 > easy_logs as f32 * 1.3, "logs {easy_logs} -> {hard_logs}");
+    assert!((hard_plastic as f32) < easy_plastic as f32 * 0.8, "plastic {easy_plastic} -> {hard_plastic}");
+    // Same seed and difficulty: same river.
+    assert_eq!(full_course(4, 1.1).objs, full_course(4, 1.1).objs);
+    // Out-of-range difficulty is clamped.
+    assert_eq!(Run::with_difficulty(1, &[0], 3.0).difficulty, D_MAX);
+}
+
+#[test]
+fn the_course_is_built_ahead_of_the_boats() {
+    let mut r = Run::new(8, &[0]);
+    let first = r.objs.iter().map(|o| o.z).fold(0.0, f32::max);
+    assert!(first < GEN_AHEAD + 40.0, "only the first stretch exists at the start: {first}");
+    until(&mut r, |r| r.leader_z() > 600.0);
+    assert!(r.gen_z >= r.leader_z() + GEN_AHEAD - 1.0);
+}
+
+#[test]
+fn director_eases_off_for_a_struggling_solo_player_but_only_so_far() {
+    // An idle boat capsizes on every log: the river should get easier, by at most D_SWING.
+    let mut r = Run::with_difficulty(12, &[0], 1.0);
+    assert!(r.adaptive);
+    until(&mut r, |r| r.t > 60.0);
+    assert!(r.difficulty < 1.0, "eased: {}", r.difficulty);
+    assert!(r.difficulty >= 1.0 - D_SWING - 1e-4);
+}
+
+#[test]
+fn director_pushes_back_on_a_player_in_full_control() {
+    // A bot that nets most plastic and never capsizes should see the river get harder.
+    let mut r = Run::with_difficulty(14, &[0], 1.0);
+    r.phase = Phase::Running;
+    for _ in 0..(TICK_HZ as usize * 55) {
+        if !matches!(r.phase, Phase::Running) {
+            break;
+        }
+        let b = r.boats[0].clone();
+        let i = vec![(0, bot(&r, &b))];
+        r.step(&i);
+    }
+    assert!(r.difficulty > 1.0, "pushed back: {} (collected {}, missed {}, capsizes {})", r.difficulty, r.boats[0].collected, r.missed, r.boats[0].capsizes);
+    assert!(r.difficulty <= 1.0 + D_SWING + 1e-4);
+    assert!(r.boats[0].collected > 0);
+}
+
+#[test]
+fn director_never_adapts_a_crew_versus_crew_run() {
+    let mut r = Run::with_difficulty(16, &[0, 1, 2, 3], 1.1);
+    assert!(!r.adaptive);
+    until(&mut r, |r| r.t > 60.0);
+    assert_eq!(r.difficulty, 1.1);
+}
+
+#[test]
+fn performance_counters_track_each_boat() {
+    let mut r = Run::new(9, &[0]);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+    r.spawn(Kind::Plastic, lane, z + 2.0);
+    r.spawn(Kind::Log, lane, z + 10.0);
+    r.spawn(Kind::Plastic, (lane + 1) % 3, z + 3.0);
+    for _ in 0..40 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert_eq!(r.boats[0].collected, 1);
+    assert_eq!(r.boats[0].capsizes, 1);
+    assert!(r.missed >= 1);
 }

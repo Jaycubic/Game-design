@@ -2,6 +2,7 @@
 
 mod auth;
 mod config;
+mod director;
 mod error;
 mod http;
 mod hub;

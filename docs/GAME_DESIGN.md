@@ -97,6 +97,50 @@ The hub follows the mobile pattern of a big PLAY button, side tiles and a curren
 | River Road | Milestones for runs completed, unlocking two boats. |
 | Fair-play rules | No real money, no loot boxes or paid randomness, a 10-minute undo on purchases, and a daily cap on the win bonus. |
 
+### 5.1 River Director (adaptive difficulty, internal)
+
+The River Director keeps each room in "flow": never trivially easy, never hopeless. It is a design-side system and
+is deliberately **not** described in the rule book or anywhere in the game's interface.
+
+**What it learns.** Every player has a skill rating (table `player_skill`, starting at 1000). After each finished
+run (not the tutorial), the server scores the player's performance on the same scale, from:
+- their share of the plastic that passed, against a fair share (all collected and missed plastic ÷ boats);
+- capsizes per minute;
+- pipes they plugged;
+- the river's final health.
+
+The rating then moves part of the way towards that score: halfway after the first run, less as runs add up, but
+never less than 10 %. This is online learning in the style of the Elo and Glicko ratings used in chess. The code is
+in `crates/game-server/src/director.rs`.
+
+**What it changes.** One factor `d`, between 0.8 and 1.2:
+
+| Value | Effect of `d` |
+|---|---|
+| Logs, weed mats and pipes | × d (denser rows, closer pipes) |
+| Debris-wave interval | ÷ d |
+| Plastic | × (2 − d): a harder river is a little less generous |
+
+It never changes points, the score formula, River Health rules, rule-change options, boat speed or hop length.
+
+**When.**
+- *Before a run:* `d` comes from the average rating of everyone in the run (1000 → 1.0, ±200 → ±0.2). One value for
+  the whole river.
+- *During a solo or co-op run* (one crew): every 10 s of run clock, the Director compares the crew with a flow
+  band: it should net 55–80 % of the plastic that passes, with at most one capsize per window. Below the band (or
+  2+ capsizes) `d` drops by 0.03; above it with no capsizes `d` rises by 0.03. The total drift is capped at ±0.1
+  from the starting value. The course is generated about 200 m ahead of the leading boat, so changes shape the
+  river still to come and never pop obstacles in front of a player.
+- *During a crew-vs-crew run:* `d` stays fixed. Hidden help for one side would decide who wins.
+
+**Data for the future.** Each scored run is logged (`director_runs`, `director_players`): starting and final `d`,
+each player's performance and rating before and after. Whether a player came back within 24 hours is derived from
+the log (see `docs/DATABASE.md`). With enough runs this can train a model that predicts which settings keep people
+playing; that is future work.
+
+**Ethics.** The Director sells nothing, never touches rewards or the shop, and treats both crews identically in
+competitive play. It is disclosed here, in the design documentation.
+
 ## 6. Look and feel
 
 - **Theme "River Nature":**

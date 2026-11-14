@@ -58,6 +58,8 @@ pub fn racers(g: &RoomEntry) -> Vec<(u8, Uuid)> {
 }
 
 /// Start a run in this room. `practice` lets the host play alone (half Seeds).
+/// `difficulty` is the River Director's starting value for these players.
+#[allow(clippy::too_many_arguments)]
 pub fn start(
     entry_arc: Arc<Mutex<RoomEntry>>,
     g: &mut RoomEntry,
@@ -65,6 +67,7 @@ pub fn start(
     practice: bool,
     tutorial: bool,
     skins: HashMap<u8, String>,
+    difficulty: f32,
     db: PgPool,
 ) -> Result<(), GameError> {
     if g.state.roster.host != player {
@@ -84,7 +87,7 @@ pub fn start(
         return Err(GameError::new("no_players", "Nobody is connected."));
     }
     let seed = rand::random::<u64>();
-    let mut run = if tutorial { Run::tutorial(seed, &seats) } else { Run::new(seed, &seats) };
+    let mut run = if tutorial { Run::tutorial(seed, &seats) } else { Run::with_difficulty(seed, &seats, difficulty) };
     // Each boat's upgrade levels come from the boat its player has equipped.
     for (&seat, key) in &skins {
         run.equip(seat, river_core::boat_stats(key));
@@ -157,7 +160,11 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
                 tracing::info!(room = %room, "tutorial finished");
                 return;
             }
-            // Pay out after releasing the room lock; tell players what they earned.
+            // Learn from the run (River Director), then pay out, after releasing the room lock.
+            let seats: Vec<(u8, Uuid)> = outcomes.iter().map(|o| (o.seat, o.player)).collect();
+            if let Err(e) = crate::director::record(&db, room, host.practice, &host.run, &seats).await {
+                tracing::error!(error = %e, room = %room, "recording the run for the River Director failed");
+            }
             match meta::award(&db, room, host.practice, outcomes).await {
                 Ok(paid) => {
                     let g = entry.lock().await;

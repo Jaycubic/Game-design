@@ -70,6 +70,27 @@ fn three() -> u8 {
     3
 }
 
+fn one() -> f32 {
+    1.0
+}
+
+// ── River Director (adaptive difficulty) ──
+// One factor `d` scales the river: obstacles and pipes x d, debris waves come
+// d times as often, plastic x (2 - d). It never touches scoring, River Health
+// rules, the rule-change options or the speeds players react to.
+pub const D_MIN: f32 = 0.8;
+pub const D_MAX: f32 = 1.2;
+/// In-run nudge size and how far it may drift from the room's starting value.
+pub const D_STEP: f32 = 0.03;
+pub const D_SWING: f32 = 0.1;
+/// Seconds of run clock between in-run checks.
+pub const DIRECTOR_EVERY: f32 = 10.0;
+/// The "flow band": share of passing plastic a crew should be netting.
+pub const FLOW_LOW: f32 = 0.55;
+pub const FLOW_HIGH: f32 = 0.80;
+/// The course is generated this far ahead of the leading boat.
+pub const GEN_AHEAD: f32 = 200.0;
+
 // ── deterministic RNG ────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -238,6 +259,13 @@ pub struct Boat {
     pub plastic: u32,
     #[serde(default)]
     pub stats: Stats,
+    /// Lifetime counters for this run (performance scoring).
+    #[serde(default)]
+    pub collected: u32,
+    #[serde(default)]
+    pub capsizes: u32,
+    #[serde(default)]
+    pub plugged: u32,
 }
 
 impl Boat {
@@ -385,6 +413,33 @@ pub struct Run {
     /// Lanes in the full-width river (3, 4 or 6).
     #[serde(default = "three")]
     pub lane_count: u8,
+    /// River Director: current and starting difficulty, and whether it may adapt in-run
+    /// (only with a single crew, so it can never favour one crew over another).
+    #[serde(default = "one")]
+    pub difficulty: f32,
+    #[serde(default = "one")]
+    pub difficulty_start: f32,
+    #[serde(default)]
+    pub adaptive: bool,
+    #[serde(default)]
+    pub director: DirectorWindow,
+    /// Plastic that escaped downstream, for performance scoring.
+    #[serde(default)]
+    pub missed: u32,
+    /// Course generation cursor (the next row's z) and the next pipe's z.
+    #[serde(default)]
+    pub gen_z: f32,
+    #[serde(default)]
+    pub gen_pipe: f32,
+}
+
+/// What the Director saw since its last check.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct DirectorWindow {
+    pub timer: f32,
+    pub collected: u32,
+    pub missed: u32,
+    pub capsizes: u32,
 }
 
 pub const TUTORIAL_SECONDS: f32 = 60.0;
@@ -392,6 +447,11 @@ pub const TUTORIAL_SECONDS: f32 = 60.0;
 impl Run {
     /// Seats are assigned to crews alternately (0,1,0,1). Two players = one crew.
     pub fn new(seed: u64, seats: &[u8]) -> Run {
+        Run::with_difficulty(seed, seats, 1.0)
+    }
+
+    /// A run whose river starts at difficulty `d` (see the River Director constants).
+    pub fn with_difficulty(seed: u64, seats: &[u8], d: f32) -> Run {
         let two_crews = seats.len() >= 3;
         let lane_count = lane_count_for(seats.len());
         let k = seats.len().max(1) as f32;
@@ -415,6 +475,9 @@ impl Run {
                 plug: None,
                 plastic: 0,
                 stats: Stats::default(),
+                collected: 0,
+                capsizes: 0,
+                plugged: 0,
             })
             .collect();
         let crews = (0..if two_crews { 2 } else { 1 }).map(|id| Crew { id, ..Default::default() }).collect();
@@ -442,8 +505,16 @@ impl Run {
             results: None,
             tutorial: false,
             lane_count,
+            difficulty: d.clamp(D_MIN, D_MAX),
+            difficulty_start: d.clamp(D_MIN, D_MAX),
+            adaptive: !two_crews,
+            director: DirectorWindow::default(),
+            missed: 0,
+            gen_z: 45.0,
+            gen_pipe: 120.0,
         };
-        run.generate_course();
+        run.next_wave = 30.0 / run.difficulty;
+        run.generate_to(GEN_AHEAD);
         run
     }
 
@@ -452,7 +523,9 @@ impl Run {
     pub fn tutorial(seed: u64, seats: &[u8]) -> Run {
         let mut run = Run::new(seed, seats);
         run.tutorial = true;
+        run.adaptive = false;
         run.objs.clear();
+        run.gen_z = f32::MAX; // hand-built course only
         run.next_id = 1;
         run.next_wave = f32::MAX;
         // 1–2: steer and collect (plastic on both side lanes)
@@ -519,23 +592,31 @@ impl Run {
     }
 
     /// Hand-shaped random patterns along the whole course.
-    /// Wider rivers get denser rows (the obstacle multiplier) plus extra loose
-    /// plastic (to reach the plastic multiplier).
-    fn generate_course(&mut self) {
+    /// Generate course rows up to `until` (and never past the course end).
+    /// Wider rivers and a higher difficulty get denser rows (more obstacles);
+    /// plastic per row is then thinned or topped up to reach its own target,
+    /// plastic_mult x (2 - d). The course is built ahead of the boats as they go,
+    /// so the Director's in-run changes shape the river still to come.
+    pub fn generate_to(&mut self, until: f32) {
         let n = self.lane_count as i8;
         let all: Vec<i8> = (0..n).collect();
         let (plastic_mult, obstacle_mult) = spawn_mults(self.lane_count);
-        // A row holds about 2.6 plastic on average; top it up so plastic grows faster than obstacles.
-        let extra_plastic = (plastic_mult / obstacle_mult - 1.0) * 2.6;
-        let mut z = 45.0;
-        let mut next_pipe = 120.0;
-        while z < COURSE_LEN {
+        let d = self.difficulty;
+        let rows = obstacle_mult * d;
+        // A row holds about 2.6 plastic; `ratio` is how much of that each row should carry.
+        let ratio = plastic_mult * (2.0 - d) / rows;
+        let keep = ratio.min(1.0);
+        let extra_plastic = (ratio - 1.0).max(0.0) * 2.6;
+        let mut z = self.gen_z;
+        let mut next_pipe = self.gen_pipe;
+        let until = until.min(COURSE_LEN);
+        while z < until {
             match self.rng.range(10) {
                 0..=3 => {
                     // a line of plastic to follow
                     let lane = self.rng.lane(&all);
                     for k in 0..(3 + self.rng.range(3)) {
-                        self.spawn(Kind::Plastic, lane, z + k as f32 * 3.0);
+                        self.gen_plastic(keep, lane, z + k as f32 * 3.0);
                     }
                 }
                 4..=5 => {
@@ -543,7 +624,7 @@ impl Run {
                     let lane = self.rng.lane(&all);
                     self.spawn(Kind::Weed, lane, z);
                     for k in 0..3 {
-                        self.spawn(Kind::Plastic, lane, z + 4.0 + k as f32 * 3.0);
+                        self.gen_plastic(keep, lane, z + 4.0 + k as f32 * 3.0);
                     }
                 }
                 6..=7 => {
@@ -556,14 +637,14 @@ impl Run {
                     }
                     let left = start > 0 && (start + c >= n || self.rng.range(2) == 0);
                     let reward = if left { start - 1 } else { start + c };
-                    self.spawn(Kind::Plastic, reward, z);
+                    self.gen_plastic(keep, reward, z);
                 }
                 _ => {
                     // scattered plastic
                     for _ in 0..2 {
                         let lane = self.rng.lane(&all);
                         let dz = self.rng.unit() * 8.0;
-                        self.spawn(Kind::Plastic, lane, z + dz);
+                        self.gen_plastic(keep, lane, z + dz);
                     }
                 }
             }
@@ -578,9 +659,19 @@ impl Run {
             if z >= next_pipe {
                 let side = if self.rng.range(2) == 0 { -1 } else { 1 };
                 self.spawn(Kind::Pipe, side, z + 6.0);
-                next_pipe += 190.0 + self.rng.unit() * 60.0;
+                next_pipe += (190.0 + self.rng.unit() * 60.0) / d;
             }
-            z += (16.0 + self.rng.unit() * 10.0) / obstacle_mult;
+            z += (16.0 + self.rng.unit() * 10.0) / rows;
+        }
+        self.gen_z = z;
+        self.gen_pipe = next_pipe;
+    }
+
+    /// Course plastic: kept with probability `keep` (always drawn, so the river
+    /// layout stays deterministic for a given seed and difficulty).
+    fn gen_plastic(&mut self, keep: f32, lane: i8, z: f32) {
+        if self.rng.unit() < keep {
+            self.spawn(Kind::Plastic, lane, z);
         }
     }
 
@@ -652,7 +743,7 @@ impl Run {
         self.twist = Some(twist);
         self.changes += 1;
         if twist == Twist::MonsoonSurge {
-            self.next_wave = self.next_wave.min(self.t + 15.0);
+            self.next_wave = self.next_wave.min(self.t + 15.0 / self.difficulty);
         }
         if twist == Twist::DrySeason {
             let max = *self.lanes().last().unwrap();
@@ -759,6 +850,11 @@ impl Run {
         self.move_boats();
         self.collide();
         self.pressure();
+        self.direct();
+        let ahead = self.leader_z() + GEN_AHEAD;
+        if self.gen_z < ahead {
+            self.generate_to(ahead);
+        }
         if self.t >= self.duration() {
             self.finish();
         }
@@ -852,6 +948,7 @@ impl Run {
                 p.plugged = true;
             }
             let crew = self.boats[i].crew;
+            self.boats[i].plugged += 1;
             self.crew_mut(crew).pipes += 1;
             self.heal(HEALTH_PLUG);
             self.events.push(Event::Plugged { seat, pipe });
@@ -930,6 +1027,8 @@ impl Run {
                         self.objs[oi].alive = false;
                         let crew = self.boats[bi].crew;
                         self.boats[bi].plastic += plastic_value;
+                        self.boats[bi].collected += 1;
+                        self.director.collected += 1;
                         self.boats[bi].boost = (self.boats[bi].boost + self.boats[bi].stats.boost_per_plastic()).min(1.0);
                         self.crew_mut(crew).plastic += plastic_value;
                         self.heal(HEALTH_PLASTIC);
@@ -954,6 +1053,8 @@ impl Run {
             let (alive, kind, z, id) = (self.objs[oi].alive, self.objs[oi].kind, self.objs[oi].z, self.objs[oi].id);
             if alive && kind == Kind::Plastic && z < last - 2.0 {
                 self.objs[oi].alive = false;
+                self.missed += 1;
+                self.director.missed += 1;
                 self.events.push(Event::Missed { id });
                 self.heal(HEALTH_MISSED);
             }
@@ -966,10 +1067,12 @@ impl Run {
     /// A short stop, then a moment of protection; the boat spills some of its
     /// plastic just ahead, spread over nearby lanes, where anyone can net it again.
     fn capsize(&mut self, bi: usize) {
+        self.director.capsizes += 1;
         let (seat, crew, lane, z) = (self.boats[bi].seat, self.boats[bi].crew, self.boats[bi].lane, self.boats[bi].z);
         let b = &mut self.boats[bi];
         b.capsize = CAPSIZE_TIME;
         b.immune = CAPSIZE_TIME + IMMUNE_TIME;
+        b.capsizes += 1;
         b.boosting = 0.0;
         b.plug = None;
         let dropped = CAPSIZE_DROP.min(b.plastic);
@@ -983,6 +1086,33 @@ impl Run {
             self.spawn(Kind::Plastic, l, z + 7.0 + k as f32 * 3.0);
         }
         self.events.push(Event::Capsized { seat, dropped });
+    }
+
+    /// River Director, in-run part: every 10 s compare the crew with the flow
+    /// band and nudge the difficulty by a small step, never more than
+    /// D_SWING away from where the room started. Single-crew runs only.
+    fn direct(&mut self) {
+        if !self.adaptive || self.tutorial {
+            return;
+        }
+        let w = &mut self.director;
+        w.timer += DT;
+        if w.timer < DIRECTOR_EVERY {
+            return;
+        }
+        let seen = w.collected + w.missed;
+        let share = if seen > 0 { w.collected as f32 / seen as f32 } else { (FLOW_LOW + FLOW_HIGH) / 2.0 };
+        let step = if w.capsizes >= 2 || share < FLOW_LOW {
+            -D_STEP
+        } else if w.capsizes == 0 && share > FLOW_HIGH {
+            D_STEP
+        } else {
+            0.0
+        };
+        *w = DirectorWindow::default();
+        let lo = (self.difficulty_start - D_SWING).max(D_MIN);
+        let hi = (self.difficulty_start + D_SWING).min(D_MAX);
+        self.difficulty = (self.difficulty + step).clamp(lo, hi);
     }
 
     fn pressure(&mut self) {
@@ -1012,7 +1142,8 @@ impl Run {
                 }
             }
             self.events.push(Event::WaveIncoming { id });
-            self.next_wave = self.t + if self.twist == Some(Twist::MonsoonSurge) { 15.0 } else { 30.0 };
+            let every = if self.twist == Some(Twist::MonsoonSurge) { 15.0 } else { 30.0 };
+            self.next_wave = self.t + every / self.difficulty;
         }
 
         // Extra spawns from rule changes.

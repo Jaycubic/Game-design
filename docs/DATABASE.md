@@ -14,9 +14,10 @@ instead.
 |---|---|
 | `0001_initial_schema.sql` | Accounts, sessions, rooms, membership, plus the earlier board game's campaign tables |
 | `0002_hub_economy.sql` | Seeds wallet, owned boats, daily claims, River Road claims, run rewards |
+| `0003_river_director.sql` | Skill ratings and the River Director's run log (internal, see below) |
 
-The run itself is never written row by row. It lives in server memory for its 3 minutes, and only the reward for each
-player is stored when it ends.
+The run itself is never written row by row. It lives in server memory for its 3 minutes; when it ends, each player's
+reward is stored, and the River Director logs one summary row for the run and one per player.
 
 ## Tables
 
@@ -43,6 +44,26 @@ player is stored when it ends.
 
 The boat catalog, daily track and River Road milestones are constants in `crates/game-server/src/meta.rs`. Boat stats
 live in `crates/river-core` (`boat_stats`). None of them are stored as rows.
+
+### River Director (internal)
+
+The adaptive-difficulty system described in `docs/GAME_DESIGN.md` §5.1. Players never see these values.
+
+| Table | Purpose | Key constraints |
+|---|---|---|
+| `player_skill` | One skill rating per player (starts at 1000), its `confidence` (0–1) and the `runs` counted | Primary key player; `confidence` between 0 and 1 |
+| `director_runs` | One row per finished run (tutorials excluded): boats, crews, lanes, whether the Director could adapt in-run, starting and final difficulty `d_start`/`d_end`, final River Health | Serial id; `room_id` is kept even after the room closes |
+| `director_players` | Each player's part in a logged run: performance score, rating before and after, plastic collected, capsizes, pipes plugged | Primary key (run, player); indexed by (player, run) |
+
+"Played again within 24 hours", the signal a future model would learn from, is derived rather than stored:
+
+```sql
+SELECT p.run_id, p.player_id,
+       EXISTS (SELECT 1 FROM director_players q JOIN director_runs rq ON rq.id = q.run_id
+               WHERE q.player_id = p.player_id AND q.run_id > p.run_id
+                 AND rq.finished_at <= r.finished_at + interval '24 hours') AS returned_24h
+FROM director_players p JOIN director_runs r ON r.id = p.run_id;
+```
 
 ### Earlier board game
 

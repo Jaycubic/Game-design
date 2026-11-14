@@ -246,8 +246,9 @@ impl Hub {
                 let ids: Vec<Uuid> = racers.iter().map(|(_, p)| *p).collect();
                 let equipped = crate::meta::skins(db, &ids).await;
                 let skins = racers.iter().filter_map(|(s, p)| equipped.get(p).map(|c| (*s, c.clone()))).collect();
+                let difficulty = if tutorial { 1.0 } else { crate::director::room_difficulty(db, &ids).await };
                 let mut g = entry.lock().await;
-                crate::river::start(entry.clone(), &mut g, &pid, practice || tutorial, tutorial, skins, db.clone())?;
+                crate::river::start(entry.clone(), &mut g, &pid, practice || tutorial, tutorial, skins, difficulty, db.clone())?;
                 return Ok(Outcome2::default());
             }
             Command::RunInput { steer, hop, action, glyph } => {
