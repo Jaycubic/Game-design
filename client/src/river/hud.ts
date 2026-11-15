@@ -112,7 +112,7 @@ export class RunHud {
     const finale = s.finale ? FINALE_INFO[s.finale] : null;
 
     // ── top bar: scores · timer · River Health ──
-    const topSig = JSON.stringify([s.crews, mm, ss, Math.round(s.health), s.twist, s.finale, s.choked]);
+    const topSig = JSON.stringify([s.crews, mm, ss, s.endless ? Math.floor(s.distance ?? 0) : 0, Math.round(s.health), s.twist, s.finale, s.choked]);
     if (topSig !== this.sigTop) {
       this.sigTop = topSig;
       const hp = Math.round(s.health);
@@ -133,10 +133,13 @@ export class RunHud {
         h(
           "div",
           { class: "rh-clock" },
-          h("div", { class: "rh-time" + (left < 15 ? " urgent" : "") }, `${mm}:${String(ss).padStart(2, "0")}`),
+          s.endless
+            ? h("div", { class: "rh-time" }, `${Math.floor(s.distance ?? 0)} m`)
+            : h("div", { class: "rh-time" + (left < 15 ? " urgent" : "") }, `${mm}:${String(ss).padStart(2, "0")}`),
           h(
             "div",
             { class: "rh-badges" },
+            s.endless ? h("span", { class: "rh-badge" }, "∞ Endless") : null,
             twist ? h("span", { class: "rh-badge", title: twist.line }, `${twist.icon} ${twist.name}`) : null,
             finale ? h("span", { class: "rh-badge", title: finale.line }, `${finale.icon} ${finale.name}`) : null,
           ),
@@ -297,7 +300,7 @@ export class RunHud {
   results(r: RunResults, s: Snapshot | null, host: boolean) {
     const myCrew = s?.boats.find((b) => b.seat === this.mySeat)?.crew ?? 0;
     const two = r.scores.length > 1;
-    const title = !two ? (r.revived ? "River revived!" : r.choked ? "The river choked" : "Run complete") : r.winner === null ? "It's a draw!" : r.winner === myCrew ? "Your crew wins!" : `${CREW_NAMES[r.winner]} win!`;
+    const title = s?.endless ? "Endless run over" : !two ? (r.revived ? "River revived!" : r.choked ? "The river choked" : "Run complete") : r.winner === null ? "It's a draw!" : r.winner === myCrew ? "Your crew wins!" : `${CREW_NAMES[r.winner]} win!`;
     this.center.replaceChildren(
       h(
         "div",
@@ -354,6 +357,17 @@ export class RunHud {
     }
     this.pendingRiver = null;
     card.querySelector(".rh-stars")?.remove();
+    if (r.endless) {
+      const e = h(
+        "div",
+        { class: "rh-stars" },
+        h("div", { class: "rh-stars-title" }, `∞ Endless · ${r.name}`),
+        h("div", { class: "rh-best" }, `${r.distance ?? 0} m travelled · score ${r.score} (metres + 5 per plastic)`),
+        h("div", { class: "rh-best" + (r.new_best ? " new" : "") }, r.new_best ? `🏆 New Endless best: ${r.best}` : `Endless best: ${r.best}`),
+      );
+      card.insertBefore(e, card.querySelector("button"));
+      return;
+    }
     const block = h(
       "div",
       { class: "rh-stars" },

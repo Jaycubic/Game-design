@@ -36,6 +36,7 @@ sound.music("hub");
 let started = false;
 let authError: string | null = null;
 let pendingPractice = false;
+let pendingEndless = false;
 let pendingTutorial = false;
 let runWasTutorial = false;
 const TUTORIAL_KEY = "nt.tutorialDone";
@@ -60,6 +61,10 @@ function onMessage(m: Envelope) {
   const p = m.payload ?? {};
   if (m.type.startsWith("run.")) return handleRun(m.type, p);
   if (p.state) store.set({ room: p.state as RoomView });
+  if (m.type === "room.joined" && pendingEndless) {
+    pendingEndless = false;
+    send("run.start", { endless: true, river: selectedRiver() });
+  }
   if (m.type === "room.joined" && pendingPractice) {
     pendingPractice = false;
     send("run.start", { practice: true, river: selectedRiver() });
@@ -211,6 +216,11 @@ const ui: UiActions = {
   async practice() {
     const r = await api.createRoom();
     pendingPractice = true;
+    enterRoom(r.room_id);
+  },
+  async endless() {
+    const r = await api.createRoom();
+    pendingEndless = true;
     enterRoom(r.room_id);
   },
   async joinRoom(code) {

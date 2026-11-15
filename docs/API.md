@@ -95,7 +95,7 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 
 | type | payload | Notes |
 |---|---|---|
-| `run.start` | `{practice?: bool, tutorial?: bool, river?: "canal" \| "mangrove" \| "gorge"}` | Host only, from the lobby. `river` defaults to `canal` and must be unlocked for the host (errors `bad_river`, `river_locked`). A normal run needs at least 2 connected, ready players. `practice` lets the host play alone for half Seeds; `tutorial` starts the 60-second scripted course, which pays no Seeds. Errors: `not_host`, `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players`. |
+| `run.start` | `{practice?: bool, tutorial?: bool, river?: "canal" \| "mangrove" \| "gorge", endless?: bool}` | Host only, from the lobby. `river` defaults to `canal` and must be unlocked for the host (errors `bad_river`, `river_locked`). `endless` starts solo Endless (only with one connected player, error `endless_solo`; pays like practice). A normal run needs at least 2 connected, ready players. `practice` lets the host play alone for half Seeds; `tutorial` starts the 60-second scripted course, which pays no Seeds. Errors: `not_host`, `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players`. |
 | `run.input` | `{steer?: -1\|0\|1, hop?: bool, action?: bool, glyph?: 0–5}` | Applied on the next tick. A `glyph` sent while plugging is a gate-code entry; otherwise it is a signal ping. |
 | `run.choose` | `{option}` | Twist vote (0–2) or Finale pick (0–1). Only the trailing crew may pick the Finale. |
 
@@ -103,10 +103,10 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 
 | type | payload |
 |---|---|
-| `run.started` | `{seed, boats: [{seat, crew}], names: {seat: name}, skins: {seat: boat_key}, practice, tutorial, river}` |
+| `run.started` | `{seed, boats: [{seat, crew}], names: {seat: name}, skins: {seat: boat_key}, practice, tutorial, river, endless}` |
 | `run.snapshot` | `{snapshot, you, skins}`, 15 times a second, filtered for each viewer (see below) |
 | `run.events` | `{events: [...]}`, sent on each tick that has events |
-| `run.rewards` | `{seeds, practice, river}` after a run finishes (not after the tutorial). `river` is `{river, name, goals, stars, new_stars, score, best, new_best}` for this player; `missions` is today's three `{key, text, progress, goal, reward, done, just_done}`; `rank` is `{name, index, next, progress, change}` |
+| `run.rewards` | `{seeds, practice, river}` after a run finishes (not after the tutorial). `river` is `{river, name, goals, stars, new_stars, score, best, new_best}` for this player (for Endless: `{river, name, endless: true, distance, score, best, new_best}`); `missions` is today's three `{key, text, progress, goal, reward, done, just_done}`; `rank` is `{name, index, next, progress, change}` |
 
 **Snapshot fields:**
 

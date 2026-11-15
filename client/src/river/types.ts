@@ -65,6 +65,10 @@ export interface RunResults {
 export interface Snapshot {
   tick: number;
   river?: River;
+  /** Solo Endless: no time limit, one capsize ends the run. */
+  endless?: boolean;
+  /** Metres travelled by the leading boat. */
+  distance?: number;
   duration: number;
   tutorial: boolean;
   t: number;

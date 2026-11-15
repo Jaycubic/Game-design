@@ -176,7 +176,7 @@ export class RunMode {
             this.scene.kick(0.75);
             this.hud.hit(feel.prefs.reduceFlash);
             if (e.dropped && scr?.visible) this.hud.popup(scr.x, scr.y - 30, `−${e.dropped} ♻`, "bad");
-            this.hud.banner(e.dropped ? "Capsized! Net your plastic back" : "Capsized!", "bad");
+            this.hud.banner(s.endless ? "Capsized — run over!" : e.dropped ? "Capsized! Net your plastic back" : "Capsized!", "bad");
           }
           break;
         case "slowed":

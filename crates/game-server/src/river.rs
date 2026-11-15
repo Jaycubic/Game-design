@@ -20,10 +20,22 @@ use uuid::Uuid;
 
 const MAX_QUEUED: usize = 8;
 
+/// How a run was started.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Mode {
+    /// Allowed alone; pays half Seeds.
+    pub practice: bool,
+    /// The scripted 60-second course: no Seeds, no records.
+    pub tutorial: bool,
+    /// Solo Endless (always practice too).
+    pub endless: bool,
+}
+
 pub struct RunHost {
     pub run: Run,
     pub practice: bool,
     pub tutorial: bool,
+    pub endless: bool,
     /// seat → equipped boat key (sets the 3D model and its stats).
     pub skins: HashMap<u8, String>,
     pending: HashMap<u8, VecDeque<Input>>,
@@ -64,8 +76,7 @@ pub fn start(
     entry_arc: Arc<Mutex<RoomEntry>>,
     g: &mut RoomEntry,
     player: &str,
-    practice: bool,
-    tutorial: bool,
+    mode: Mode,
     skins: HashMap<u8, String>,
     difficulty: f32,
     river: River,
@@ -80,6 +91,7 @@ pub fn start(
     if !matches!(g.state.phase, crate::room::Phase::Lobby) {
         return Err(GameError::new("not_in_lobby", "Return to the lobby first."));
     }
+    let Mode { practice, tutorial, endless } = mode;
     if !practice {
         g.state.roster.can_start(player)?;
     }
@@ -88,7 +100,16 @@ pub fn start(
         return Err(GameError::new("no_players", "Nobody is connected."));
     }
     let seed = rand::random::<u64>();
-    let mut run = if tutorial { Run::tutorial(seed, &seats) } else { Run::create(seed, &seats, difficulty, river) };
+    if endless && seats.len() != 1 {
+        return Err(GameError::new("endless_solo", "Endless is a solo mode: play it from a room of your own."));
+    }
+    let mut run = if tutorial {
+        Run::tutorial(seed, &seats)
+    } else if endless {
+        Run::endless(seed, seats[0], difficulty, river)
+    } else {
+        Run::create(seed, &seats, difficulty, river)
+    };
     // Each boat's upgrade levels come from the boat its player has equipped.
     for (&seat, key) in &skins {
         run.equip(seat, river_core::boat_stats(key));
@@ -105,12 +126,12 @@ pub fn start(
         "run.started",
         g.state.id,
         g.state.version,
-        json!({ "seed": seed, "boats": boats, "names": names, "skins": skins, "practice": practice, "tutorial": tutorial, "river": run.river }),
+        json!({ "seed": seed, "boats": boats, "names": names, "skins": skins, "practice": practice, "tutorial": tutorial, "river": run.river, "endless": endless }),
     );
     for c in g.conns.values() {
         let _ = c.tx.send(msg.clone());
     }
-    g.run = Some(RunHost { run, practice, tutorial, skins, pending: HashMap::new() });
+    g.run = Some(RunHost { run, practice, tutorial, endless, skins, pending: HashMap::new() });
     tokio::spawn(run_loop(entry_arc, db));
     Ok(())
 }
@@ -163,10 +184,15 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
             }
             // Learn from the run (River Director), then pay out, after releasing the room lock.
             let seats: Vec<(u8, Uuid)> = outcomes.iter().map(|o| (o.seat, o.player)).collect();
-            let ranks = crate::director::record(&db, room, host.practice, &host.run, &seats).await.unwrap_or_else(|e| {
-                tracing::error!(error = %e, room = %room, "recording the run for the River Director failed");
+            // Endless runs end at the first capsize by design, so they don't feed the skill rating.
+            let ranks = if host.endless {
                 HashMap::new()
-            });
+            } else {
+                crate::director::record(&db, room, host.practice, &host.run, &seats).await.unwrap_or_else(|e| {
+                    tracing::error!(error = %e, room = %room, "recording the run for the River Director failed");
+                    HashMap::new()
+                })
+            };
             let river_results = crate::rivers::record(&db, &host.run, &seats).await.unwrap_or_else(|e| {
                 tracing::error!(error = %e, room = %room, "recording river stars failed");
                 HashMap::new()

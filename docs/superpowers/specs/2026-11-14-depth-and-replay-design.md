@@ -1,6 +1,6 @@
 # Clearwater Run — depth and replay (design, round 2)
 
-Status: **approved** 2026-11-14 (with the guided tutorial added in §3.1) · steps 1–5 built
+Status: **approved** 2026-11-14 (with the guided tutorial added in §3.1) · steps 1–6 built
 
 ## Why
 

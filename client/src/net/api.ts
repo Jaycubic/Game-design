@@ -122,6 +122,8 @@ export interface RiverCard {
   goals: string[];
   stars: boolean[];
   best: number;
+  /** Best solo Endless score on this river. */
+  best_endless: number;
   unlocked: boolean;
   need_runs: number;
   need_stars: number;
@@ -136,6 +138,9 @@ export interface RiverResult {
   score: number;
   best: number;
   new_best: boolean;
+  /** Present for Endless runs: no stars, distance in metres. */
+  endless?: boolean;
+  distance?: number;
 }
 export interface RoomResponse {
   room_id: string;

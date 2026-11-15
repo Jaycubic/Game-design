@@ -74,7 +74,14 @@ export function riverCards(p: Profile, redraw: () => void): HTMLElement[] {
             { class: "river-goals" },
             c.goals.map((g, i) => h("li", { class: c.stars[i] ? "done" : "" }, h("span", { class: "star" + (c.stars[i] ? " on" : "") }, "★"), g)),
           ),
-          h("div", { class: "river-best" }, "Best score ", h("b", null, c.best ? String(c.best) : "—")),
+          h(
+            "div",
+            { class: "river-best" },
+            "Best score ",
+            h("b", null, c.best ? String(c.best) : "—"),
+            " · Endless ",
+            h("b", null, c.best_endless ? String(c.best_endless) : "—"),
+          ),
           !c.unlocked
             ? h("span", { class: "chip" }, icon("lock"), `Unlocks at ${need(c)}`)
             : c.key === chosen

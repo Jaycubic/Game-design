@@ -125,6 +125,9 @@ pub enum Command {
         /// River key ("canal", "mangrove", "gorge"); the host must have it unlocked.
         #[serde(default)]
         river: Option<String>,
+        /// Solo Endless: one capsize ends the run (pays like practice).
+        #[serde(default)]
+        endless: bool,
     },
     /// River run: one player's input (applied on the next tick).
     #[serde(rename = "run.input")]

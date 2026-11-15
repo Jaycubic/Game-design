@@ -241,7 +241,8 @@ impl Hub {
             return self.hint(&entry, &pid).await;
         }
         match cmd {
-            Command::RunStart { practice, tutorial, river } => {
+            Command::RunStart { practice, tutorial, river, endless } => {
+                let endless = endless && !tutorial;
                 let river = if tutorial {
                     river_core::River::Canal
                 } else {
@@ -260,9 +261,13 @@ impl Hub {
                 let ids: Vec<Uuid> = racers.iter().map(|(_, p)| *p).collect();
                 let equipped = crate::meta::skins(db, &ids).await;
                 let skins = racers.iter().filter_map(|(s, p)| equipped.get(p).map(|c| (*s, c.clone()))).collect();
+                if endless && racers.len() != 1 {
+                    return Err(GameError::new("endless_solo", "Endless is a solo mode: play it from a room of your own."));
+                }
                 let difficulty = if tutorial { 1.0 } else { crate::director::room_difficulty(db, &ids).await };
                 let mut g = entry.lock().await;
-                crate::river::start(entry.clone(), &mut g, &pid, practice || tutorial, tutorial, skins, difficulty, river, db.clone())?;
+                let mode = crate::river::Mode { practice: practice || tutorial || endless, tutorial, endless };
+                crate::river::start(entry.clone(), &mut g, &pid, mode, skins, difficulty, river, db.clone())?;
                 return Ok(Outcome2::default());
             }
             Command::RunInput { steer, hop, action, glyph } => {

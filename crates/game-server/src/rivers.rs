@@ -60,19 +60,19 @@ fn unpack(mask: i16) -> [bool; 3] {
     [mask & 1 != 0, mask & 2 != 0, mask & 4 != 0]
 }
 
-/// (runs completed, total stars, per river: (stars mask, best score)).
-async fn progress(db: &PgPool, pid: Uuid) -> sqlx::Result<(i32, i32, HashMap<String, (i16, i32)>)> {
+/// (runs completed, total stars, per river: (stars mask, best score, best Endless score)).
+async fn progress(db: &PgPool, pid: Uuid) -> sqlx::Result<(i32, i32, HashMap<String, (i16, i32, i32)>)> {
     let runs: Option<i32> = sqlx::query_scalar("SELECT runs FROM player_wallets WHERE player_id = $1")
         .bind(pid)
         .fetch_optional(db)
         .await?;
-    let rows: Vec<(String, i16, i32)> =
-        sqlx::query_as("SELECT river, stars, best_score FROM player_rivers WHERE player_id = $1")
+    let rows: Vec<(String, i16, i32, i32)> =
+        sqlx::query_as("SELECT river, stars, best_score, best_endless FROM player_rivers WHERE player_id = $1")
             .bind(pid)
             .fetch_all(db)
             .await?;
-    let total = rows.iter().map(|(_, m, _)| m.count_ones() as i32).sum();
-    Ok((runs.unwrap_or(0), total, rows.into_iter().map(|(r, m, b)| (r, (m, b))).collect()))
+    let total = rows.iter().map(|(_, m, _, _)| m.count_ones() as i32).sum();
+    Ok((runs.unwrap_or(0), total, rows.into_iter().map(|(r, m, b, e)| (r, (m, b, e))).collect()))
 }
 
 fn is_unlocked(i: &RiverInfo, runs: i32, stars: i32) -> bool {
@@ -92,11 +92,11 @@ pub async fn profile(db: &PgPool, pid: Uuid) -> sqlx::Result<Value> {
         .iter()
         .map(|&r| {
             let i = info(r);
-            let (mask, best) = rows.get(r.key()).copied().unwrap_or((0, 0));
+            let (mask, best, best_endless) = rows.get(r.key()).copied().unwrap_or((0, 0, 0));
             json!({
                 "key": r.key(), "name": i.name, "line": i.line,
                 "goals": ["Keep River Health at 60 % or more", format!("Crew score {} or more", r.score_target()), i.goal],
-                "stars": unpack(mask), "best": best,
+                "stars": unpack(mask), "best": best, "best_endless": best_endless,
                 "unlocked": is_unlocked(i, runs, total), "need_runs": i.runs, "need_stars": i.stars,
             })
         })
@@ -113,6 +113,10 @@ pub async fn record(db: &PgPool, run: &Run, players: &[(u8, Uuid)]) -> sqlx::Res
     for &(seat, player) in players {
         let Some(b) = run.boats.iter().find(|b| b.seat == seat) else { continue };
         let score = res.scores.iter().find(|(c, _)| *c == b.crew).map(|(_, s)| *s).unwrap_or(0);
+        if run.endless {
+            out.insert(seat, record_endless(db, run, player, score).await?);
+            continue;
+        }
         let stars = run.stars(seat);
         let mut tx = db.begin().await?;
         let before: Option<(i16, i32)> =
@@ -146,6 +150,30 @@ pub async fn record(db: &PgPool, run: &Run, players: &[(u8, Uuid)]) -> sqlx::Res
         );
     }
     Ok(out)
+}
+
+/// Endless keeps its own best score per river (no stars, no river runs counted).
+async fn record_endless(db: &PgPool, run: &Run, player: Uuid, score: i32) -> sqlx::Result<Value> {
+    let key = run.river.key();
+    let old: i32 = sqlx::query_scalar("SELECT best_endless FROM player_rivers WHERE player_id = $1 AND river = $2")
+        .bind(player)
+        .bind(key)
+        .fetch_optional(db)
+        .await?
+        .unwrap_or(0);
+    sqlx::query(
+        "INSERT INTO player_rivers (player_id, river, best_endless, updated_at) VALUES ($1, $2, $3, now())
+         ON CONFLICT (player_id, river) DO UPDATE SET best_endless = GREATEST(player_rivers.best_endless, $3), updated_at = now()",
+    )
+    .bind(player)
+    .bind(key)
+    .bind(score)
+    .execute(db)
+    .await?;
+    Ok(json!({
+        "river": key, "name": info(run.river).name, "endless": true, "distance": run.distance().round() as i32,
+        "goals": [], "stars": [], "new_stars": [], "score": score, "best": old.max(score), "new_best": score > old && score > 0,
+    }))
 }
 
 #[cfg(test)]

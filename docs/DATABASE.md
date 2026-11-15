@@ -17,6 +17,7 @@ instead.
 | `0003_river_director.sql` | Skill ratings and the River Director's run log (internal, see below) |
 | `0004_rivers.sql` | Stars, best score and runs per player per river |
 | `0005_missions_ranks.sql` | Daily missions; shown rank columns on `player_skill` |
+| `0006_endless.sql` | `best_endless` per player per river |
 
 The run itself is never written row by row. It lives in server memory for its 3 minutes; when it ends, each player's
 reward is stored, and the River Director logs one summary row for the run and one per player.
@@ -44,7 +45,7 @@ reward is stored, and the River Director logs one summary row for the run and on
 | `road_claims` | River Road milestones collected | Primary key (player, milestone): each milestone is paid once |
 | `run_rewards` | Every finished run's reward per player | `seeds >= 0`; indexed by (player, time) for the daily cap on the win bonus |
 | `player_missions` | Three missions per player per UTC day: mission key, progress, goal, reward, `completed_at` (paid once, when set) | Primary key (player, day, slot); `slot` 0–2; `progress >= 0` |
-| `player_rivers` | Each player's progress per river: `stars` as a bitmask (1 clean river, 2 score target, 4 river goal; never lost), `best_score`, `runs` | Primary key (player, river); `river` is `canal`, `mangrove` or `gorge`; `stars` 0–7 |
+| `player_rivers` | Each player's progress per river: `stars` as a bitmask (1 clean river, 2 score target, 4 river goal; never lost), `best_score`, `runs`, and `best_endless` (best solo Endless score) | Primary key (player, river); `river` is `canal`, `mangrove` or `gorge`; `stars` 0–7 |
 
 The boat catalog, daily track and River Road milestones are constants in `crates/game-server/src/meta.rs`; river
 names, goals and unlock rules are in `crates/game-server/src/rivers.rs`. Boat stats

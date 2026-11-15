@@ -723,3 +723,50 @@ fn solo_gorge_has_currents_near_the_start() {
         .sum();
     assert!(total >= 60, "about one row in ten has a current: {total} over 20 courses");
 }
+
+#[test]
+fn endless_ends_on_the_first_capsize_and_scores_distance_plus_plastic() {
+    let mut r = Run::endless(5, 0, 1.0, River::Canal);
+    assert!(r.endless && !r.adaptive);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    r.boats[0].collected = 4;
+    let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+    r.spawn(Kind::Log, lane, z + 30.0);
+    until(&mut r, |r| r.phase == Phase::Finished);
+    let res = r.results.clone().expect("results");
+    let dist = r.distance() as i32;
+    assert!(dist > 25);
+    assert_eq!(res.scores[0].1, dist + 4 * ENDLESS_PLASTIC_POINTS);
+    assert_eq!(r.stars(0), [false; 3], "Endless earns no stars");
+}
+
+#[test]
+fn endless_speeds_up_and_still_has_exactly_two_player_chosen_changes() {
+    let mut r = Run::endless(6, 0, 1.0, River::Canal);
+    r.objs.clear();
+    r.gen_z = f32::MAX; // open water: nothing to capsize on
+    r.next_wave = f32::INFINITY;
+    r.phase = Phase::Running;
+    let mut changes = Vec::new();
+    for _ in 0..(TICK_HZ as usize * 200) {
+        if let Phase::Choosing { change, .. } = r.phase.clone() {
+            changes.push((change, r.t));
+            r.choose(0, 0).unwrap();
+        }
+        let i = idle(&r);
+        r.step(&i);
+        r.next_wave = f32::INFINITY;
+    }
+    assert_eq!(changes.len(), 2);
+    assert!((changes[0].1 - ENDLESS_TWIST_AT).abs() < 0.2, "{changes:?}");
+    assert!((changes[1].1 - ENDLESS_FINALE_AT).abs() < 0.2, "{changes:?}");
+    assert_eq!(r.changes, 2);
+    assert!(r.pace() > 1.2, "about x1.02 per 15 s: {}", r.pace());
+    assert!(r.phase != Phase::Finished, "no time limit");
+    // The course keeps going past the normal end.
+    let mut e = Run::endless(6, 0, 1.0, River::Canal);
+    e.generate_to(COURSE_LEN + 500.0);
+    assert!(e.objs.iter().any(|o| o.z > COURSE_LEN));
+}

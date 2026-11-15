@@ -17,6 +17,7 @@ export interface UiActions {
   logout(): void;
   play(): Promise<void>;
   practice(): Promise<void>;
+  endless(): Promise<void>;
   joinRoom(code: string): Promise<void>;
   openRoom(id: string): void;
   leaveRoom(): void;
@@ -155,7 +156,12 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
       { class: "hub-play" },
       riverChip(p ?? null, () => a.openPanel("rivers")),
       h("button", { class: "play-btn", "data-autofocus": true, onclick: guard(a.play) }, h("span", { class: "play-main" }, icon("play"), "PLAY"), h("span", { class: "play-sub" }, "Crew run · 2–4 players")),
-      h("button", { class: "btn ghost wide", onclick: guard(a.practice) }, icon("solo"), "Practice solo"),
+      h(
+        "div",
+        { class: "solo-row" },
+        h("button", { class: "btn ghost", onclick: guard(a.practice) }, icon("solo"), "Practice solo"),
+        h("button", { class: "btn ghost", onclick: guard(a.endless), title: "Solo: one capsize ends the run. How far can you go?" }, "∞ Endless"),
+      ),
       h("form", { class: "join-row", onsubmit: (e: Event) => (e.preventDefault(), guard(() => a.joinRoom(code.value))()) }, code, h("button", { class: "btn", type: "submit" }, "Join")),
       err,
       rooms.length

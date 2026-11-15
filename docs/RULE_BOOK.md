@@ -211,12 +211,21 @@ mission pays 20–40 Seeds the moment it is done. Open **Missions** in the hub t
 goes up as you play well, and it can drop by at most one step in a day. The bar shows how close you are to the next
 rank. The results screen shows your missions and rank after every run.
 
-## 11. Disconnections
+## 11. Solo Endless
+
+**∞ Endless** (next to Practice solo in the hub) is a solo run on any river you have unlocked:
+- There is no time limit, but **one capsize ends the run**.
+- Your boat speeds up by 2 % every 15 seconds.
+- The rules still change exactly twice, and you choose: a Twist at 1:00 and a Finale at 2:30.
+- **Score = metres travelled + 5 per plastic collected.** Each river keeps your best Endless score.
+- It pays Seeds like a practice run and counts towards daily missions. It earns no stars.
+
+## 12. Disconnections
 
 If your connection drops, the game reconnects automatically and you keep your seat. During a run your boat keeps
 moving forward on its own until you return.
 
-## 12. Fair play
+## 13. Fair play
 
 | Possible loophole | How the rules stop it |
 |---|---|

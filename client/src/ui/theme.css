@@ -349,3 +349,7 @@ button.hub-tile:hover .hub-tile-icon { color: var(--ink); background: linear-gra
   .mission-count { display: none; }
   .rank-chip { display: none; }
 }
+
+/* Practice and Endless side by side under PLAY */
+.solo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.solo-row .btn { width: 100%; justify-content: center; }

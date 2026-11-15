@@ -15,6 +15,15 @@ pub const DT: f32 = 1.0 / TICK_HZ as f32;
 pub const RUN_SECONDS: f32 = 180.0;
 pub const TWIST_AT: f32 = 63.0; // 35 %
 pub const FINALE_AT: f32 = 140.0; // 78 %
+
+// ── Solo Endless ──
+// One capsize ends the run; the boat speeds up 2 % every 15 s; the two
+// player-chosen rule changes come at 60 s and 150 s; score = metres + plastic x 5.
+pub const ENDLESS_TWIST_AT: f32 = 60.0;
+pub const ENDLESS_FINALE_AT: f32 = 150.0;
+pub const ENDLESS_SPEEDUP: f32 = 1.02;
+pub const ENDLESS_STEP: f32 = 15.0;
+pub const ENDLESS_PLASTIC_POINTS: i32 = 5;
 pub const COUNTDOWN: f32 = 3.0;
 pub const WARNING: f32 = 5.0;
 pub const TWIST_VOTE: f32 = 15.0;
@@ -511,6 +520,9 @@ pub struct Run {
     pub gen_pipe: f32,
     #[serde(default)]
     pub river: River,
+    /// Solo Endless mode (see the ENDLESS_ constants).
+    #[serde(default)]
+    pub endless: bool,
 }
 
 /// What the Director saw since its last check.
@@ -600,6 +612,7 @@ impl Run {
             gen_z: 45.0,
             gen_pipe: 120.0,
             river,
+            endless: false,
         };
         run.next_wave = 30.0 / run.difficulty;
         run.generate_to(GEN_AHEAD);
@@ -647,12 +660,44 @@ impl Run {
         run
     }
 
+    /// A solo Endless run on a chosen river at difficulty `d`.
+    pub fn endless(seed: u64, seat: u8, d: f32, river: River) -> Run {
+        let mut run = Run::create(seed, &[seat], d, river);
+        run.endless = true;
+        run.adaptive = false; // the run speeds up on its own schedule instead
+        run
+    }
+
     pub fn duration(&self) -> f32 {
         if self.tutorial {
             TUTORIAL_SECONDS
+        } else if self.endless {
+            f32::INFINITY
         } else {
             RUN_SECONDS
         }
+    }
+
+    fn twist_at(&self) -> f32 {
+        if self.endless { ENDLESS_TWIST_AT } else { TWIST_AT }
+    }
+
+    fn finale_at(&self) -> f32 {
+        if self.endless { ENDLESS_FINALE_AT } else { FINALE_AT }
+    }
+
+    /// Endless speed-up: x1.02 for every 15 s survived (1.0 otherwise).
+    pub fn pace(&self) -> f32 {
+        if self.endless {
+            ENDLESS_SPEEDUP.powi((self.t / ENDLESS_STEP) as i32)
+        } else {
+            1.0
+        }
+    }
+
+    /// Metres travelled by the leading boat.
+    pub fn distance(&self) -> f32 {
+        self.leader_z().max(0.0)
     }
 
     /// The open lanes, 0 = leftmost. Dry Season closes a third of them on the right.
@@ -698,7 +743,7 @@ impl Run {
         let extra_plastic = (ratio - 1.0).max(0.0) * 2.6;
         let mut z = self.gen_z;
         let mut next_pipe = self.gen_pipe;
-        let until = until.min(COURSE_LEN);
+        let until = if self.endless { until } else { until.min(COURSE_LEN) };
         while z < until {
             match self.rng.range(10) {
                 0..=3 => {
@@ -948,10 +993,10 @@ impl Run {
             Phase::Running => {
                 if self.tutorial {
                     // no rule changes in the tutorial
-                } else if self.changes == 0 && self.t + WARNING >= TWIST_AT {
-                    self.phase = Phase::Warning { change: ChangeKind::Twist, left: TWIST_AT - self.t };
-                } else if self.changes == 1 && self.twist.is_some() && self.t + WARNING >= FINALE_AT {
-                    self.phase = Phase::Warning { change: ChangeKind::Finale, left: FINALE_AT - self.t };
+                } else if self.changes == 0 && self.t + WARNING >= self.twist_at() {
+                    self.phase = Phase::Warning { change: ChangeKind::Twist, left: self.twist_at() - self.t };
+                } else if self.changes == 1 && self.twist.is_some() && self.t + WARNING >= self.finale_at() {
+                    self.phase = Phase::Warning { change: ChangeKind::Finale, left: self.finale_at() - self.t };
                 }
             }
         }
@@ -968,7 +1013,8 @@ impl Run {
         if self.gen_z < ahead {
             self.generate_to(ahead);
         }
-        if self.t >= self.duration() {
+        let wrecked = self.endless && self.boats.iter().any(|b| b.capsizes > 0);
+        if self.t >= self.duration() || wrecked {
             self.finish();
         }
     }
@@ -1098,6 +1144,7 @@ impl Run {
 
     fn move_boats(&mut self) {
         let mut failed = Vec::new();
+        let pace = self.pace();
         for (i, b) in self.boats.iter_mut().enumerate() {
             b.hop = (b.hop - DT).max(0.0);
             b.capsize = (b.capsize - DT).max(0.0);
@@ -1115,7 +1162,7 @@ impl Run {
                 b.boosting = BOOST_TIME;
                 self.events.push(Event::Boost { seat: b.seat });
             }
-            b.z += b.speed() * DT;
+            b.z += b.speed() * pace * DT;
         }
         for (i, pipe) in failed {
             self.boats[i].plug = None;
@@ -1329,8 +1376,20 @@ impl Run {
         self.second_wind_left = (self.second_wind_left - DT).max(0.0);
     }
 
+    /// Endless score: metres travelled plus 5 per plastic collected.
+    pub fn endless_score(&self) -> i32 {
+        let plastic: u32 = self.boats.iter().map(|b| b.collected).sum();
+        self.distance() as i32 + plastic as i32 * ENDLESS_PLASTIC_POINTS
+    }
+
     fn finish(&mut self) {
         let revived = self.health >= REVIVED_AT;
+        if self.endless {
+            let scores = self.crews.iter().map(|c| (c.id, self.endless_score())).collect();
+            self.results = Some(Results { scores, winner: None, health: self.health, choked: self.choked, revived });
+            self.phase = Phase::Finished;
+            return;
+        }
         let mut scores: Vec<(u8, i32)> = self
             .crews
             .iter()
@@ -1361,7 +1420,7 @@ impl Run {
         let (Some(res), Some(b)) = (&self.results, self.boats.iter().find(|b| b.seat == seat)) else {
             return [false; 3];
         };
-        if self.tutorial {
+        if self.tutorial || self.endless {
             return [false; 3];
         }
         let score = res.scores.iter().find(|(c, _)| *c == b.crew).map(|(_, s)| *s).unwrap_or(0);
@@ -1436,6 +1495,9 @@ pub struct PlugView {
 pub struct Snapshot {
     pub tick: u64,
     pub river: River,
+    pub endless: bool,
+    /// Metres travelled by the leading boat (shown in Endless).
+    pub distance: f32,
     pub duration: f32,
     pub tutorial: bool,
     pub t: f32,
@@ -1511,7 +1573,7 @@ impl Run {
                     crew: b.crew,
                     lane: b.lane,
                     z: b.z,
-                    speed: b.speed(),
+                    speed: b.speed() * self.pace(),
                     hop: b.hop,
                     capsize: b.capsize,
                     immune: b.immune,
@@ -1530,9 +1592,12 @@ impl Run {
                 .cloned()
                 .collect(),
             plugs,
-            duration: self.duration(),
+            // Endless has no time limit (0 here, since JSON can't carry infinity).
+            duration: if self.endless { 0.0 } else { self.duration() },
             tutorial: self.tutorial,
             river: self.river,
+            endless: self.endless,
+            distance: self.distance(),
             results: self.results.clone(),
         }
     }

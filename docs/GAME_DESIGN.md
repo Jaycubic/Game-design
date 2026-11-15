@@ -120,6 +120,14 @@ round-2 spec for later.
   UTC day, so a bad evening doesn't undo a week of progress.
 - **Results screen:** score, stars, best score, mission progress (with Seeds paid) and rank progress.
 
+### 5.0.2 Solo Endless
+
+A personal-best mode for one player: no clock, one capsize ends the run, the boat speeds up 2 % every 15 s, and
+score is metres + plastic × 5, kept per river. The two player-chosen rule changes still happen (Twist at 60 s,
+Finale at 150 s), so the assignment's "rules change exactly twice" holds in every mode. The runner-style "one hit"
+thrill is kept out of crew races on purpose, where a capsize only costs time and spilled plastic. Endless runs pay
+like practice and count for missions, but don't feed the skill rating (they end on the first mistake by design).
+
 ### 5.1 River Director (adaptive difficulty, internal)
 
 The River Director keeps each room in "flow": never trivially easy, never hopeless. It is a design-side system and
