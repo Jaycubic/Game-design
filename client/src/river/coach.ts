@@ -5,7 +5,7 @@
 
 import { h } from "../ui/dom";
 import { Spotlight, type SpotTarget } from "../ui/spotlight";
-import { isTouch } from "../input/touch";
+import { touchPrefs, usesTouch } from "../input/touch";
 import { hint } from "../input/controls";
 import type { Intent } from "../input/controls";
 import type { RunEvent, Snapshot } from "./types";
@@ -20,7 +20,10 @@ interface Step {
   done(c: Coach): boolean;
 }
 
-const tap = () => (isTouch() ? "Tap" : "Press");
+const tap = () => {
+  const m = touchPrefs.get().mode;
+  return m === "swipe" ? "Swipe" : m === "off" ? "Press" : "Tap";
+};
 
 export class Coach {
   private step = 0;
@@ -85,21 +88,21 @@ export class Coach {
     },
     {
       title: "Plug the pipe",
-      keys: () => `${hint("action")} then ${isTouch() ? "tap the symbols" : "1–6"}`,
+      keys: () => `${hint("action")} then ${usesTouch() ? "tap the symbols" : "1–6"}`,
       text: "Pull up beside the sewage pipe, use the same ✂ button, then enter the 3-symbol gate code.",
       spot: (c) =>
         c.plugging
           ? {
               name: "code",
               title: "Gate code",
-              text: `Remember the order, then ${isTouch() ? "tap the symbols" : "press their keys 1–6"}. In a crew, only your crewmate sees the right order.`,
+              text: `Remember the order, then ${usesTouch() ? "tap the symbols" : "press their keys 1–6"}. In a crew, only your crewmate sees the right order.`,
             }
           : { name: "action", title: "Plug a pipe", text: `Steer into the lane next to the pipe and ${tap().toLowerCase()} ✂ when you're beside it.` },
       done: (c) => c.plugged || c.pluggingFailed,
     },
     {
       title: "Signal your crew",
-      keys: () => (isTouch() ? "🍃 💧 🐟" : "1–6"),
+      keys: () => (usesTouch() ? "🍃 💧 🐟" : "1–6"),
       text: "Send any symbol. It pops up over your boat for everyone to see.",
       spot: () => ({
         name: "signals",

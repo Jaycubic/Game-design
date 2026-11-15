@@ -6,7 +6,7 @@ import { RiverScene, type BoatPose } from "./scene";
 import { RunHud } from "./hud";
 import { Coach } from "./coach";
 import { GamepadInput, intentForKey, type Intent } from "../input/controls";
-import { TouchControls, isTouch } from "../input/touch";
+import { TouchControls, actionVerb, usesTouch } from "../input/touch";
 import { sound } from "../audio/sound";
 import { feel } from "../ui/feel";
 import type { RunEvent, RunResults, Snapshot } from "./types";
@@ -62,7 +62,7 @@ export class RunMode {
     });
     this.keyHandler = (e) => this.onKey(e);
     window.addEventListener("keydown", this.keyHandler);
-    if (isTouch()) this.touch = new TouchControls(document.getElementById("run-ui")!, document.getElementById("scene")!, (it) => this.apply(it));
+    if (usesTouch()) this.touch = new TouchControls(document.getElementById("run-ui")!, document.getElementById("scene")!, (it) => this.apply(it));
     engine.runRenderLoop(() => this.frame());
   }
 
@@ -181,7 +181,7 @@ export class RunMode {
           break;
         case "slowed":
           if (mine) sound.play("slowed");
-          if (mine) this.hud.banner(`Tangled in weed — ${isTouch() ? "tap ✂" : "press ▼"} to cut`, "warn");
+          if (mine) this.hud.banner(`Tangled in weed — ${actionVerb()} to cut`, "warn");
           break;
         case "boost":
           if (mine) sound.play("boost");

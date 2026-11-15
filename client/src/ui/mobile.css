@@ -139,3 +139,15 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
 @media (max-width: 760px) and (orientation: portrait) {
   .touch-run .rotate-hint { display: block; position: absolute; left: 50%; top: 34%; transform: translateX(-50%); background: rgba(10, 30, 40, 0.75); color: #fff; border-radius: 12px; padding: 6px 12px; font-size: 0.85rem; pointer-events: none; animation: rh-fadeout 0.6s 4s forwards; white-space: nowrap; }
 }
+
+/* ── On-screen control options (Settings → Controls) ── */
+.tc-swipe-only .tc-left, .tc-swipe-only .tc-right { display: none; }
+.tc-swipe-hint { position: absolute; left: 50%; bottom: calc(70px + env(safe-area-inset-bottom, 0)); transform: translateX(-50%); background: rgba(10, 30, 40, 0.6); color: #fff; border-radius: 12px; padding: 4px 12px; font-size: 0.8rem; pointer-events: none; white-space: nowrap; animation: rh-fadeout 0.8s 6s forwards; }
+.tc-size-s .tc-left, .tc-size-s .tc-right { transform: scale(0.82); }
+.tc-size-l .tc-left, .tc-size-l .tc-right { transform: scale(1.2); }
+.tc-left { transform-origin: bottom left; }
+.tc-right { transform-origin: bottom right; }
+/* Left-handed: mirror the thumb clusters (the signals move to the left edge). */
+.tc-swap .tc-left { left: auto; right: calc(14px + env(safe-area-inset-right, 0)); transform-origin: bottom right; }
+.tc-swap .tc-right { right: auto; left: calc(14px + env(safe-area-inset-left, 0)); flex-direction: row-reverse; transform-origin: bottom left; }
+.tc-swap .tc-glyphs { right: auto; left: calc(10px + env(safe-area-inset-left, 0)); }

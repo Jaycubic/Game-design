@@ -2,7 +2,7 @@
 
 import { h } from "../ui/dom";
 import { hint } from "../input/controls";
-import { isTouch } from "../input/touch";
+import { actionVerb, usesTouch } from "../input/touch";
 import { signalName } from "../ui/panels";
 import type { MissionView, RankView, RiverResult } from "../net/api";
 import { missionList, rankCard } from "../ui/hub";
@@ -97,8 +97,9 @@ export class RunHud {
       const side = pipe.lane < 0 ? "LEFT" : "RIGHT";
       // Pipes are plugged from the outermost open lane on their bank.
       const edge = pipe.lane < 0 ? s.lanes[0] : s.lanes[s.lanes.length - 1];
-      const act = isTouch() ? "tap ✂" : "press ▼";
-      prompt = me.lane === edge ? (pipe.z - me.z < 7 ? `🔧 ${isTouch() ? "Tap ✂" : "Press ▼"} now to plug the pipe!` : `🔧 Pipe ahead on the ${side} — get ready to ${act}`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and ${act}`;
+      const act = actionVerb();
+      const Act = act.charAt(0).toUpperCase() + act.slice(1);
+      prompt = me.lane === edge ? (pipe.z - me.z < 7 ? `🔧 ${Act} now to plug the pipe!` : `🔧 Pipe ahead on the ${side} — get ready to ${act}`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and ${act}`;
     }
     if (this.promptEl.textContent !== prompt) {
       this.promptEl.textContent = prompt;
@@ -181,7 +182,7 @@ export class RunHud {
               { class: "rh-code-glyphs" },
               pv.code.map((g, i) => h("span", { class: "rh-glyph" + (i < pv.entered ? " done" : "") }, GLYPHS[g], h("kbd", null, String(g + 1)), h("small", { class: "rh-glyph-name" }, signalName(g)))),
             ),
-            h("div", { class: "rh-code-hint" }, own ? (pv.clear ? (isTouch() ? "Tap the symbols in order." : "Type it in order with keys 1–6.") : "Right symbols, wrong order. Your crewmate sees the real order — watch their signals.") : `Only your crew sees this order. Signal it with ${isTouch() ? "the symbol buttons" : "keys 1–6"} — the other crew can see your signals too.`),
+            h("div", { class: "rh-code-hint" }, own ? (pv.clear ? (usesTouch() ? "Tap the symbols in order." : "Type it in order with keys 1–6.") : "Right symbols, wrong order. Your crewmate sees the real order — watch their signals.") : `Only your crew sees this order. Signal it with ${usesTouch() ? "the symbol buttons" : "keys 1–6"} — the other crew can see your signals too.`),
             h("div", { class: "rh-code-time" }, `${Math.ceil(pv.left)} s`),
             this.signalTip(),
           ),

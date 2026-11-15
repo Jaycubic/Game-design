@@ -50,15 +50,17 @@ and the rival crew sees those signals too.
 - **Missions and ranks:** three daily missions that pay Seeds, and a rank from Rookie to River Guardian.
 - **Tutorial:** a skippable 60-second scripted course. Each step spotlights the control it teaches (dim, ring,
   tapping hand, bubble). It is offered on first sign-in and is available later from the cap icon.
-- **Phones and tablets:** on-screen buttons and swipes, with a layout for portrait and landscape.
+- **Phones and tablets:** on-screen buttons and/or swipes (chosen in Settings), with a layout for portrait and
+  landscape. PCs default to the keyboard.
 - **Seeds:** the only currency. Earned by playing, never bought.
 - **Garage and Shop:** seven boats, from the starter rowboat to a jet boat and a cleanup tug. Each boat is a model
   with a person aboard, and each has four stats: speed, net, cutter and boost. Pricier boats are modestly better, at
   most 8 % faster than the starter.
 - **Daily reward:** a 7-day track. A missed day pauses the track instead of resetting it.
 - **River Road:** milestone rewards for runs completed, including two boats.
-- **Settings:** graphics quality, sound (music, effects), comfort (screen shake, reduce flashing), rebindable keys
-  and the gamepad layout.
+- **Settings:** graphics quality, sound (music, effects), comfort (screen shake, reduce flashing), on-screen controls
+  (buttons + swipes, buttons only, swipes only or off; button size; left-handed), rebindable keys and the gamepad
+  layout.
 
 ## 4. Architecture
 

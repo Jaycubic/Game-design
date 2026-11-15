@@ -1,6 +1,10 @@
-// Phone and tablet controls for a run: thumb buttons plus swipes on the river.
+// On-screen controls for a run: thumb buttons and/or swipes on the river.
 // Left thumb steers (◀ ▶), right thumb hops and cuts, signals sit on the right edge.
 // Swipes anywhere on the 3D view do the same: ←/→ steer, ↑ hop, ↓ cut / plug.
+// Players pick the scheme in Settings → Controls, like most mobile games:
+// buttons + swipes (the default on phones and tablets), buttons only, swipes
+// only, or off (the default on PCs, where the keyboard and gamepad are used).
+// Keyboard and gamepad always work whatever is chosen.
 
 import { h } from "../ui/dom";
 import { GLYPHS } from "../river/types";
@@ -18,11 +22,54 @@ export function isTouch(): boolean {
 
 const SWIPE = 36; // px before a drag counts as a swipe
 
+export type TouchMode = "both" | "buttons" | "swipe" | "off";
+export type TouchSize = "s" | "m" | "l";
+export interface TouchPrefs {
+  mode: TouchMode;
+  size: TouchSize;
+  /** Left-handed: steering on the right, hop and cut on the left. */
+  swap: boolean;
+}
+const PREFS_KEY = "nt.touch";
+
+function defaults(): TouchPrefs {
+  return { mode: isTouch() ? "both" : "off", size: "m", swap: false };
+}
+
+export const touchPrefs = {
+  get(): TouchPrefs {
+    try {
+      return { ...defaults(), ...JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") };
+    } catch {
+      return defaults();
+    }
+  },
+  set(p: Partial<TouchPrefs>) {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({ ...this.get(), ...p }));
+    } catch {
+      /* session only */
+    }
+  },
+};
+
+/** Whether this player uses on-screen controls (buttons and/or swipes). */
+export function usesTouch(): boolean {
+  return touchPrefs.get().mode !== "off";
+}
+
+/** How to do the action, in the player's chosen scheme: "tap ✂", "swipe down" or "press ▼". */
+export function actionVerb(key = "▼"): string {
+  const m = touchPrefs.get().mode;
+  return m === "both" || m === "buttons" ? "tap ✂" : m === "swipe" ? "swipe down" : `press ${key}`;
+}
+
 export class TouchControls {
   readonly root: HTMLElement;
   private start: { x: number; y: number; id: number } | null = null;
+  private prefs = touchPrefs.get();
   private down = (e: PointerEvent) => {
-    if (e.pointerType === "mouse") return;
+    if (e.pointerType === "mouse" || (this.prefs.mode !== "both" && this.prefs.mode !== "swipe")) return;
     this.start = { x: e.clientX, y: e.clientY, id: e.pointerId };
   };
   private up = (e: PointerEvent) => {
@@ -58,9 +105,11 @@ export class TouchControls {
         },
         label,
       );
+    const p = this.prefs;
+    const buttons = p.mode === "both" || p.mode === "buttons";
     this.root = h(
       "div",
-      { class: "touch-controls" },
+      { class: `touch-controls tc-size-${p.size}` + (p.swap ? " tc-swap" : "") + (buttons ? "" : " tc-swipe-only") },
       h("div", { class: "tc-left", "data-tut": "steer" }, btn("tc-steer", "◀", { type: "steer", dir: -1 }, "Steer left"), btn("tc-steer", "▶", { type: "steer", dir: 1 }, "Steer right")),
       h("div", { class: "tc-right" }, btn("tc-act tut-action", "✂", { type: "action" }, "Cut weed or plug pipe"), btn("tc-hop tut-hop", "▲", { type: "hop" }, "Hop")),
       h(
@@ -70,6 +119,7 @@ export class TouchControls {
           btn("tc-glyph", [h("b", null, g), h("small", null, signalName(i)), h("i", null, String(i + 1))], { type: "glyph", g: i }, `Signal ${i + 1}: ${signalName(i)}`),
         ),
       ),
+      p.mode === "swipe" ? h("div", { class: "tc-swipe-hint" }, "Swipe ← → to steer · ↑ hop · ↓ cut / plug") : null,
       h("div", { class: "rotate-hint" }, "↻ Turn your phone sideways for a wider river"),
     );
     host.appendChild(this.root);

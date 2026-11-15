@@ -39,6 +39,19 @@ Crews compete on score, but **everyone shares one River Health bar**.
 
 Your boat moves forward on its own. The letter keys can be rebound in **Settings**; the arrow keys always work.
 
+**On-screen controls** (Settings → Controls), as in most mobile games:
+
+| Choice | What you get |
+|---|---|
+| **Buttons + swipes** | Thumb buttons and swipes on the river. The default on phones and tablets. |
+| **Buttons only** | Thumb buttons; swipes are ignored. |
+| **Swipes only** | No thumb buttons: swipe ← → to steer, ↑ to hop, ↓ to cut or plug. |
+| **Off** | Keyboard or gamepad only. The default on PCs; a touch-screen laptop can switch the others on. |
+
+With buttons you can also pick the **button size** (small, medium, large) and a **left-handed** layout (steering on
+the right, hop and cut on the left). The six signal buttons stay on screen whenever on-screen controls are on,
+because gate codes need them. Keyboard and gamepad keep working whatever you choose.
+
 ## 4. The river
 
 The river widens with the number of boats, and carries more plastic and more obstacles when it does:

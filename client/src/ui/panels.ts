@@ -3,10 +3,60 @@
 import { sound } from "../audio/sound";
 import { feel } from "./feel";
 import { GLYPHS, GLYPH_NAMES } from "../river/types";
-import { isTouch } from "../input/touch";
+import { isTouch, touchPrefs, usesTouch, type TouchMode, type TouchSize } from "../input/touch";
 import { h } from "./dom";
 import type { Quality } from "../render/engine";
 import { BIND_LABELS, bindings, GamepadInput, keyLabel, rebind, resetBindings, type Bindable } from "../input/controls";
+
+/** On-screen controls: scheme (like most mobile games), button size and left-handed layout. */
+function touchSection(redraw: () => void): HTMLElement {
+  const p = touchPrefs.get();
+  const opt = (mode: TouchMode, label: string, note: string) =>
+    h(
+      "label",
+      { class: "radio scheme" + (p.mode === mode ? " on" : "") },
+      h("input", { type: "radio", name: "touch-mode", value: mode, checked: p.mode === mode, onchange: () => (touchPrefs.set({ mode }), redraw()) }),
+      h("span", null, h("b", null, label), h("small", { class: "muted" }, note)),
+    );
+  const buttons = p.mode === "both" || p.mode === "buttons";
+  return h(
+    "fieldset",
+    { class: "touch-settings" },
+    h("legend", null, "On-screen controls"),
+    h("p", { class: "muted small" }, isTouch() ? "For phones and tablets. Keyboard and gamepad always work too." : "For touch-screen laptops. Keyboard and gamepad always work."),
+    h(
+      "div",
+      { class: "scheme-grid" },
+      opt("both", "Buttons + swipes", "Tap the thumb buttons or swipe on the river"),
+      opt("buttons", "Buttons only", "Thumb buttons; swipes are ignored"),
+      opt("swipe", "Swipes only", "← → steer · ↑ hop · ↓ cut / plug"),
+      opt("off", "Off", isTouch() ? "Keyboard or gamepad only" : "Keyboard or gamepad (default on PC)"),
+    ),
+    buttons
+      ? h(
+          "div",
+          { class: "slider-row" },
+          h("span", null, "Button size"),
+          h(
+            "div",
+            { class: "seg" },
+            (["s", "m", "l"] as TouchSize[]).map((size) =>
+              h("button", { class: "btn tiny" + (p.size === size ? " primary" : " ghost"), onclick: () => (touchPrefs.set({ size }), redraw()) }, { s: "Small", m: "Medium", l: "Large" }[size]),
+            ),
+          ),
+        )
+      : null,
+    buttons
+      ? h(
+          "label",
+          { class: "radio" },
+          h("input", { type: "checkbox", checked: p.swap, onchange: (e: Event) => (touchPrefs.set({ swap: (e.target as HTMLInputElement).checked }), redraw()) }),
+          " Left-handed (steer on the right, hop and cut on the left)",
+        )
+      : null,
+    h("p", { class: "muted small" }, "Takes effect at the start of the next run."),
+  );
+}
 
 /** Keyboard rebinding (arrow keys always work) and gamepad layout. */
 export function controlsSection(): HTMLElement {
@@ -16,6 +66,7 @@ export function controlsSection(): HTMLElement {
     const b = bindings();
     root.replaceChildren(
       h("h3", null, "Controls"),
+      touchSection(draw),
       h("p", { class: "muted small" }, "Arrow keys always work. Each action also has one key you can choose."),
       h(
         "table",
@@ -82,9 +133,9 @@ export function howToPlay(): HTMLElement {
       { class: "htp-list" },
       row("🚤", "◀ ▶", "Switch lanes — your boat moves on its own"),
       row("🦘", "▲", "Hop over logs and debris waves"),
-      row("✂️", isTouch() ? "✂" : "▼", "Cut weed mats · plug sewage pipes"),
+      row("✂️", usesTouch() ? "✂" : "▼", "Cut weed mats · plug sewage pipes"),
       row("♻️", "", "Grab plastic — it fills your boost"),
-      row("🔧", isTouch() ? "Tap" : "1–6", "Type gate codes · signal your crew"),
+      row("🔧", usesTouch() ? "Tap" : "1–6", "Type gate codes · signal your crew"),
       row("🌊", "", "River Health is shared — if it chokes, everyone loses half"),
       row("⚡", "", "Twice per run, players change the rules"),
       row("💥", "", "Capsize and you stop for a moment and spill 3 plastic — net it back"),
