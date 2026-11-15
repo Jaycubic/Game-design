@@ -24,6 +24,13 @@ pub const ENDLESS_FINALE_AT: f32 = 150.0;
 pub const ENDLESS_SPEEDUP: f32 = 1.02;
 pub const ENDLESS_STEP: f32 = 15.0;
 pub const ENDLESS_PLASTIC_POINTS: i32 = 5;
+/// Team Endless: the crew shares this many lives (solo Endless has one).
+pub const ENDLESS_CREW_LIVES: u8 = 3;
+
+/// Catch-up current: a boat this far behind the front boat sails a little faster,
+/// so stopping to fix a pipe never strands anyone.
+pub const CATCH_UP_GAP: f32 = 25.0;
+pub const CATCH_UP_MULT: f32 = 1.15;
 pub const COUNTDOWN: f32 = 3.0;
 pub const WARNING: f32 = 5.0;
 pub const TWIST_VOTE: f32 = 15.0;
@@ -48,6 +55,30 @@ pub const PLUG_TIME: f32 = 8.0;
 pub const FIX_TIME: f32 = 1.0;
 /// A boat with no crewmate sees its gate code for this long, then types it from memory.
 pub const MEMORY_TIME: f32 = 2.0;
+
+// ── Crew key locks (2+ players) ──
+// When the front boat nears an open pipe, every player is dealt a different
+// secret key and sees only their own, briefly. A pipe's lock has one slot per
+// player (seat order); teammates answer by pressing their key, and a fixer
+// types the full set. Several fixers may open locks at the same pipe: answers go
+// to all of them and the first correct entry fixes it. A wrong entry or running
+// out of time costs River Health and deals new keys.
+pub const KEY_DEAL_AT: f32 = 70.0;
+pub const KEY_SHOW: f32 = 3.0;
+pub const LOCK_TIME: f32 = 12.0;
+pub const LOCK_FAIL_COST: f32 = 5.0;
+
+/// Keys dealt for one pipe.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Deal {
+    pub pipe: u32,
+    /// (seat, key glyph), in seat order.
+    pub keys: Vec<(u8, u8)>,
+    /// Seconds each player still sees their own key.
+    pub shown: f32,
+    /// Keys teammates have sent for this pipe: (seat, glyph).
+    pub answers: Vec<(u8, u8)>,
+}
 pub const COURSE_LEN: f32 = 3300.0;
 
 pub const HEALTH_START: f32 = 70.0;
@@ -250,16 +281,13 @@ pub const FINALES: [Finale; 2] = [Finale::SecondWind, Finale::CleanSweep];
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plug {
     pub pipe: u32,
-    pub code: [u8; 3],
+    /// Solo: a 3-symbol code. Crew lock: every player's key, in seat order.
+    pub code: Vec<u8>,
     pub entered: Vec<u8>,
     pub left: f32,
-}
-
-impl Plug {
-    /// What the plugging boat sees: the right symbols in the wrong order.
-    pub fn scrambled(&self) -> [u8; 3] {
-        [self.code[1], self.code[2], self.code[0]]
-    }
+    /// A crew key lock (rather than the solo memory code).
+    #[serde(default)]
+    pub team: bool,
 }
 
 /// A boat's upgrade levels, 1–5 each. Level 2 is the starter boat and
@@ -408,7 +436,7 @@ pub enum Phase {
         change: ChangeKind,
         left: f32,
     },
-    /// Paused: players choose. Twist = all vote; Finale = `pickers` crew chooses.
+    /// Paused: the crew votes (Twist, then Finale). `pickers` is kept for older clients and is always None.
     Choosing {
         change: ChangeKind,
         left: f32,
@@ -451,6 +479,12 @@ pub enum Event {
     NetFreed { seat: u8, id: u32 },
     /// A current pushed a boat one lane.
     Pushed { seat: u8, dir: i8 },
+    /// New keys for the pipe ahead (each player sees only their own).
+    KeysDealt { pipe: u32 },
+    /// A fixer pressed hop to leave a lock and sail on.
+    PlugSkipped { seat: u8, pipe: u32 },
+    /// A teammate sent their key to an open lock.
+    Answered { seat: u8, pipe: u32 },
 }
 
 /// One player's input since the last tick.
@@ -527,9 +561,18 @@ pub struct Run {
     pub gen_pipe: f32,
     #[serde(default)]
     pub river: River,
-    /// Solo Endless mode (see the ENDLESS_ constants).
+    /// Crew key deals, one per pipe being approached.
+    #[serde(default)]
+    pub deals: Vec<Deal>,
+    /// Seats whose player is disconnected: their key is filled in automatically.
+    #[serde(default)]
+    pub away: Vec<u8>,
+    /// Endless mode (see the ENDLESS_ constants).
     #[serde(default)]
     pub endless: bool,
+    /// Endless: lives the crew has left (each capsize uses one).
+    #[serde(default)]
+    pub lives: u8,
 }
 
 /// What the Director saw since its last check.
@@ -556,7 +599,7 @@ impl Run {
 
     /// A run on a chosen river at difficulty `d`.
     pub fn create(seed: u64, seats: &[u8], d: f32, river: River) -> Run {
-        let two_crews = seats.len() >= 3;
+        // Round 3: every player is in one crew, against the pollution.
         let lane_count = lane_count_for(seats.len());
         let k = seats.len().max(1) as f32;
         // Spread the starting boats across the river.
@@ -567,7 +610,7 @@ impl Run {
             .enumerate()
             .map(|(i, &seat)| Boat {
                 seat,
-                crew: if two_crews { (i % 2) as u8 } else { 0 },
+                crew: 0,
                 lane: start(i),
                 z: -(i as f32) * 2.5,
                 hop: 0.0,
@@ -587,7 +630,7 @@ impl Run {
                 last_current: 0,
             })
             .collect();
-        let crews = (0..if two_crews { 2 } else { 1 }).map(|id| Crew { id, ..Default::default() }).collect();
+        let crews = vec![Crew { id: 0, ..Default::default() }];
         let mut run = Run {
             seed,
             rng: Rng::new(seed),
@@ -614,13 +657,16 @@ impl Run {
             lane_count,
             difficulty: d.clamp(D_MIN, D_MAX),
             difficulty_start: d.clamp(D_MIN, D_MAX),
-            adaptive: !two_crews,
+            adaptive: true,
             director: DirectorWindow::default(),
             missed: 0,
             gen_z: 45.0,
             gen_pipe: 120.0,
             river,
+            deals: Vec::new(),
+            away: Vec::new(),
             endless: false,
+            lives: 0,
         };
         run.next_wave = 30.0 / run.difficulty;
         run.generate_to(GEN_AHEAD);
@@ -669,9 +715,11 @@ impl Run {
     }
 
     /// A solo Endless run on a chosen river at difficulty `d`.
-    pub fn endless(seed: u64, seat: u8, d: f32, river: River) -> Run {
-        let mut run = Run::create(seed, &[seat], d, river);
+    /// An Endless run for 1–4 players. Solo has one life; a crew shares ENDLESS_CREW_LIVES.
+    pub fn endless(seed: u64, seats: &[u8], d: f32, river: River) -> Run {
+        let mut run = Run::create(seed, seats, d, river);
         run.endless = true;
+        run.lives = if seats.len() > 1 { ENDLESS_CREW_LIVES } else { 1 };
         run.adaptive = false; // the run speeds up on its own schedule instead
         run
     }
@@ -879,32 +927,39 @@ impl Run {
         if option >= max {
             return Err("unknown option");
         }
-        let Some(boat) = self.boats.iter().find(|b| b.seat == seat) else { return Err("not in this run") };
-        if let Some(c) = pickers {
-            if boat.crew != c {
-                return Err("only the trailing crew picks the Finale");
-            }
-            // First pick from the picking crew decides.
-            self.resolve_finale(Some(option as usize), false);
-            return Ok(());
+        if !self.boats.iter().any(|b| b.seat == seat) {
+            return Err("not in this run");
         }
+        let _ = pickers;
         self.votes.retain(|(s, _)| *s != seat);
         self.votes.push((seat, option));
         if self.votes.len() == self.boats.len() {
-            self.resolve_twist();
+            match change {
+                ChangeKind::Twist => self.resolve_twist(),
+                ChangeKind::Finale => self.resolve_finale_vote(),
+            }
         }
         Ok(())
     }
 
-    fn resolve_twist(&mut self) {
-        let mut counts = [0u32; 3];
+    /// The most-voted option (of `n`), and whether a tie (or no votes) was settled by a spin.
+    fn tally(&mut self, n: usize) -> (usize, bool) {
+        let mut counts = vec![0u32; n];
         for (_, o) in &self.votes {
             counts[*o as usize] += 1;
         }
         let best = *counts.iter().max().unwrap();
-        let tied: Vec<usize> = (0..3).filter(|i| counts[*i] == best).collect();
-        let spin = tied.len() > 1;
-        let pick = tied[self.rng.range(tied.len() as u32) as usize];
+        let tied: Vec<usize> = (0..n).filter(|i| counts[*i] == best).collect();
+        (tied[self.rng.range(tied.len() as u32) as usize], tied.len() > 1)
+    }
+
+    fn resolve_finale_vote(&mut self) {
+        let (pick, spin) = self.tally(FINALES.len());
+        self.resolve_finale(Some(pick), spin);
+    }
+
+    fn resolve_twist(&mut self) {
+        let (pick, spin) = self.tally(TWISTS.len());
         let twist = TWISTS[pick];
         self.twist = Some(twist);
         self.changes += 1;
@@ -938,21 +993,6 @@ impl Run {
         self.phase = Phase::Reveal { change: ChangeKind::Finale, left: REVEAL, spin: spin || choice.is_none() };
     }
 
-    /// The crew that picks the Finale: the trailing one (a tie is a visible spin).
-    fn trailing_crew(&mut self) -> u8 {
-        if self.crews.len() == 1 {
-            return self.crews[0].id;
-        }
-        let (a, b) = (self.crews[0].score(), self.crews[1].score());
-        if a < b {
-            self.crews[0].id
-        } else if b < a {
-            self.crews[1].id
-        } else {
-            self.crews[self.rng.range(2) as usize].id
-        }
-    }
-
     /// Advance one fixed step with each seat's input.
     pub fn step(&mut self, inputs: &[(u8, Input)]) {
         self.tick += 1;
@@ -967,7 +1007,7 @@ impl Run {
                 if left - DT <= 0.0 {
                     match change {
                         ChangeKind::Twist => self.resolve_twist(),
-                        ChangeKind::Finale => self.resolve_finale(None, true),
+                        ChangeKind::Finale => self.resolve_finale_vote(),
                     }
                 } else if let Phase::Choosing { left: l, .. } = &mut self.phase {
                     *l -= DT;
@@ -984,16 +1024,12 @@ impl Run {
             }
             Phase::Warning { change, left } => {
                 if left - DT <= 0.0 {
-                    let pickers = if change == ChangeKind::Finale {
-                        let c = self.trailing_crew();
-                        self.finale_crew = Some(c);
-                        Some(c)
-                    } else {
-                        None
-                    };
+                    if change == ChangeKind::Finale {
+                        self.finale_crew = Some(0); // Second Wind helps the whole crew
+                    }
                     self.votes.clear();
                     let left = if change == ChangeKind::Twist { TWIST_VOTE } else { FINALE_PICK };
-                    self.phase = Phase::Choosing { change, left, pickers };
+                    self.phase = Phase::Choosing { change, left, pickers: None };
                     return;
                 }
                 self.phase = Phase::Warning { change, left: left - DT };
@@ -1016,12 +1052,13 @@ impl Run {
         self.move_boats();
         self.collide();
         self.pressure();
+        self.deal_keys();
         self.direct();
         let ahead = self.leader_z() + GEN_AHEAD;
         if self.gen_z < ahead {
             self.generate_to(ahead);
         }
-        let wrecked = self.endless && self.boats.iter().any(|b| b.capsizes > 0);
+        let wrecked = self.endless && self.lives == 0;
         if self.t >= self.duration() || wrecked {
             self.finish();
         }
@@ -1034,15 +1071,31 @@ impl Run {
         if let Some(g) = input.glyph.filter(|g| *g < GLYPHS) {
             if let Some(plug) = &mut self.boats[i].plug {
                 plug.entered.push(g);
-                if plug.entered.len() == 3 {
-                    let ok = plug.entered == plug.code;
-                    let pipe = plug.pipe;
-                    self.boats[i].plug = None;
-                    self.finish_plug(i, pipe, ok);
+                let (pipe, team, typed, done) = (plug.pipe, plug.team, plug.entered.len(), plug.entered.len() == plug.code.len());
+                // A fixer's own key, typed into its slot, also counts as their answer for other fixers.
+                if team && self.slot_of(seat) == Some(typed - 1) {
+                    self.answer(pipe, seat, g);
+                }
+                if done {
+                    let plug = self.boats[i].plug.take().expect("plugging");
+                    self.finish_plug(i, pipe, plug.entered == plug.code);
                 }
             } else {
+                // Not fixing: the key answers any teammate's open lock (and shows over the boat).
+                let mut open: Vec<u32> = self.boats.iter().filter_map(|b| b.plug.as_ref().filter(|p| p.team).map(|p| p.pipe)).collect();
+                open.dedup();
+                for pipe in open {
+                    self.answer(pipe, seat, g);
+                    self.events.push(Event::Answered { seat, pipe });
+                }
                 self.events.push(Event::Ping { seat, glyph: g });
             }
+        }
+        // ▲ while fixing leaves the lock and sails on.
+        if input.hop && self.boats[i].plug.is_some() {
+            let pipe = self.boats[i].plug.take().map(|p| p.pipe).unwrap_or_default();
+            self.events.push(Event::PlugSkipped { seat, pipe });
+            return;
         }
         let b = &mut self.boats[i];
         if b.capsize > 0.0 || b.plug.is_some() || b.fixing > 0.0 {
@@ -1124,19 +1177,103 @@ impl Run {
             .find(|o| o.kind == Kind::Pipe && !o.plugged && o.lane == side && z >= o.z - 7.0 && z <= o.z + 3.0)
             .map(|o| o.id);
         if let Some(pipe) = pipe {
-            let code = [
-                self.rng.range(GLYPHS as u32) as u8,
-                self.rng.range(GLYPHS as u32) as u8,
-                self.rng.range(GLYPHS as u32) as u8,
-            ];
-            self.boats[i].plug = Some(Plug { pipe, code, entered: Vec::new(), left: PLUG_TIME });
+            let plug = if self.boats.len() > 1 {
+                // Crew lock: everyone's key, in seat order.
+                if !self.deals.iter().any(|d| d.pipe == pipe) {
+                    self.new_deal(pipe);
+                }
+                let deal = self.deals.iter().find(|d| d.pipe == pipe).expect("deal");
+                let code = deal.keys.iter().map(|(_, k)| *k).collect();
+                Plug { pipe, code, entered: Vec::new(), left: LOCK_TIME, team: true }
+            } else {
+                let code = (0..3).map(|_| self.rng.range(GLYPHS as u32) as u8).collect();
+                Plug { pipe, code, entered: Vec::new(), left: PLUG_TIME, team: false }
+            };
+            self.boats[i].plug = Some(plug);
             self.events.push(Event::PlugStarted { seat, pipe });
+        }
+    }
+
+    /// A seat's slot in a crew lock (seat order).
+    pub fn slot_of(&self, seat: u8) -> Option<usize> {
+        let mut seats: Vec<u8> = self.boats.iter().map(|b| b.seat).collect();
+        seats.sort();
+        seats.iter().position(|s| *s == seat)
+    }
+
+    /// Deal every player a different key for `pipe` (replacing any earlier deal).
+    fn new_deal(&mut self, pipe: u32) {
+        let mut pool: Vec<u8> = (0..GLYPHS).collect();
+        for k in (1..pool.len()).rev() {
+            let j = self.rng.range(k as u32 + 1) as usize;
+            pool.swap(k, j);
+        }
+        let mut seats: Vec<u8> = self.boats.iter().map(|b| b.seat).collect();
+        seats.sort();
+        let keys: Vec<(u8, u8)> = seats.iter().zip(pool).map(|(s, k)| (*s, k)).collect();
+        let answers = keys.iter().filter(|(s, _)| self.away.contains(s)).copied().collect();
+        self.deals.retain(|d| d.pipe != pipe);
+        self.deals.push(Deal { pipe, keys, shown: KEY_SHOW, answers });
+        self.events.push(Event::KeysDealt { pipe });
+    }
+
+    /// Record a teammate's key for a pipe's lock (a later press replaces an earlier one).
+    fn answer(&mut self, pipe: u32, seat: u8, glyph: u8) {
+        if let Some(d) = self.deals.iter_mut().find(|d| d.pipe == pipe) {
+            d.answers.retain(|(s, _)| *s != seat);
+            d.answers.push((seat, glyph));
+        }
+    }
+
+    /// Mark players as away (disconnected): their keys fill in by themselves.
+    pub fn set_away(&mut self, seats: Vec<u8>) {
+        self.away = seats;
+    }
+
+    /// Deal keys for pipes coming up, count down how long keys show, fill in away players.
+    fn deal_keys(&mut self) {
+        for d in &mut self.deals {
+            d.shown = (d.shown - DT).max(0.0);
+        }
+        if self.boats.len() < 2 || self.tutorial {
+            return;
+        }
+        let (front, last) = (self.leader_z(), self.last_z());
+        let objs = &self.objs;
+        self.deals.retain(|d| objs.iter().any(|o| o.id == d.pipe && !o.plugged && o.z > last - 40.0));
+        // One pipe's keys at a time, so "your key" is never ambiguous: the next pipe's
+        // keys come once the current pipe is fixed or everyone has passed it.
+        if self.deals.is_empty() {
+            let next = self
+                .objs
+                .iter()
+                .filter(|o| o.kind == Kind::Pipe && !o.plugged && o.z > front - 3.0 && o.z <= front + KEY_DEAL_AT)
+                .min_by(|a, b| a.z.total_cmp(&b.z))
+                .map(|o| o.id);
+            if let Some(pipe) = next {
+                self.new_deal(pipe);
+            }
+        }
+        let away = self.away.clone();
+        for d in &mut self.deals {
+            for (s, k) in d.keys.clone() {
+                if away.contains(&s) && !d.answers.iter().any(|(a, _)| *a == s) {
+                    d.answers.push((s, k));
+                }
+            }
         }
     }
 
     fn finish_plug(&mut self, i: usize, pipe: u32, ok: bool) {
         let seat = self.boats[i].seat;
+        // Any other lock on this pipe closes: it was fixed, or the keys are about to change.
+        for b in &mut self.boats {
+            if b.plug.as_ref().is_some_and(|p| p.pipe == pipe) {
+                b.plug = None;
+            }
+        }
         if ok {
+            self.deals.retain(|d| d.pipe != pipe);
             if let Some(p) = self.objs.iter_mut().find(|o| o.id == pipe) {
                 p.plugged = true;
             }
@@ -1147,13 +1284,19 @@ impl Run {
             self.heal(HEALTH_PLUG);
             self.events.push(Event::Plugged { seat, pipe });
         } else {
+            // The river takes a hit, and a crew gets new keys for its next try.
+            self.heal(-LOCK_FAIL_COST);
             self.events.push(Event::PlugFailed { seat, pipe });
+            if self.boats.len() > 1 {
+                self.new_deal(pipe);
+            }
         }
     }
 
     fn move_boats(&mut self) {
         let mut failed = Vec::new();
         let pace = self.pace();
+        let front = self.leader_z();
         for (i, b) in self.boats.iter_mut().enumerate() {
             b.hop = (b.hop - DT).max(0.0);
             b.capsize = (b.capsize - DT).max(0.0);
@@ -1172,7 +1315,8 @@ impl Run {
                 b.boosting = BOOST_TIME;
                 self.events.push(Event::Boost { seat: b.seat });
             }
-            b.z += b.speed() * pace * DT;
+            let catch_up = if b.z < front - CATCH_UP_GAP { CATCH_UP_MULT } else { 1.0 };
+            b.z += b.speed() * pace * catch_up * DT;
         }
         for (i, pipe) in failed {
             self.boats[i].plug = None;
@@ -1278,6 +1422,9 @@ impl Run {
     /// plastic just ahead, spread over nearby lanes, where anyone can net it again.
     fn capsize(&mut self, bi: usize) {
         self.director.capsizes += 1;
+        if self.endless {
+            self.lives = self.lives.saturating_sub(1);
+        }
         let (seat, crew, lane, z) = (self.boats[bi].seat, self.boats[bi].crew, self.boats[bi].lane, self.boats[bi].z);
         let b = &mut self.boats[bi];
         b.capsize = CAPSIZE_TIME;
@@ -1491,13 +1638,22 @@ pub struct BoatView {
     pub plugging: Option<u32>,
     /// Seconds left fixing a just-plugged pipe.
     pub fixing: f32,
+    /// Pipes this boat has fixed this run (for the suggested fixer).
+    pub pipes: u32,
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub struct PlugView {
     pub pipe: u32,
-    /// The symbols as this viewer may see them.
-    pub code: [u8; 3],
+    /// Solo: the symbols as this viewer may see them. Crew locks: empty (see `slots`).
+    pub code: Vec<u8>,
+    /// A crew key lock.
+    pub team: bool,
+    /// Crew locks: one slot per player in seat order: (seat, answered, key). The key is
+    /// shown to the fixer for teammates' slots, and to each player for their own answer.
+    pub slots: Vec<(u8, bool, Option<u8>)>,
+    /// Crew locks: slots the fixer has typed so far.
+    pub typed: usize,
     pub clear: bool,
     /// No crewmate: a memory puzzle (shown clearly, then hidden).
     pub memory: bool,
@@ -1512,6 +1668,8 @@ pub struct Snapshot {
     pub tick: u64,
     pub river: River,
     pub endless: bool,
+    /// Endless: lives the crew has left.
+    pub lives: u8,
     /// Metres travelled by the leading boat (shown in Endless).
     pub distance: f32,
     pub duration: f32,
@@ -1534,6 +1692,8 @@ pub struct Snapshot {
     pub objs: Vec<Obj>,
     /// Gate codes this viewer is involved in (own plug, or a crewmate's).
     pub plugs: Vec<(u8, PlugView)>,
+    /// This viewer's own key for the pipe ahead, while it is being shown.
+    pub my_key: Option<u8>,
     pub results: Option<Results>,
 }
 
@@ -1553,22 +1713,48 @@ impl Run {
                 if me.crew != b.crew {
                     return None;
                 }
-                let alone = self.crew_size(b.crew) == 1;
                 let own = b.seat == viewer;
-                let memory = own && alone;
-                let clear = !own || (memory && p.left > PLUG_TIME - MEMORY_TIME);
+                if p.team {
+                    let deal = self.deals.iter().find(|d| d.pipe == p.pipe);
+                    let slots = deal
+                        .map(|d| {
+                            d.keys
+                                .iter()
+                                .map(|(s, _)| {
+                                    let ans = d.answers.iter().find(|(a, _)| a == s).map(|(_, g)| *g);
+                                    let visible = own || *s == viewer;
+                                    (*s, ans.is_some(), if visible { ans } else { None })
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    return Some((
+                        b.seat,
+                        PlugView {
+                            pipe: p.pipe,
+                            code: Vec::new(),
+                            team: true,
+                            slots,
+                            typed: p.entered.len(),
+                            clear: false,
+                            memory: false,
+                            hidden: false,
+                            entered: p.entered.len(),
+                            left: p.left,
+                        },
+                    ));
+                }
+                let memory = own;
+                let clear = !own || p.left > PLUG_TIME - MEMORY_TIME;
                 let hidden = memory && !clear;
                 Some((
                     b.seat,
                     PlugView {
                         pipe: p.pipe,
-                        code: if hidden {
-                            [0; 3]
-                        } else if clear {
-                            p.code
-                        } else {
-                            p.scrambled()
-                        },
+                        code: if hidden { vec![0; 3] } else { p.code.clone() },
+                        team: false,
+                        slots: Vec::new(),
+                        typed: 0,
                         clear,
                         memory,
                         hidden,
@@ -1609,6 +1795,7 @@ impl Run {
                     plastic: b.plastic,
                     plugging: b.plug.as_ref().map(|p| p.pipe),
                     fixing: b.fixing,
+                    pipes: b.plugged,
                 })
                 .collect(),
             crews: self.crews.iter().map(|c| (c.id, c.score(), c.plastic, c.pipes, c.banks, c.nets)).collect(),
@@ -1619,11 +1806,17 @@ impl Run {
                 .cloned()
                 .collect(),
             plugs,
+            my_key: self
+                .deals
+                .iter()
+                .filter(|d| d.shown > 0.0)
+                .find_map(|d| d.keys.iter().find(|(s, _)| *s == viewer).map(|(_, k)| *k)),
             // Endless has no time limit (0 here, since JSON can't carry infinity).
             duration: if self.endless { 0.0 } else { self.duration() },
             tutorial: self.tutorial,
             river: self.river,
             endless: self.endless,
+            lives: self.lives,
             distance: self.distance(),
             results: self.results.clone(),
         }

@@ -119,8 +119,15 @@ function openRun() {
     names,
     { input: (i) => void socket?.sendRaw("run.input", i), choose: (option) => send("run.choose", { option }) },
     closeRun,
+    quitRun,
     !!room?.members.find((x) => x.you)?.host,
   );
+}
+
+/** Quit a run early: leave the room and go back to the hub. The others keep playing. */
+function quitRun() {
+  send("room.leave");
+  setTimeout(leaveToHub, 150);
 }
 
 function closeRun() {
@@ -240,6 +247,7 @@ const ui: UiActions = {
   },
   ready: (v) => send("room.ready", { ready: v }),
   startRun: (practice) => send("run.start", { practice, river: selectedRiver() }),
+  startEndless: () => send("run.start", { endless: true, river: selectedRiver() }),
   openHowTo: () => modals.push("howto", "How to play", howToPlay()),
   openPanel: (kind) => modals.push("panel-" + kind, PANEL_TITLES[kind], hubPanel(kind), { wide: true, onClose: () => render(true) }),
   openSettings: () =>

@@ -100,13 +100,10 @@ pub fn start(
         return Err(GameError::new("no_players", "Nobody is connected."));
     }
     let seed = rand::random::<u64>();
-    if endless && seats.len() != 1 {
-        return Err(GameError::new("endless_solo", "Endless is a solo mode: play it from a room of your own."));
-    }
     let mut run = if tutorial {
         Run::tutorial(seed, &seats)
     } else if endless {
-        Run::endless(seed, seats[0], difficulty, river)
+        Run::endless(seed, &seats, difficulty, river)
     } else {
         Run::create(seed, &seats, difficulty, river)
     };
@@ -143,7 +140,10 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
         tick.tick().await;
         let mut g = entry.lock().await;
         let room = g.state.id;
+        // Disconnected players' keys fill in by themselves, so a pipe lock is never impossible.
+        let away: Vec<u8> = g.state.roster.members.iter().filter(|m| !m.connected).map(|m| m.seat).collect();
         let Some(host) = g.run.as_mut() else { return };
+        host.run.set_away(away);
         let inputs = host.take_inputs();
         host.run.step(&inputs);
         let events = host.run.drain_events();

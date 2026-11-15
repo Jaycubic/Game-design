@@ -53,6 +53,7 @@ export class RunMode {
     names: Record<string, string>,
     private send: RunSender,
     private onLeave: () => void,
+    private onQuit: () => void,
     private isHost: boolean,
   ) {
     this.scene = new RiverScene(engine);
@@ -60,6 +61,7 @@ export class RunMode {
       choose: (o) => send.choose(o),
       glyph: (g) => send.input({ glyph: g }),
       leave: () => this.onLeave(),
+      quit: () => this.onQuit(),
     });
     this.keyHandler = (e) => this.onKey(e);
     window.addEventListener("keydown", this.keyHandler);
@@ -177,7 +179,8 @@ export class RunMode {
             this.scene.kick(0.75);
             this.hud.hit(feel.prefs.reduceFlash);
             if (e.dropped && scr?.visible) this.hud.popup(scr.x, scr.y - 30, `−${e.dropped} ♻`, "bad");
-            this.hud.banner(s.endless ? "Capsized — run over!" : e.dropped ? "Capsized! Net your plastic back" : "Capsized!", "bad");
+            const livesLeft = Math.max(0, (s.lives ?? 1) - 1);
+            this.hud.banner(s.endless ? (livesLeft > 0 ? `Capsized! ${livesLeft} ${livesLeft === 1 ? "life" : "lives"} left` : "Capsized — run over!") : e.dropped ? "Capsized! Net your plastic back" : "Capsized!", "bad");
           }
           break;
         case "slowed":
@@ -202,8 +205,17 @@ export class RunMode {
           break;
         }
         case "plug_failed":
-          if (mine) sound.play("plugFail");
-          if (mine) this.hud.banner("Wrong code — the pipe is still pouring", "bad");
+          sound.play("plugFail", { volume: mine ? 1 : 0.7 });
+          this.hud.banner(s.boats.length > 1 ? "Lock failed! River −5 — new keys for the next try" : "Wrong code! River −5", "bad");
+          break;
+        case "plug_skipped":
+          if (mine) this.hud.banner("You left the pipe — sail on!", "warn");
+          break;
+        case "keys_dealt":
+          if (s.boats.length > 1) sound.play("countdown", { volume: 0.6 });
+          break;
+        case "answered":
+          if (s.boats.some((b) => b.seat === this.mySeat && b.plugging === e.pipe)) sound.play("ping", { volume: 0.7 });
           break;
         case "ping":
           if (!mine) sound.play("ping", { volume: 0.5 });
@@ -215,7 +227,7 @@ export class RunMode {
           break;
         case "choked":
           sound.play("lose", { volume: 0.7 });
-          this.hud.banner("The river is choking — everyone's score will be halved", "bad");
+          this.hud.banner("The river is choking — the crew's score will be halved", "bad");
           break;
         case "rule_changed":
           sound.play("rule");
@@ -325,7 +337,9 @@ export class RunMode {
     const pipe = s.objs.filter((o) => o.kind === "pipe" && !o.plugged && o.z > mz - 2 && o.z < mz + 90).sort((a, b) => a.z - b.z)[0];
     if (pipe && me) {
       const scr = this.scene.worldToScreen(new Vector3(this.scene.pipeX(pipe.lane), 2.6, pipe.z));
-      this.hud.pipeMarker(scr.x, scr.y, scr.visible, pipe.z - mz);
+      // Suggested fixer: the player with the fewest pipes fixed (ties: the lowest seat).
+      const turn = s.boats.length > 1 ? [...s.boats].sort((a, b) => (a.pipes ?? 0) - (b.pipes ?? 0) || a.seat - b.seat)[0].seat : null;
+      this.hud.pipeMarker(scr.x, scr.y, scr.visible, pipe.z - mz, turn);
     } else this.hud.pipeMarker(0, 0, false, 0);
     for (const p of poses) {
       const scr = this.scene.worldToScreen(new Vector3(p.x, p.y + 1.6, p.z));

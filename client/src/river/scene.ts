@@ -41,6 +41,7 @@ import {
   weedMesh,
   netMesh,
   currentMesh,
+  murkMesh,
 } from "./props";
 import { LANE_W, SEAT_COLOURS, type River, type RunObj } from "./types";
 
@@ -243,6 +244,7 @@ export class RiverScene {
     this.objBatches = {
       danger: new Batch(disc("danger", new Color3(0.35, 0.05, 0.04), 0.5)),
       net: new Batch(withMat(netMesh(scene, LANE_W * 2))),
+      murk: new Batch(withMat(murkMesh(scene))),
       current: new Batch(withMat(currentMesh(scene), this.currentMat())),
       boulder: new Batch(withMat(flora.rock.clone("boulder"))),
       gap: new Batch(disc("gap", new Color3(0.45, 1, 0.6), 0.35)),
@@ -530,7 +532,12 @@ export class RiverScene {
           const px = o.lane * (HALF + 1.2);
           ob.pipe.add(px, 0.35, o.z, o.lane > 0 ? 0 : Math.PI, 1.6);
           if (o.plugged) ob.plug.add(px, 0.35, o.z, o.lane > 0 ? 0 : Math.PI, 1.6);
-          else ob.plume.add(o.lane * (HALF - 1.6), -0.04, o.z + 6, 0, 1, 0, 0, 2.4 + Math.sin(t * 1.5 + o.id) * 0.3, 9);
+          else {
+            ob.plume.add(o.lane * (HALF - 1.6), -0.04, o.z + 6, 0, 1, 0, 0, 2.4 + Math.sin(t * 1.5 + o.id) * 0.3, 9);
+            // A grumpy smog cloud sulks over every open pipe, bobbing and puffing.
+            const puff = 1 + Math.sin(t * 3 + o.id) * 0.06;
+            ob.murk.add(px - o.lane * 0.6, 2.6 + Math.sin(t * 1.7 + o.id) * 0.25, o.z, Math.sin(t * 0.8 + o.id) * 0.15, 1.7 * puff);
+          }
           break;
         }
       }

@@ -97,7 +97,7 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 |---|---|---|
 | `run.start` | `{practice?: bool, tutorial?: bool, river?: "canal" \| "mangrove" \| "gorge", endless?: bool}` | Host only, from the lobby. `river` defaults to `canal` and must be unlocked for the host (errors `bad_river`, `river_locked`). `endless` starts solo Endless (only with one connected player, error `endless_solo`; pays like practice). A normal run needs at least 2 connected, ready players. `practice` lets the host play alone for half Seeds; `tutorial` starts the 60-second scripted course, which pays no Seeds. Errors: `not_host`, `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players`. |
 | `run.input` | `{steer?: -1\|0\|1, hop?: bool, action?: bool, glyph?: 0–5}` | Applied on the next tick. A `glyph` sent while plugging is a gate-code entry; otherwise it is a signal ping. |
-| `run.choose` | `{option}` | Twist vote (0–2) or Finale pick (0–1). Only the trailing crew may pick the Finale. |
+| `run.choose` | `{option}` | Twist vote (0–2) or Finale vote (0–1). Every player votes; a tie or no votes spins. |
 
 ### Run messages (server → client)
 

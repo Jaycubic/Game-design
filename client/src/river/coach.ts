@@ -95,7 +95,7 @@ export class Coach {
           ? {
               name: "code",
               title: "Gate code",
-              text: `Remember the order, then ${usesTouch() ? "tap the symbols" : "press their keys 1–6"}. In a crew, only your crewmate sees the right order.`,
+              text: `Remember the order, then ${usesTouch() ? "tap the symbols" : "press their keys 1–6"}. With friends, everyone holds one key for each pipe.`,
             }
           : { name: "action", title: "Plug a pipe", text: `Steer into the lane next to the pipe and ${tap().toLowerCase()} ✂ when you're beside it.` },
       done: (c) => c.plugged || c.pluggingFailed,
@@ -107,7 +107,7 @@ export class Coach {
       spot: () => ({
         name: "signals",
         title: "Signals",
-        text: "Six symbols with no fixed meaning: your crew decides what they mean. Use them to pass on gate codes, or to bluff the other crew.",
+        text: "Six symbols. With friends, each of you is shown one as your key before every pipe, and the pipe's lock needs everyone's key.",
       }),
       done: (c) => c.pings >= 1 || c.age > 12,
     },

@@ -1,31 +1,31 @@
 # Clearwater Run — Rule Book
 
-*A crew boat race to keep a river alive.* 2–4 players, each on their own device. A run lasts 3 minutes.
+*One crew, one river, against the pollution.* 1–4 players, each on their own device, all on the same
+team. A run lasts 3 minutes.
 
 ---
 
 ## 1. Getting into a run
 
 1. Sign in and press **PLAY**. The game opens a room and shows a six-character **invitation code**.
-2. Friends press **Join** on their own devices and type the code. 2–4 players can join.
+2. Friends press **Join** on their own devices and type the code. Up to 4 players, all in one crew.
 3. Everyone presses **Ready**, and the host starts the run.
 
-**Practice solo** starts a run with just you. It pays half Seeds. **∞ Endless** is a solo run with no clock (§11).
+**Practice solo** starts a run with just you. It pays half Seeds. **∞ Endless** has no clock (§11): play it alone
+from the hub, or with your crew from the room (the host presses ∞ Endless).
 
 The **river chip** above PLAY chooses the river (§4); in a crew room the host's choice counts.
 
 **Tutorial** is a 60-second course that teaches each control in turn. You can skip it at any time, and it pays
 nothing.
 
-## 2. Crews
+## 2. One crew against the pollution
 
-| Players | Crews |
-|---|---|
-| 1 (practice) | You alone |
-| 2 | One crew together, against the river |
-| 3–4 | Two rival crews; seats alternate between Crew A and Crew B |
+Everyone in the room is **one crew**. You share one score, one River Health bar and one result, and you play
+together against the pollution. A grumpy brown smog cloud sulks over every open sewage pipe until you plug it.
 
-Crews compete on score, but **everyone shares one River Health bar**.
+- **You saved the river** when the run ends with the river **revived** (River Health 60 or more).
+- **the river chokes** if River Health ever reaches 0 (the river **chokes**).
 
 ## 3. Controls
 
@@ -38,6 +38,9 @@ Crews compete on score, but **everyone shares one River Health bar**.
 | Vote during a rule change | keys 1–3 | A / B / X | tap a card |
 
 Your boat moves forward on its own. The letter keys can be rebound in **Settings**; the arrow keys always work.
+
+**Quit:** the **✕** next to the timer leaves a run early. Tap it once (it turns into "Quit?"), then again to go back
+to the hub. Your crew keeps playing without you.
 
 **On-screen controls** (Settings → Controls), as in most mobile games:
 
@@ -70,7 +73,7 @@ Boats start spread across the river.
 | **Weed mat** | Slows you for a second. | Press **Action** just before it to cut it. Each cut greens a bank: +5 crew score and the river heals. |
 | **Log** | Capsizes you: you stop for about a second and spill 3 plastic, which floats just ahead for anyone to net. Then you're safe from obstacles for 1 second. A red shadow under a log in your lane means hop now. | **Hop** over it. |
 | **Debris wave** (every 30 s) | Covers every lane but one (two gaps on a 6-lane river) and capsizes you. The gap lanes glow. | Steer to a gap, or hop. |
-| **Sewage pipe** (on a bank) | Pours murk that drains River Health every second until it is plugged. | Pull up beside it in the outermost lane on its side, press **Action**, then type its gate code (§5). |
+| **Sewage pipe** (on a bank, with a smog cloud above it) | Pours sewage that drains River Health every second until it is plugged. | Pull up beside it in the outermost lane on its side, press **Action**, and fill its lock with your crew (§5). |
 
 **Other boats:** if you run into the back of a boat in your lane, you slow down for a moment. Hop or change lanes
 to pass.
@@ -89,41 +92,62 @@ new thing on top of everything above.
 | **Mangrove Maze** | **Ghost nets**: old fishing nets across two lanes. They slow you like weed. Cut one with **Action** twice (or a crewmate cuts once too) to free the 4 plastic trapped inside. | 3 runs or 3 ★ |
 | **Rapids Gorge** | **Currents** (white arrows) push you one lane sideways unless you hop over them. **Rocks** capsize you even if you hop: steer round them. | 8 runs or 7 ★ |
 
-## 5. Plugging a pipe: the gate code
+## 5. Plugging a pipe: the crew key lock
 
-**Finding a pipe.** Open pipes stand out on the bank with a brown plume in the water and a floating 🔧 marker
-above them. A card at the top of the screen tells you which bank it's on, how far away it is, and what to do next.
+**Finding a pipe.** Open pipes stand out on the bank: a big pipe, a brown plume in the water, a grumpy smog cloud above it,
+and a floating 🔧 marker with the distance. A card at the top of the screen tells you which bank it's on, how far
+away it is, and what to do next. With friends, the marker also suggests whose turn it is to fix one ("Asha's turn?",
+whoever has fixed the fewest so far). It's only a hint: anyone can fix any pipe.
 
-**Plugging it:**
-1. Steer into the **outermost lane** on the pipe's side and press **Action** beside it. Your boat stops.
-2. A **3-symbol gate code** appears. You have 8 seconds to enter it with keys 1–6 (or the symbol buttons).
-3. Right code: your boat stays put **1 more second** while your crew member fixes the pipe. The river heals by 10
-   and your crew's **multiplier** goes up for the rest of the run (shown as ×1.5, ×2… next to your score).
-4. Wrong code or too slow: the pipe keeps pouring. You can try again.
+### With a crew (2–4 players): everyone holds a key
 
-**The puzzle: you can't read your own code.**
-- **You see the right symbols in the wrong order. Your crewmates see the real order.**
-- Crewmates can only talk through the six **signals**: 1 Leaf, 2 Drop, 3 Fish, 4 Bridge, 5 Arrow and 6 Star. They have
-  no fixed meaning; your crew decides what they mean. Signals appear over the sender's boat.
-- **The rival crew sees your signals too**, so crews invent shorthand, or send decoys.
+1. **Keys.** As the crew nears a pipe (about 70 m), **each player sees their own key** for 3 seconds, on the left
+   of the screen: for example "Your key: ⭐ 6 · Star". Every player gets a different symbol, and nobody else sees
+   yours. **Remember it.**
+2. **Call for help.** A player beside the pipe presses **Action**. Their boat stops and a **lock** opens with one
+   slot per player, in seat order (player 1, 2, 3, 4), each in that player's colour.
+3. **Answer.** Everyone else gets a call: "Ben is fixing a pipe — send your key!" Press the number of **your** key.
+   It appears in your slot on the lock, wherever you are on the river.
+4. **Unlock.** The fixer types the slots **left to right**: their own key from memory, the others as they arrive.
+   The whole crew has **12 seconds**.
+5. **Fixed!** The boat stays put 1 more second while the crew member hammers the pipe shut. The smog cloud over that pipe
+   is gone, the river heals by 10, and your crew's **multiplier** goes up for the rest of the run (×1.5, ×2… next to
+   your score).
+6. **Failed** (a wrong key, or someone didn't answer in time): **the river takes a hit**, River Health −5, the pipe keeps
+   pouring, and everyone is shown **new keys** for the next try.
 
-**Worked example (two crewmates, Player A and Player B).**
+**Skip.** A fixer can leave the lock at any time by pressing **▲ (hop)**, with no penalty. This is how a crew that
+all stopped can sail on and leave one fixer behind.
 
-| Step | Player A (at the pipe) | Player B (crewmate, anywhere on the river) |
+**More than one fixer.** Several players can open a lock at the same pipe. Every answer goes into all of them, and
+the **first** fixer to enter the full set correctly fixes the pipe. Stop together for a lightning fix, or leave one
+fixer behind while the rest keep collecting: your crew's choice.
+
+**Catching up.** A boat more than about 25 m behind the front boat sails 15 % faster until it rejoins, so stopping
+to fix a pipe never strands anyone.
+
+**One pipe at a time.** Keys belong to the pipe you're approaching. The next pipe's keys come once that pipe is
+fixed or everyone has passed it.
+
+**Worked example (Ben, You and Asha).**
+
+| Step | You (the fixer) | Ben and Asha |
 |---|---|---|
-| 1 | Reaches the pipe and presses **Action**. The boat stops. | Gets a card: "A is plugging a pipe — tell them the order!" |
-| 2 | Sees the code **scrambled**: 🍃 Leaf · ➜ Arrow · 🐟 Fish. Right symbols, wrong order. | Sees the **real order**: 🐟 Fish · 🍃 Leaf · ➜ Arrow. |
-| 3 | Watches the space over B's boat. | Sends the symbols one by one: **3** (Fish), then **1** (Leaf), then **5** (Arrow). Each pops up over B's boat. |
-| 4 | Types what B sent: **3, 1, 5**. | — |
-| 5 | Correct: the boat stays put for 1 second while A's crew member hammers the pipe shut. The brown plume stops, River Health +10, and every plastic is now worth ×1.5. | Shares the score boost. |
+| 1 | See your key: ⭐ Star (6). | Ben sees 🍃 Leaf (1). Asha sees 🐟 Fish (3). |
+| 2 | Press **Action** beside the pipe. The lock shows: Ben · You · Asha. | Get the call: "You is fixing a pipe — send your key!" |
+| 3 | Watch the slots fill: Ben 🍃 1 … Asha 🐟 3. | Ben presses **1**, Asha presses **3**. |
+| 4 | Type left to right: **1** (Ben), **6** (yours, from memory), **3** (Asha). | Keep sailing. |
+| 5 | Fixed: River +10, every plastic now ×1.5. | Same score boost for everyone. |
 
-A only ever needed **which order**: they could already see the three symbols. So B's job is just to send them in
-order. Because the rival crew sees B's symbols too, a sharp crew agrees a trick in advance (for example "the
-symbol I send twice is a fake").
+**Disconnected players.** Their slot fills in by itself, so a lock is never impossible.
 
-**Playing alone (no crewmate).** It becomes a memory puzzle instead: the code is shown **in the real order for
-2 seconds**, then turns into **? ? ?**, and you enter it from memory. This happens in Practice solo, Endless, and
-for anyone whose crew is just them.
+### Playing alone: a memory puzzle
+
+With no crewmates, the lock is a **3-symbol code** shown **in the real order for 2 seconds**, then hidden as
+**? ? ?**. Enter it from memory within 8 seconds. ▲ skips here too. A wrong code makes the river take a hit (River Health −5).
+
+**Signals.** The six symbols are 1 Leaf, 2 Drop, 3 Fish, 4 Bridge, 5 Arrow and 6 Star. They are your keys, and
+outside a lock you can still send them as signals that pop up over your boat.
 
 ## 6. Score and River Health
 
@@ -141,8 +165,8 @@ For example, 40 plastic with 2 pipes plugged and 3 banks greened scores 40 × 2 
 | Plastic missed | −0.8 |
 | Each open pipe | −0.12 every second |
 
-- **River choked:** if River Health ever reaches 0, every crew's final score is **halved**.
-- **River revived:** if the run ends with River Health at 60 or more, every crew gets **+20**.
+- **River choked:** if River Health ever reaches 0, the crew's final score is **halved**.
+- **River revived:** if the run ends with River Health at 60 or more, the crew gets **+20**.
 
 ## 7. The two rule changes
 
@@ -168,20 +192,22 @@ visible spin among the tied options.
 
 ### Rule change 2: Finale (about 2:20 into the run)
 
-The **trailing crew** chooses within 10 seconds. With only one crew, that crew chooses. A tied score, or no choice,
-is settled by a visible spin.
+The crew **votes** within 10 seconds, like the Twist. The option with the most votes wins; a tie, or no votes, is
+settled by a visible spin.
 
 | Finale | Effect |
 |---|---|
-| **Second Wind** | The choosing crew's boost fills, and extra plastic flows into its lanes for 20 s. |
-| **Clean Sweep** | Every open pipe pours at half rate for the rest of the run, which helps everyone. |
+| **Second Wind** | Every boat's boost fills, and extra plastic flows into your lanes for 20 s. |
+| **Clean Sweep** | Every open pipe pours at half rate for the rest of the run. |
 
-The Finale lets the trailing crew either chase points or help the shared river.
+The Finale is a crew decision: chase points (Second Wind) or protect the river (Clean Sweep).
 
 ## 8. End of the run
 
-- **Two crews:** the higher crew score wins. Both crews still live with the shared river result.
-- **One crew:** you "win" by keeping the river revived (River Health of 60 or more at the end).
+- **You saved the river** when the river ends revived (River Health 60 or more). The results say "River revived! You saved it
+  together".
+- **the river chokes** if River Health reached 0. Otherwise the run is complete and your crew score still counts.
+- The results also show how many pipes each player fixed.
 
 **Stars.** Every river has three stars to earn, and each one stays earned:
 
@@ -200,7 +226,7 @@ help unlock the next river.
 
 **Seeds per run:**
 - Your crew score ÷ 5, up to 60.
-- **+20** for a win. Only your first 3 wins each day earn this bonus.
+- **+20** for a revived river. Only your first 3 wins each day earn this bonus.
 - **+10** if the river was revived.
 - Practice runs pay half. The tutorial pays nothing.
 
@@ -245,19 +271,22 @@ any purchase for a full refund within 10 minutes.
 ## 10. Daily missions and ranks
 
 **Missions.** Every day (UTC) you get three missions, such as "Collect 60 plastic", "Plug 2 sewage pipes", "Earn a
-star on any river" or "Win a crew race". Progress counts in every run, practice included (not the tutorial). A
+star on any river", "Fix a pipe yourself" or "Finish a run with the river revived". Progress counts in every run, practice included (not the tutorial). A
 mission pays 20–40 Seeds the moment it is done. Open **Missions** in the hub to see today's three.
 
 **Ranks.** Your rank shows how well you've been playing: Rookie, Deckhand, Skipper, Captain, River Guardian. It
 goes up as you play well, and it can drop by at most one step in a day. The bar shows how close you are to the next
 rank. The results screen shows your missions and rank after every run.
 
-## 11. Solo Endless
+## 11. Endless
 
-**∞ Endless** (next to Practice solo in the hub) is a solo run on any river you have unlocked:
-- There is no time limit, but **one capsize ends the run**.
-- Your boat speeds up by 2 % every 15 seconds.
+**∞ Endless** is a run with no clock on any river you have unlocked. Start it alone from the hub (next to Practice
+solo), or with your crew from the room (the host presses ∞ Endless):
+- **Alone:** one capsize ends the run. **With a crew:** you share **3 lives** (❤️❤️❤️ under the score); every capsize
+  uses one, and the run ends when they're gone or the river chokes.
+- The boats speed up by 2 % every 15 seconds.
 - The rules still change exactly twice, and you choose: a Twist at 1:00 and a Finale at 2:30.
+- Pipes use the crew key lock (or the memory code alone).
 - **Score = metres travelled + 5 per plastic collected.** Each river keeps your best Endless score.
 - It pays Seeds like a practice run and counts towards daily missions. It earns no stars.
 
@@ -270,9 +299,10 @@ moving forward on its own until you return.
 
 | Possible loophole | How the rules stop it |
 |---|---|
-| A crew ignores the river and only farms plastic | A choked river halves every score. |
-| A crew lets the other do the clean-up work | The +20 "revived" bonus goes to every crew. |
-| A rival reads your gate code | Signals are public, but only your crew sees the real order. |
+| The crew ignores the river and only farms plastic | A choked river halves the score. |
+| Racing ahead and ignoring a teammate's call for keys | The lock fails and the river takes a hit: the whole crew loses River Health. |
+| One player fixes every pipe | The marker suggests whoever has fixed the fewest, and the results show each player's pipes. |
+| Stopping to fix leaves you stranded | The catch-up current brings you back to the crew. |
 | A rule change is random or forced on players | Both changes are chosen by players. Only a tie, or no choice, spins. |
 | Farming wins for Seeds | The win bonus counts only 3 wins a day. Practice pays half. The tutorial pays nothing. |
 | Paying to win | There is no real money, and upgrades are capped and modest. |

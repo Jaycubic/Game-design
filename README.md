@@ -6,9 +6,9 @@ on the same local network. ("Clearwater Run" is a working title, set by `GAME_TI
 ## 1. What it is
 
 Each player steers a small cleanup boat down one shared river for a **3-minute run**. You scoop up plastic, cut weed
-mats, hop logs and plug the sewage pipes on the banks. With 3–4 players the boats form two rival crews. Each crew
-competes on score, but both crews share one **River Health** bar. Let it reach zero and everyone's score is halved.
-Finish above 60 and every crew gets a bonus.
+mats, hop logs and plug the sewage pipes on the banks. Everyone in the room is **one crew** against the
+pollution (a grumpy smog cloud sulks over every open pipe). The crew shares one score and one **River Health** bar: let it
+reach zero and the river chokes (the score is halved); finish above 60 and the river is revived.
 
 The environmental issue is **plastic and sewage pollution in rivers**, carried by the scoring rules rather than by text:
 - plastic that slips past hurts the river;
@@ -31,15 +31,15 @@ The game uses no real place names; the real-world link belongs in the presentati
 | 0:00 | 3-second countdown, then the boats move forward on their own. |
 | 0:00–1:03 | Steer between 3–6 lanes (wider with more boats), collect plastic, hop logs, cut weed, plug pipes. A debris wave every 30 s. |
 | ≈1:03 | **Rule change 1 – Twist:** everyone votes for one of three river modifiers (15 s). |
-| ≈2:20 | **Rule change 2 – Finale:** the trailing crew picks one of two options (10 s). |
-| 3:00 | Results: crew scores, River Health, Seeds earned. |
+| ≈2:20 | **Rule change 2 – Finale:** the crew votes for one of two options (10 s). |
+| 3:00 | Results: crew score, River Health (revived or choked), pipes fixed per player, Seeds earned. |
 
 The two rule changes are **always chosen by players and happen exactly twice per run**. The controls, the scoring
 formula and the win condition never change.
 
-**Communication puzzle:** to plug a pipe you type a 3-symbol gate code. The boat at the pipe sees the right symbols
-in the wrong order; its crewmate sees the real order. Crewmates can only talk through six signal glyphs (keys 1–6),
-and the rival crew sees those signals too.
+**Teamwork puzzle:** before each pipe, every player is shown their own secret key (one of six symbols). To plug the
+pipe, a fixer opens a lock with one slot per player; teammates answer with their key from wherever they are, and
+the fixer enters them all. Playing alone, it's a memory code instead.
 
 ## 3. Around the run
 

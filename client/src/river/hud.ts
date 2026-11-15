@@ -23,6 +23,8 @@ export interface HudCallbacks {
   choose(option: number): void;
   glyph(g: number): void;
   leave(): void;
+  /** Leave the run (and the room) before it ends. */
+  quit(): void;
 }
 
 export class RunHud {
@@ -61,6 +63,8 @@ export class RunHud {
       this.fx,
       this.pipeCard,
       this.pipeMark,
+      this.keyCard,
+      this.quitBtn,
       h(
         "div",
         { class: "rh-keys" },
@@ -105,7 +109,7 @@ export class RunHud {
     const finale = s.finale ? FINALE_INFO[s.finale] : null;
 
     // ── top bar: scores · timer · River Health ──
-    const topSig = JSON.stringify([s.crews, mm, ss, s.endless ? Math.floor(s.distance ?? 0) : 0, Math.round(s.health), s.twist, s.finale, s.choked]);
+    const topSig = JSON.stringify([s.crews, mm, ss, s.lives, s.endless ? Math.floor(s.distance ?? 0) : 0, Math.round(s.health), s.twist, s.finale, s.choked]);
     if (topSig !== this.sigTop) {
       this.sigTop = topSig;
       const hp = Math.round(s.health);
@@ -133,6 +137,7 @@ export class RunHud {
             "div",
             { class: "rh-badges" },
             s.endless ? h("span", { class: "rh-badge" }, "∞ Endless") : null,
+            s.endless && s.boats.length > 1 ? h("span", { class: "rh-badge lives" }, `${"❤️".repeat(s.lives ?? 0)}${"🤍".repeat(Math.max(0, 3 - (s.lives ?? 0)))}`) : null,
             twist ? h("span", { class: "rh-badge", title: twist.line }, `${twist.icon} ${twist.name}`) : null,
             finale ? h("span", { class: "rh-badge", title: finale.line }, `${finale.icon} ${finale.name}`) : null,
           ),
@@ -152,15 +157,31 @@ export class RunHud {
     const centerSig = JSON.stringify([p.phase, "left" in p ? Math.ceil(p.left) : 0, s.votes, s.twist, s.finale, s.results ? 1 : 0]);
     if (centerSig !== this.sigCenter) {
       this.sigCenter = centerSig;
-      this.center.replaceChildren(...this.centerContent(s, myCrew).filter((x): x is HTMLElement => !!x));
+      this.center.replaceChildren(...this.centerContent(s).filter((x): x is HTMLElement => !!x));
     }
 
-    // ── gate code (private to the crew) ──
-    const plug = s.plugs[0];
+    // ── your key, while it is shown ──
+    const keyText = s.my_key !== null && s.my_key !== undefined ? String(s.my_key) : "";
+    if (keyText !== this.sigKey) {
+      this.sigKey = keyText;
+      this.keyCard.classList.toggle("on", !!keyText);
+      if (keyText) {
+        const g = Number(keyText);
+        this.keyCard.replaceChildren(
+          h("div", { class: "rh-key-title" }, "Your key for the next pipe"),
+          h("div", { class: "rh-key-glyph" }, GLYPHS[g], h("small", null, `${g + 1} · ${signalName(g)}`)),
+          h("div", { class: "rh-key-hint" }, "Remember it! Your crew will need it."),
+        );
+      }
+    }
+
+    // ── pipe locks: your own first, otherwise a teammate's that needs you ──
+    const plug = s.plugs.find(([seat]) => seat === this.mySeat) ?? s.plugs.find(([, pv]) => !pv.team || !pv.slots?.find(([st]) => st === this.mySeat)?.[1]) ?? s.plugs[0];
     const codeSig = JSON.stringify(plug ?? null);
     if (codeSig !== this.sigCode) {
       this.sigCode = codeSig;
-      if (!plug) this.code.replaceChildren();
+      if (plug && plug[1].team) this.lockCard(plug[0], plug[1]);
+      else if (!plug) this.code.replaceChildren();
       else {
         const [seat, pv] = plug;
         const own = seat === this.mySeat;
@@ -214,6 +235,82 @@ export class RunHud {
     }
   }
 
+  private keyCard = h("div", { class: "rh-key" });
+  // Quit: first tap asks, second tap leaves (so a stray tap never ends a run).
+  private quitTimer = 0;
+  private quitBtn = h(
+    "button",
+    {
+      class: "rh-quit",
+      title: "Quit this run",
+      "aria-label": "Quit this run",
+      onclick: () => {
+        if (this.quitBtn.classList.contains("confirm")) {
+          this.cb.quit();
+          return;
+        }
+        this.quitBtn.classList.add("confirm");
+        this.quitBtn.textContent = "Quit?";
+        clearTimeout(this.quitTimer);
+        this.quitTimer = window.setTimeout(() => {
+          this.quitBtn.classList.remove("confirm");
+          this.quitBtn.textContent = "✕";
+        }, 3000);
+      },
+    },
+    "✕",
+  );
+  private sigKey = "";
+  private buzzed = new Set<string>();
+
+  /** A crew key lock: the fixer's popup, or a teammate's "press your key!" call. */
+  private lockCard(fixer: number, pv: import("./types").PlugView) {
+    const own = fixer === this.mySeat;
+    const slots = pv.slots ?? [];
+    const how = usesTouch() ? "tap the symbol buttons" : "press keys 1–6";
+    const mine = slots.find(([st]) => st === this.mySeat);
+    const typed = pv.typed ?? 0;
+    const slot = ([seat, answered, key]: [number, boolean, number | null], i: number) =>
+      h(
+        "div",
+        { class: "rh-slot" + (answered ? " in" : "") + (own && i < typed ? " typed" : ""), style: `--c:${SEAT_COLOURS[seat % 4]}` },
+        h("span", { class: "rh-slot-name" }, seat === this.mySeat ? "You" : this.name(seat)),
+        h(
+          "span",
+          { class: "rh-slot-key" },
+          own && i < typed ? "✔" : key !== null ? GLYPHS[key] : seat === fixer && own ? "?" : answered ? "✔" : "…",
+        ),
+        own && key !== null && seat !== this.mySeat ? h("small", null, `${key + 1}`) : seat === fixer && own ? h("small", null, "from memory") : null,
+      );
+    let title: string;
+    let hint: string;
+    if (own) {
+      title = "Fix the pipe — enter every key";
+      hint = `Type the slots left to right (${how}): yours from memory, your crew's as they arrive. Press ▲ to leave.`;
+    } else if (mine && !mine[1]) {
+      title = `🔧 ${this.name(fixer)} is fixing a pipe — send your key!`;
+      hint = `Press the key you were shown (${how}).`;
+      const tag = `${fixer}:${pv.pipe}`;
+      if (!this.buzzed.has(tag)) {
+        this.buzzed.add(tag);
+        navigator.vibrate?.([60, 40, 60]);
+      }
+    } else {
+      title = `✔ Key sent — ${this.name(fixer)} is entering the lock`;
+      hint = "Keep sailing; you can press your key again if you made a mistake.";
+    }
+    this.code.replaceChildren(
+      h(
+        "div",
+        { class: "rh-code-card lock" + (own ? " fixer" : mine && !mine[1] ? " call" : " sent"), "data-tut": "code" },
+        h("div", { class: "rh-code-title" }, title),
+        h("div", { class: "rh-slots" }, slots.map(slot)),
+        h("div", { class: "rh-code-hint" }, hint),
+        h("div", { class: "rh-code-time" }, `${Math.ceil(pv.left)} s`),
+      ),
+    );
+  }
+
   /** The nearest open pipe ahead: a steady card saying where it is and what to do next. */
   private pipePrompt(s: Snapshot, me: Snapshot["boats"][number] | undefined) {
     const racing = s.phase.phase === "running" || s.phase.phase === "warning";
@@ -247,13 +344,16 @@ export class RunHud {
   }
 
   /** Floating marker over the nearest open pipe (screen position from the 3D scene). */
-  pipeMarker(x: number, y: number, visible: boolean, metres: number) {
+  pipeMarker(x: number, y: number, visible: boolean, metres: number, turn: number | null = null) {
     this.pipeMark.style.display = visible ? "" : "none";
     if (!visible) return;
     this.pipeMark.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
     const label = this.pipeMark.lastChild as HTMLElement;
-    const text = `${Math.round(metres)} m`;
+    // Suggested fixer: whoever has fixed the fewest pipes so far (a hint, not a rule).
+    const who = turn === null ? "" : turn === this.mySeat ? " · your turn?" : ` · ${this.name(turn)}'s turn?`;
+    const text = `${Math.round(metres)} m${who}`;
     if (label.textContent !== text) label.textContent = text;
+    this.pipeMark.style.setProperty("--c", turn === null ? "#b9853a" : SEAT_COLOURS[turn % 4]);
   }
 
   /** Shown the first time a gate code ever appears on this device. */
@@ -272,7 +372,7 @@ export class RunHud {
     return this.signalTip();
   }
 
-  private centerContent(s: Snapshot, myCrew: number): (HTMLElement | null)[] {
+  private centerContent(s: Snapshot): (HTMLElement | null)[] {
     const p = s.phase;
     if (p.phase === "countdown") return [h("div", { class: "rh-big pop", key: String(Math.ceil(p.left)) }, String(Math.ceil(p.left)))];
     if (p.phase === "warning") {
@@ -307,27 +407,31 @@ export class RunHud {
       ];
     }
     if (p.phase === "choosing" && p.change === "finale") {
-      const mine = p.pickers === myCrew;
+      // The Finale is a crew vote, like the Twist.
+      const myVote = s.votes.find(([seat]) => seat === this.mySeat)?.[1];
       return [
         h(
           "div",
           { class: "rh-choice" },
-          h("div", { class: "rh-choice-title" }, mine ? (s.crews.length > 1 ? "You're behind — pick the final twist!" : "Pick the final twist!") : `${s.crews.length > 1 ? CREW_NAMES[p.pickers ?? 0] : "Your crew"} picks the final twist…`, h("span", { class: "rh-choice-time" }, `${Math.ceil(p.left)}`)),
+          h("div", { class: "rh-choice-title" }, "Final twist — vote!", h("span", { class: "rh-choice-time" }, `${Math.ceil(p.left)}`)),
           h(
             "div",
             { class: "rh-cards two" },
             FINALE_ORDER.map((f, i) => {
               const info = FINALE_INFO[f];
+              const voters = s.votes.filter(([, o]) => o === i).map(([seat]) => seat);
               return h(
                 "button",
-                { class: "rh-card", disabled: !mine, onclick: () => this.cb.choose(i) },
+                { class: "rh-card" + (myVote === i ? " picked" : ""), onclick: () => this.cb.choose(i) },
                 h("kbd", null, String(i + 1)),
                 h("div", { class: "rh-card-icon" }, info.icon),
                 h("div", { class: "rh-card-name" }, info.name),
                 h("div", { class: "rh-card-line" }, info.line),
+                h("div", { class: "rh-voters" }, voters.map((v) => h("span", { class: "rh-dot", style: `background:${SEAT_COLOURS[v % 4]}`, title: this.name(v) }))),
               );
             }),
           ),
+          h("div", { class: "rh-choice-foot" }, "A tie is settled by a spin."),
         ),
       ];
     }
@@ -351,7 +455,7 @@ export class RunHud {
   results(r: RunResults, s: Snapshot | null, host: boolean) {
     const myCrew = s?.boats.find((b) => b.seat === this.mySeat)?.crew ?? 0;
     const two = r.scores.length > 1;
-    const title = s?.endless ? "Endless run over" : !two ? (r.revived ? "River revived!" : r.choked ? "The river choked" : "Run complete") : r.winner === null ? "It's a draw!" : r.winner === myCrew ? "Your crew wins!" : `${CREW_NAMES[r.winner]} win!`;
+    const title = s?.endless ? "Endless run over" : !two ? (r.revived ? "River revived! You saved it together" : r.choked ? "The river choked" : "Run complete") : r.winner === null ? "It's a draw!" : r.winner === myCrew ? "Your crew wins!" : `${CREW_NAMES[r.winner]} win!`;
     this.center.replaceChildren(
       h(
         "div",

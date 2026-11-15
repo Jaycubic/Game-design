@@ -146,7 +146,7 @@ export function howToPlay(): HTMLElement {
     h(
       "p",
       { class: "small" },
-      "The six signals have no fixed meaning — your crew invents its own code. When a crewmate plugs a pipe, you see the real gate code and they see it scrambled: send them the symbols in order. The other crew sees your signals too, so you can bluff.",
+      "The six symbols are your keys. Before each pipe you're shown your own key: remember it. When a teammate opens a pipe's lock, press your key to send it; the lock needs everyone's key. Playing alone, you get a memory code instead.",
     ),
     h(
       "div",

@@ -35,11 +35,12 @@ fn deterministic_for_same_seed_and_inputs() {
 }
 
 #[test]
-fn crews_two_players_coop_four_players_two_crews() {
+fn everyone_is_one_crew() {
     assert_eq!(Run::new(1, &[0, 1]).crews.len(), 1);
     let r = Run::new(1, &[0, 1, 2, 3]);
-    assert_eq!(r.crews.len(), 2);
-    assert_eq!(r.boats.iter().map(|b| b.crew).collect::<Vec<_>>(), vec![0, 1, 0, 1]);
+    assert_eq!(r.crews.len(), 1);
+    assert!(r.boats.iter().all(|b| b.crew == 0));
+    assert!(r.adaptive, "the Director can adapt every crew run");
 }
 
 #[test]
@@ -175,63 +176,159 @@ fn weed_slows_unless_cut_and_cutting_greens_a_bank() {
 }
 
 #[test]
-fn gate_code_is_clear_only_to_crewmates_and_plugging_heals() {
-    let mut r = Run::new(13, &[0, 1, 2, 3]);
-    r.objs.clear();
-    r.gen_z = f32::MAX; // no generated rows in this test
-    r.phase = Phase::Running;
-    r.boats[0].lane = 5; // right edge of a 6-lane river
-    let z = r.boats[0].z + 2.0;
-    let pipe = r.spawn(Kind::Pipe, 1, z);
-    let mut i = idle(&r);
-    i[0].1.action = true;
-    r.step(&i);
-    let code = r.boats[0].plug.as_ref().expect("plugging").code;
-    // Viewer 0 (plugger) sees scrambled; viewer 2 (crewmate) sees clear; viewer 1 (rival) sees nothing.
-    let s0 = r.snapshot_for(0);
-    let s2 = r.snapshot_for(2);
-    let s1 = r.snapshot_for(1);
-    assert!(!s0.plugs[0].1.clear);
-    assert_eq!(s2.plugs[0].1.code, code);
-    assert!(s2.plugs[0].1.clear);
-    assert!(s1.plugs.is_empty());
-    assert_eq!(r.boats[0].speed(), 0.0, "the boat stops while plugging");
-    let before = r.health;
-    for g in code {
+fn a_crew_lock_needs_every_players_key_and_plugging_heals() {
+    let mut r = crew_at_pipe(13, 4);
+    let pipe = open_lock(&mut r, 0);
+    let keys = keys_for(&r, pipe);
+    // Keys are all different, and each player saw only their own.
+    let mut uniq = keys.clone();
+    uniq.sort();
+    uniq.dedup();
+    assert_eq!(uniq.len(), 4);
+    assert_eq!(r.snapshot_for(2).my_key, Some(keys[2]));
+    assert_eq!(r.boats[0].speed(), 0.0, "the boat stops while fixing");
+    // The fixer's lock shows nothing until teammates answer.
+    let v = r.snapshot_for(0).plugs[0].1.clone();
+    assert!(v.team && v.slots.iter().all(|(_, answered, _)| !answered));
+    for seat in 1..4u8 {
         let mut i = idle(&r);
-        i[0].1.glyph = Some(g);
+        i[seat as usize].1.glyph = Some(keys[seat as usize]);
         r.step(&i);
     }
+    let v = r.snapshot_for(0).plugs[0].1.clone();
+    assert_eq!(v.slots[1], (1, true, Some(keys[1])), "the fixer sees teammates' keys");
+    assert_eq!(r.snapshot_for(2).plugs[0].1.slots[1], (1, true, None), "others only see that seat 1 answered");
+    let before = r.health;
+    type_keys(&mut r, 0, &keys);
     assert!(r.objs.iter().any(|o| o.id == pipe && o.plugged));
     assert_eq!(r.crews[0].pipes, 1);
     assert!(r.health > before + 5.0);
+    assert!(r.deals.iter().all(|d| d.pipe != pipe));
 }
 
-#[test]
-fn wrong_code_fails_and_glyphs_are_pings_otherwise() {
-    let mut r = Run::new(17, &[0, 1]);
+/// A crew of `n` with boat 0 beside a right-bank pipe (no other objects).
+fn crew_at_pipe(seed: u64, n: u8) -> Run {
+    let seats: Vec<u8> = (0..n).collect();
+    let mut r = Run::new(seed, &seats);
     r.objs.clear();
     r.gen_z = f32::MAX; // no generated rows in this test
     r.phase = Phase::Running;
-    r.boats[0].lane = 0; // left edge
-    let z = r.boats[0].z;
-    r.spawn(Kind::Pipe, -1, z);
-    let mut i = idle(&r);
-    i[0].1.action = true;
+    let edge = *r.lanes().last().unwrap();
+    for b in &mut r.boats {
+        b.lane = edge;
+    }
+    let z = r.boats[0].z + 2.0;
+    r.spawn(Kind::Pipe, 1, z);
+    r
+}
+
+/// Seat `seat` presses Action beside the pipe; returns the pipe id.
+fn open_lock(r: &mut Run, seat: u8) -> u32 {
+    let mut i = idle(r);
+    i[seat as usize].1.action = true;
     r.step(&i);
-    let code = r.boats[0].plug.as_ref().unwrap().code;
-    let wrong = (code[0] + 1) % GLYPHS;
-    for g in [wrong, code[1], code[2]] {
-        let mut i = idle(&r);
-        i[0].1.glyph = Some(g);
+    r.boats[seat as usize].plug.as_ref().expect("plugging").pipe
+}
+
+fn keys_for(r: &Run, pipe: u32) -> Vec<u8> {
+    r.deals.iter().find(|d| d.pipe == pipe).expect("deal").keys.iter().map(|(_, k)| *k).collect()
+}
+
+fn type_keys(r: &mut Run, seat: u8, keys: &[u8]) {
+    for g in keys {
+        let mut i = idle(r);
+        i[seat as usize].1.glyph = Some(*g);
         r.step(&i);
     }
+}
+
+#[test]
+fn a_wrong_lock_costs_river_health_and_deals_new_keys() {
+    let mut r = crew_at_pipe(17, 2);
+    let pipe = open_lock(&mut r, 0);
+    let keys = keys_for(&r, pipe);
+    let before = r.health;
+    type_keys(&mut r, 0, &[keys[0], (keys[1] + 1) % GLYPHS]);
     assert_eq!(r.crews[0].pipes, 0);
-    assert!(r.drain_events().iter().any(|e| matches!(e, Event::PlugFailed { .. })));
+    assert!(r.health <= before - LOCK_FAIL_COST + 0.5, "the river takes a hit");
+    let ev = r.drain_events();
+    assert!(ev.iter().any(|e| matches!(e, Event::PlugFailed { .. })));
+    assert!(ev.iter().any(|e| matches!(e, Event::KeysDealt { .. })), "new keys for the next try");
+    // Out of time also fails.
+    let pipe = open_lock(&mut r, 0);
+    for _ in 0..(TICK_HZ as f32 * LOCK_TIME) as usize + 2 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert!(r.boats[0].plug.is_none());
+    assert!(!r.objs.iter().find(|o| o.id == pipe).unwrap().plugged);
+    // With no lock open, a key is just a signal.
     let mut i = idle(&r);
     i[1].1.glyph = Some(3);
     r.step(&i);
     assert!(r.drain_events().contains(&Event::Ping { seat: 1, glyph: 3 }));
+}
+
+#[test]
+fn hop_skips_out_of_a_lock_without_a_penalty() {
+    let mut r = crew_at_pipe(19, 2);
+    open_lock(&mut r, 0);
+    let before = r.health;
+    let mut i = idle(&r);
+    i[0].1.hop = true;
+    r.step(&i);
+    assert!(r.boats[0].plug.is_none());
+    assert!(r.drain_events().iter().any(|e| matches!(e, Event::PlugSkipped { seat: 0, .. })));
+    assert!(r.health > before - 1.0, "no surge for skipping");
+}
+
+#[test]
+fn two_fixers_at_one_pipe_first_correct_entry_wins() {
+    let mut r = crew_at_pipe(23, 3);
+    let pipe = open_lock(&mut r, 0);
+    open_lock(&mut r, 1);
+    let keys = keys_for(&r, pipe);
+    // Seat 2 answers once; both fixers get it.
+    let mut i = idle(&r);
+    i[2].1.glyph = Some(keys[2]);
+    r.step(&i);
+    // Fixer 1 types its own key first (fills its slot for fixer 0), fixer 0 is slower.
+    type_keys(&mut r, 1, &keys);
+    assert!(r.objs.iter().find(|o| o.id == pipe).unwrap().plugged);
+    assert_eq!(r.boats[1].plugged, 1, "fixer 1 fixed it");
+    assert!(r.boats[0].plug.is_none(), "the other lock closed");
+}
+
+#[test]
+fn away_players_keys_fill_in_by_themselves() {
+    let mut r = crew_at_pipe(29, 3);
+    r.set_away(vec![2]);
+    let pipe = open_lock(&mut r, 0);
+    let keys = keys_for(&r, pipe);
+    let v = r.snapshot_for(0).plugs[0].1.clone();
+    assert_eq!(v.slots[2], (2, true, Some(keys[2])));
+}
+
+#[test]
+fn keys_are_dealt_as_the_crew_nears_a_pipe_and_shown_briefly() {
+    let mut r = Run::new(31, &[0, 1]);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    let z = r.leader_z() + KEY_DEAL_AT + 30.0;
+    let pipe = r.spawn(Kind::Pipe, 1, z);
+    let i = idle(&r);
+    r.step(&i);
+    assert!(r.deals.is_empty(), "too far away yet");
+    until(&mut r, |r| !r.deals.is_empty());
+    assert_eq!(r.deals[0].pipe, pipe);
+    let k1 = r.snapshot_for(1).my_key.expect("own key shown");
+    assert_ne!(Some(k1), r.snapshot_for(0).my_key);
+    for _ in 0..(TICK_HZ as f32 * KEY_SHOW) as usize + 2 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert_eq!(r.snapshot_for(1).my_key, None, "then it hides");
 }
 
 #[test]
@@ -273,12 +370,15 @@ fn exactly_two_rule_changes_per_run_chosen_by_players() {
     assert_eq!(r.lanes(), vec![0, 1, 2, 3], "Dry Season closes a third of 6 lanes");
     assert!(r.boats.iter().all(|b| b.lane <= 3));
     until(&mut r, |r| matches!(r.phase, Phase::Choosing { change: ChangeKind::Finale, .. }));
-    let Phase::Choosing { pickers: Some(c), .. } = r.phase.clone() else { panic!() };
-    let outsider = r.boats.iter().find(|b| b.crew != c).unwrap().seat;
-    assert!(r.choose(outsider, 0).is_err(), "only the trailing crew picks");
-    let picker = r.boats.iter().find(|b| b.crew == c).unwrap().seat;
-    r.choose(picker, 1).unwrap();
+    let Phase::Choosing { pickers: None, .. } = r.phase.clone() else { panic!("the Finale is a crew vote") };
+    // Finale votes: 3 for Clean Sweep, 1 for Second Wind.
+    r.choose(0, 1).unwrap();
+    r.choose(1, 1).unwrap();
+    r.choose(2, 0).unwrap();
+    assert!(r.finale.is_none(), "waits for every vote");
+    r.choose(3, 1).unwrap();
     assert_eq!(r.finale, Some(Finale::CleanSweep));
+    assert!(matches!(r.phase, Phase::Reveal { spin: false, .. }));
     until(&mut r, |r| r.phase == Phase::Finished);
     assert_eq!(r.changes, 2);
     assert!(r.results.is_some());
@@ -551,11 +651,25 @@ fn director_pushes_back_on_a_player_in_full_control() {
 }
 
 #[test]
-fn director_never_adapts_a_crew_versus_crew_run() {
-    let mut r = Run::with_difficulty(16, &[0, 1, 2, 3], 1.1);
-    assert!(!r.adaptive);
-    until(&mut r, |r| r.t > 60.0);
-    assert_eq!(r.difficulty, 1.1);
+fn director_never_adapts_endless_or_the_tutorial() {
+    assert!(!Run::endless(16, &[0], 1.1, River::Canal).adaptive);
+    assert!(!Run::tutorial(16, &[0]).adaptive);
+}
+
+#[test]
+fn a_boat_left_behind_catches_up() {
+    let mut r = Run::new(18, &[0, 1]);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    r.boats[1].z = r.boats[0].z - 40.0; // e.g. after fixing a pipe
+    let gap0 = r.boats[0].z - r.boats[1].z;
+    for _ in 0..TICK_HZ as usize * 3 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    let gap1 = r.boats[0].z - r.boats[1].z;
+    assert!(gap1 < gap0 - 5.0, "closing in: {gap0} -> {gap1}");
 }
 
 #[test]
@@ -726,7 +840,7 @@ fn solo_gorge_has_currents_near_the_start() {
 
 #[test]
 fn endless_ends_on_the_first_capsize_and_scores_distance_plus_plastic() {
-    let mut r = Run::endless(5, 0, 1.0, River::Canal);
+    let mut r = Run::endless(5, &[0], 1.0, River::Canal);
     assert!(r.endless && !r.adaptive);
     r.objs.clear();
     r.gen_z = f32::MAX;
@@ -744,7 +858,7 @@ fn endless_ends_on_the_first_capsize_and_scores_distance_plus_plastic() {
 
 #[test]
 fn endless_speeds_up_and_still_has_exactly_two_player_chosen_changes() {
-    let mut r = Run::endless(6, 0, 1.0, River::Canal);
+    let mut r = Run::endless(6, &[0], 1.0, River::Canal);
     r.objs.clear();
     r.gen_z = f32::MAX; // open water: nothing to capsize on
     r.next_wave = f32::INFINITY;
@@ -766,7 +880,7 @@ fn endless_speeds_up_and_still_has_exactly_two_player_chosen_changes() {
     assert!(r.pace() > 1.2, "about x1.02 per 15 s: {}", r.pace());
     assert!(r.phase != Phase::Finished, "no time limit");
     // The course keeps going past the normal end.
-    let mut e = Run::endless(6, 0, 1.0, River::Canal);
+    let mut e = Run::endless(6, &[0], 1.0, River::Canal);
     e.generate_to(COURSE_LEN + 500.0);
     assert!(e.objs.iter().any(|o| o.z > COURSE_LEN));
 }
@@ -783,7 +897,7 @@ fn a_boat_with_no_crewmate_gets_a_memory_puzzle_not_a_scramble() {
     let mut i = idle(&r);
     i[0].1.action = true;
     r.step(&i);
-    let code = r.boats[0].plug.as_ref().expect("plugging").code;
+    let code = r.boats[0].plug.as_ref().expect("plugging").code.clone();
     let v = &r.snapshot_for(0).plugs[0].1;
     assert!(v.memory && v.clear && !v.hidden);
     assert_eq!(v.code, code, "shown in the real order at first");
@@ -793,27 +907,18 @@ fn a_boat_with_no_crewmate_gets_a_memory_puzzle_not_a_scramble() {
     }
     let v = &r.snapshot_for(0).plugs[0].1;
     assert!(v.memory && v.hidden && !v.clear);
-    assert_eq!(v.code, [0; 3], "nothing to read once hidden");
+    assert_eq!(v.code, vec![0; 3], "nothing to read once hidden");
 }
 
 #[test]
 fn plugging_holds_the_boat_for_a_moment_while_the_crew_fixes_the_pipe() {
-    let mut r = Run::new(43, &[0, 1, 2, 3]);
-    r.objs.clear();
-    r.gen_z = f32::MAX;
-    r.phase = Phase::Running;
-    r.boats[0].lane = 5;
-    let z = r.boats[0].z + 2.0;
-    r.spawn(Kind::Pipe, 1, z);
+    let mut r = crew_at_pipe(43, 2);
+    let pipe = open_lock(&mut r, 0);
+    let keys = keys_for(&r, pipe);
     let mut i = idle(&r);
-    i[0].1.action = true;
+    i[1].1.glyph = Some(keys[1]);
     r.step(&i);
-    let code = r.boats[0].plug.as_ref().unwrap().code;
-    for g in code {
-        let mut i = idle(&r);
-        i[0].1.glyph = Some(g);
-        r.step(&i);
-    }
+    type_keys(&mut r, 0, &keys);
     assert!((r.boats[0].fixing - FIX_TIME).abs() < 0.05);
     let z0 = r.boats[0].z;
     for _ in 0..(TICK_HZ as usize / 2) {
@@ -826,5 +931,44 @@ fn plugging_holds_the_boat_for_a_moment_while_the_crew_fixes_the_pipe() {
         r.step(&i);
     }
     assert!(r.boats[0].z > z0 + 3.0, "moving again after the fix");
-    assert!(r.snapshot_for(2).plugs.iter().all(|(_, v)| !v.memory), "crews never get the memory version");
+}
+
+
+#[test]
+fn only_one_pipes_keys_are_live_at_a_time() {
+    let mut r = Run::new(37, &[0, 1]);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    let z = r.leader_z();
+    let first = r.spawn(Kind::Pipe, 1, z + 20.0);
+    r.spawn(Kind::Pipe, -1, z + 45.0);
+    let i = idle(&r);
+    r.step(&i);
+    assert_eq!(r.deals.len(), 1);
+    assert_eq!(r.deals[0].pipe, first, "the nearest pipe first");
+}
+
+#[test]
+fn team_endless_shares_three_lives() {
+    let mut r = Run::endless(8, &[0, 1], 1.0, River::Canal);
+    assert_eq!(r.lives, ENDLESS_CREW_LIVES);
+    assert!(r.boats.iter().all(|b| b.crew == 0));
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    for k in 0..3 {
+        let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+        r.spawn(Kind::Log, lane, z + 1.0);
+        for _ in 0..(TICK_HZ as usize * 3) {
+            let i = idle(&r);
+            r.step(&i);
+        }
+        if k < 2 {
+            assert_ne!(r.phase, Phase::Finished, "still going after {} capsizes", k + 1);
+        }
+    }
+    assert_eq!(r.lives, 0);
+    assert_eq!(r.phase, Phase::Finished, "the third capsize ends it");
+    assert_eq!(Run::endless(8, &[0], 1.0, River::Canal).lives, 1, "solo has one life");
 }

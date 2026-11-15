@@ -274,3 +274,42 @@ export function currentMesh(scene: Scene): Mesh {
   }
   return merge("current", parts);
 }
+
+/** The pollution over an open pipe: a lumpy smog cloud with a grumpy face (faces -z, towards the boats). */
+export function murkMesh(scene: Scene): Mesh {
+  const r = seeded(97);
+  const parts: Mesh[] = [];
+  const puffs: [number, number, number, number][] = [
+    [0, 0, 0, 0.75],
+    [-0.65, -0.1, 0.1, 0.55],
+    [0.65, -0.05, 0.1, 0.58],
+    [-0.3, 0.45, 0.15, 0.5],
+    [0.35, 0.4, 0.1, 0.52],
+    [0, -0.35, 0.05, 0.5],
+  ];
+  for (const [x, y, z, rad] of puffs) {
+    const b = blob(scene, rad, 300 + Math.round(x * 10 + y * 7), 2);
+    place(b, [x, y, z]);
+    b.bakeCurrentTransformIntoVertices();
+    parts.push(paint(b, hex(y > 0.3 ? "#6f5a45" : "#5b4836"), 0.12, r, false));
+  }
+  for (const s of [-1, 1]) {
+    const eye = MeshBuilder.CreateSphere("eye", { diameter: 0.26, segments: 6 }, scene);
+    place(eye, [s * 0.24, 0.12, -0.66], [1, 0.8, 0.5]);
+    eye.bakeCurrentTransformIntoVertices();
+    parts.push(paint(eye, hex("#f4efe2"), 0, r));
+    const pupil = MeshBuilder.CreateSphere("pupil", { diameter: 0.12, segments: 5 }, scene);
+    place(pupil, [s * 0.22, 0.09, -0.74], [1, 1, 0.5]);
+    pupil.bakeCurrentTransformIntoVertices();
+    parts.push(paint(pupil, hex("#1e1a14"), 0, r));
+    const brow = MeshBuilder.CreateBox("brow", { width: 0.26, height: 0.06, depth: 0.05 }, scene);
+    place(brow, [s * 0.24, 0.3, -0.72], 1, [0, 0, s * 0.45]);
+    brow.bakeCurrentTransformIntoVertices();
+    parts.push(paint(brow, hex("#2a2118"), 0, r));
+  }
+  const mouth = MeshBuilder.CreateBox("mouth", { width: 0.34, height: 0.06, depth: 0.05 }, scene);
+  place(mouth, [0, -0.16, -0.74], 1, [0, 0, 0]);
+  mouth.bakeCurrentTransformIntoVertices();
+  parts.push(paint(mouth, hex("#2a2118"), 0, r));
+  return merge("murk", parts);
+}

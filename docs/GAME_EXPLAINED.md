@@ -18,14 +18,14 @@ experience is needed.
 5. [River Health: the most important idea](#5-river-health-the-most-important-idea)
 6. [Everything on the river, and why it is there](#6-everything-on-the-river-and-why-it-is-there)
 7. [The sewage pipe, explained properly](#7-the-sewage-pipe-explained-properly)
-8. [Signals: talking without words](#8-signals-talking-without-words)
-9. [Crews: working together and competing](#9-crews-working-together-and-competing)
+8. [Signals: your six keys](#8-signals-your-six-keys)
+9. [One crew against the pollution](#9-one-crew-against-the-pollution)
 10. [The two rule changes](#10-the-two-rule-changes)
 11. [Score: how points work](#11-score-how-points-work)
 12. [Capsizing, boost and other boats](#12-capsizing-boost-and-other-boats)
 13. [The three rivers](#13-the-three-rivers)
 14. [Around the game: hub, Seeds, boats, stars, missions, ranks](#14-around-the-game-hub-seeds-boats-stars-missions-ranks)
-15. [Solo Endless](#15-solo-endless)
+15. [Endless](#15-endless)
 16. [Tutorial, settings and controls](#16-tutorial-settings-and-controls)
 17. [Behind the scenes: the River Director (creator only)](#17-behind-the-scenes-the-river-director-creator-only)
 18. [How it all fits together](#18-how-it-all-fits-together)
@@ -74,13 +74,14 @@ The brief asked for a game about **environmental awareness**, addressed **indire
 | The brief says | How Clearwater Run does it |
 |---|---|
 | Environmental awareness, indirectly | You never read a lecture. You *feel* the problem: missed plastic and open pipes make the shared river sicker, and a dead river cuts everyone's score in half. |
-| Players change the rules exactly twice | Every run has a **Twist** (everyone votes) and a **Finale** (the losing crew picks). The game enforces exactly two. |
-| Cooperation | Crewmates share one score. All crews share one River Health bar. |
-| Communication | To plug a pipe, you need your crewmate to tell you a secret code, using only six symbols. |
-| Negotiation and bluffing | The Twist vote is argued out loud. The rival crew can see your symbols, so you can send fake ones. |
-| Puzzles | The gate code is a teamwork puzzle under time pressure. |
+| Players change the rules exactly twice | Every run has a **Twist** and a **Finale**, both voted by the crew. The game enforces exactly two. |
+| Cooperation | Everyone is **one crew** with one score and one River Health bar, playing together against the pollution, the pollution. |
+| Communication | Each player holds one secret key for each pipe. The pipe's lock needs **everyone's** key, so the crew must answer when a teammate calls. |
+| Negotiation | Both rule changes are crew votes, argued out loud ("points now, or protect the river?"). Crews also plan who fixes which pipe. |
+| Puzzles | The key lock: remember your key, notice the call, answer in time; alone, a memory puzzle. |
+| Competition (without fighting friends) | The crew competes against the pollution, against its own best scores and stars, and for Endless records. |
 | Simple rules | Three buttons: steer, hop, action. A 60-second tutorial teaches everything. |
-| Limited players | 2–4 players per room. |
+| Limited players | 1–4 players per room. |
 
 ---
 
@@ -91,8 +92,8 @@ The brief asked for a game about **environmental awareness**, addressed **indire
 - A run lasts **3 minutes**.
 - You **collect plastic** by driving into it. You **cut weed**, **hop over logs**, and **plug sewage pipes**.
 - There is one shared **River Health** bar for everybody. Pollution lowers it; cleaning raises it.
-- With 3–4 players, you split into **two crews** that race for the higher score, while still sharing the same
-  river.
+- Everyone in the room is **one crew** against the pollution (a grumpy smog cloud over every open pipe). You win together by
+  keeping the river alive.
 - Twice per run, the players **change the rules**.
 - At the end: scores, River Health, stars, and **Seeds** (the game's coins) to spend on boats.
 
@@ -137,15 +138,15 @@ flowchart LR
     E[Plastic that escapes] -->|−| H
     F[Every open pipe, every second] -->|− − −| H
     H --> G{End of run}
-    G -->|60 or more| R[River revived: every crew +20]
-    G -->|ever hit 0| X[River choked: every score halved]
+    G -->|60 or more| R[You saved the river: crew +20]
+    G -->|ever hit 0| X[the river chokes: score halved]
 ```
 
-**Why it exists.** It turns the "tragedy of the commons" into a rule you can feel. Two crews can fight over points,
-but if they both ignore the river, it chokes and **both** lose half their score. If either crew looks after the
-river, **both** get the +20 bonus. Selfishness costs everyone; care helps everyone.
+**Why it exists.** It turns the "tragedy of the commons" into a rule you can feel. A crew that only chases
+plastic and ignores the pipes watches the river choke, and its score is cut in half. A crew that looks after
+the river gets the +20 bonus. On screen the bar is labelled **River health**: the empty part is muddy brown.
 
-**What it teaches.** A shared resource only survives if someone pays attention to it, even while competing.
+**What it teaches.** A shared resource only survives if someone pays attention to it.
 
 You can also *see* the health: the water turns from clear blue-green to murky brown as it drops.
 
@@ -203,51 +204,57 @@ source makes every clean-up effort more effective.
 
 ### How you plug a pipe
 
-1. **Spot it.** Open pipes have a big brown plume and a floating 🔧 marker with the distance. A card at the top
-   of the screen says which bank (◀ LEFT or RIGHT ▶), how many metres away, and your next step.
+1. **Spot it.** Open pipes have a big brown plume, a grumpy smog cloud above them, and a floating 🔧 marker with the
+   distance. A card at the top of the screen says which bank (◀ LEFT or RIGHT ▶), how many metres away, and your
+   next step. With friends, the marker also suggests whose turn it is ("Asha's turn?").
 2. **Get beside it.** Steer into the **outermost lane** on that side ("Move ◀ left to the edge lane").
-3. **Press Action** when you're next to it ("Press ▼ NOW to plug it!"). Your boat **stops** while you work.
-4. A **gate code** appears: three symbols, such as 🐟 ⭐ 💧. You have **8 seconds** to enter them in order with
-   keys 1–6 (or by tapping the symbol buttons).
-5. **Right code:** your boat stays put **one more second** while your crew member hammers the pipe shut (sparks
-   and clanks). The brown plume stops, River Health +10, and a banner shows your new multiplier ("every plastic now
-   ×1.5"). The ×1.5 badge stays next to your score.
-   **Wrong code or too slow:** the pipe keeps pouring, and you can try again.
+3. **Press Action** when you're next to it ("Press ▼ NOW to plug it!"). Your boat **stops**, and the lock opens.
+4. **Fill the lock** (below), then the boat stays put **one more second** while your crew member hammers the pipe
+   shut (sparks and clanks). the smog cloud leaves, River Health +10, and a banner shows your new multiplier ("every plastic
+   now ×1.5"). The ×1.5 badge stays next to your score.
+5. **Failed:** the river takes a hit (River Health −5) and the pipe keeps pouring. You can try again with new keys.
+6. **Changed your mind?** Press **▲ (hop)** to leave the lock and sail on, with no penalty.
 
-### The twist: you can't read your own code
+### The key lock: everyone holds a piece
 
-- **You**, the boat at the pipe, see the right three symbols but **in the wrong order** (scrambled).
-- Your **crewmate**, anywhere on the river, sees the code **in the right order**.
-- The only way they can tell you is with the six **signals** (next section). They can't type words.
+As the crew nears a pipe (about 70 m), **every player is shown their own key** for 3 seconds, on the left of the
+screen: one of the six symbols, different for each player. Nobody else sees yours.
 
-#### Worked example: Player A and Player B solve a code together
+When someone presses Action at the pipe, they become the **fixer** and a lock opens with **one slot per player**, in
+seat order and in each player's colour. Everyone else gets a call: "Ben is fixing a pipe — send your key!" They
+press the number of their key, and it lands in their slot. The fixer types the slots **left to right**, their own
+key from memory, within **12 seconds**.
 
-| Step | Player A (at the pipe) | Player B (crewmate, anywhere on the river) |
+**Nobody can fix a pipe alone**: the lock needs a key that only each teammate has. That's the teamwork.
+
+#### Worked example: Ben, You and Asha
+
+| Step | You (the fixer) | Ben and Asha |
 |---|---|---|
-| 1 | Reaches the pipe and presses **Action**. The boat stops. | Gets a card: "A is plugging a pipe — tell them the order!" |
-| 2 | Sees the code **scrambled**: 🍃 Leaf · ➜ Arrow · 🐟 Fish. Right symbols, wrong order. | Sees the **real order**: 🐟 Fish · 🍃 Leaf · ➜ Arrow. |
-| 3 | Watches the space over B's boat. | Sends the symbols one by one: **3** (Fish), then **1** (Leaf), then **5** (Arrow). Each pops up over B's boat. |
-| 4 | Types what B sent: **3, 1, 5**. | — |
-| 5 | Correct: the boat stays put for 1 second while A's crew member hammers the pipe shut. The brown plume stops, River Health +10, and every plastic is now worth ×1.5. | Shares the score boost. |
+| 1 | See your key: ⭐ Star (6). | Ben sees 🍃 Leaf (1). Asha sees 🐟 Fish (3). |
+| 2 | Press **Action** beside the pipe. The lock shows: Ben · You · Asha. | Get the call: "You is fixing a pipe — send your key!" |
+| 3 | Watch the slots fill: Ben 🍃 1 … Asha 🐟 3. | Ben presses **1**, Asha presses **3**. |
+| 4 | Type left to right: **1**, **6** (yours, from memory), **3**. | Keep sailing. |
+| 5 | Fixed! River +10, every plastic now ×1.5. | Same score boost for everyone. |
 
-A only ever needed **which order**: they could already see the three symbols. So B's job is just to send them in
-order. Because the rival crew sees B's symbols too, a sharp crew agrees a trick in advance (for example "the
-symbol I send twice is a fake").
+**Several fixers.** Two or more players can open a lock at the same pipe; every answer goes into all of them, and
+the **first** to enter the full set correctly fixes it. Crews choose their plan: everyone stops for a lightning fix,
+or one fixer stays behind (the others press ▲ and sail on) while the rest keep collecting. A boat that falls more
+than 25 m behind gets a **catch-up current** (+15 % speed), so nobody is stranded.
 
-**Playing alone (no crewmate).** It becomes a memory puzzle instead: the code is shown **in the real order for
-2 seconds**, then turns into **? ? ?**, and you enter it from memory. This happens in Practice solo, Endless, and
-for anyone whose crew is just them.
+**Playing alone.** There's no one to share keys with, so it becomes a memory puzzle: a 3-symbol code shows **in the
+real order for 2 seconds**, then turns into **? ? ?**, and you enter it from memory (8 seconds).
 
 ### Why the code works this way
 
 This is the game's **puzzle** and its **communication** requirement in one. It also mirrors real life: fixing
 pollution at the source is never a one-person job. It needs people **coordinating**: inspectors, councils,
-engineers, communities. The person at the problem and the person with the information have to talk.
+engineers, communities, each holding a piece. If anyone ignores the call, the fix fails and the river suffers.
 
 ### The trade-off it creates
 
-While you plug a pipe, your boat is **stopped**. You're not collecting plastic, and the other crew may pull ahead.
-So every crew faces a real choice:
+While you plug a pipe, your boat is **stopped**, and your teammates have to answer your call instead of only
+racing ahead. So every crew faces a real choice:
 - **chase points now** (collect plastic), or
 - **invest in the river** (plug the pipe), which pays back through the multiplier and protects the shared health
   bar.
@@ -256,35 +263,31 @@ That choice, "short-term gain or long-term fix", is exactly the choice people fa
 
 ---
 
-## 8. Signals: talking without words
+## 8. Signals: your six keys
 
 There are six symbols: **1 Leaf 🍃, 2 Drop 💧, 3 Fish 🐟, 4 Bridge 🌉, 5 Arrow ➜, 6 Star ⭐.**
 
-- Press a number key (or tap a symbol button) and that symbol pops up **over your boat** for everyone to see.
-- The symbols have **no fixed meaning**. Your crew decides what they mean.
-
-**Their main job:** passing on gate codes. Your crewmate reads the real order and sends, say, Fish, Star, Drop, and
-you type those in.
-
-**Why the rival crew can see them:** this creates **bluffing and negotiation**. Crews invent their own shorthand
-("double-Leaf means the first symbol is Leaf"), or send fake signals to confuse the others. It makes
-communication a skill, not just a button.
+- They are the **keys** for pipe locks: each player is shown one before each pipe.
+- Press a number key (or tap a symbol button) and that symbol pops up **over your boat**. When a teammate's lock
+  is open, the press also sends your key to it.
+- The symbols don't need a meaning: a key is just "the symbol you were shown", so anyone can play, at any age.
 
 ---
 
-## 9. Crews: working together and competing
+## 9. One crew against the pollution
 
-| Players | How crews form |
+| Players | Crew |
 |---|---|
-| 1 (practice) | You alone, against the river. |
-| 2 | **One crew together**, against the river. |
-| 3–4 | **Two rival crews.** Seats alternate: players 1 and 3 against players 2 and 4. |
+| 1 | You alone, against the pollution. |
+| 2–4 | **Everyone in one crew**, against the pollution. |
 
-- Crewmates **share one score**, so helping each other is always worth it.
-- Crews **compete** on score, but **share River Health**.
+- The crew **shares one score**, one River Health bar and one result.
+- A grumpy brown smog cloud (silly, never scary) sulks over every open sewage pipe and vanishes when you plug it.
+- **You saved the river** when the river ends revived. **the river chokes** if it chokes.
 
-**Why both at once?** Real environmental problems look like this: groups compete (businesses, towns, countries) but
-all depend on the same shared resource. The game asks you to win **without** wrecking the thing everyone needs.
+**Why one crew?** The brief asked for teamwork and no violence. Instead of friends fighting each other for points,
+the whole room works together against the real enemy, pollution. There is still competition: against the pollution, against
+your crew's best scores and stars, and for Endless records.
 
 ---
 
@@ -304,18 +307,17 @@ a 5-second warning → the game pauses → you choose → a card shows the new r
 A tie, or nobody voting, is settled by a **visible spin**, never secretly.
 
 **Why a vote?** It's the **negotiation** part of the brief. Players argue out loud: "Dry Season will kill us, we
-haven't plugged a pipe!" Different crews want different twists depending on how they play.
+haven't plugged a pipe!" Different players want different twists depending on how they play.
 
-### Rule change 2: the Finale (about 2:20 in). The trailing crew picks.
+### Rule change 2: the Finale (about 2:20 in). The crew votes again.
 
 | Finale | What it does |
 |---|---|
-| **Second Wind** | The picking crew's boost fills up, and extra plastic flows their way for 20 s. Good for catching up. |
-| **Clean Sweep** | Every open pipe pours at half speed for the rest of the run. It helps **everyone**, including the leaders. |
+| **Second Wind** | Every boat's boost fills up, and extra plastic flows your way for 20 s. Good for a late score push. |
+| **Clean Sweep** | Every open pipe pours at half speed for the rest of the run. Good for saving the river from pollution. |
 
-**Why the losing crew picks:** it gives them a comeback chance. **Why offer Clean Sweep at all:** it is a real
-moral choice. The losing crew can chase points for itself, or help the shared river even though the leaders benefit
-too.
+**Why it's a real choice:** points now (Second Wind) or a safer river (Clean Sweep)? If River Health is low, Clean
+Sweep may be what saves the river.
 
 **What never changes:** the controls, the score formula and how you win. Only the river changes.
 
@@ -330,9 +332,9 @@ Crew score = plastic × (1 + 0.5 × pipes plugged) + 5 × banks greened
 **Example:** 40 plastic, 2 pipes plugged, 3 weed mats cut → 40 × 2 + 15 = **95**.
 
 At the end:
-- River Health 60 or more → **+20** for every crew (revived).
-- River Health ever hit 0 → every score **halved** (choked).
-- **Two crews:** the higher score wins. **One crew:** you "win" by keeping the river revived.
+- River Health 60 or more → **you saved the river**: +20 for the crew (revived).
+- River Health ever hit 0 → **the river chokes**: the score is **halved** (choked).
+- The results also show how many pipes each player fixed.
 
 ---
 
@@ -412,17 +414,18 @@ predatory parts: no loot boxes, no paid shortcuts, no punishment for missing a d
 
 ---
 
-## 15. Solo Endless
+## 15. Endless
 
-A survival mode for one player:
-- **No time limit**, but **one capsize ends the run**.
-- Your boat speeds up 2% every 15 seconds, so it gets harder and harder.
+A survival mode with no clock, alone or as a crew:
+- **Alone:** one capsize ends the run. **With a crew** (the host presses ∞ Endless in the room): you share
+  **3 lives** (❤️❤️❤️); every capsize uses one.
+- The boats speed up 2% every 15 seconds, so it gets harder and harder.
 - The rules still change **exactly twice**, and you choose (Twist at 1:00, Finale at 2:30).
+- Pipes use the key lock (or the memory code alone).
 - **Score = metres travelled + 5 per plastic.** Each river keeps your best.
 - Pays like practice; counts for missions; earns no stars.
 
-**Why it exists:** after a few wins, players want a "how far can I go?" challenge. "One hit and you're out" is
-exciting alone, but would feel unfair in crew races, so it lives in its own mode.
+**Why it exists:** after a few wins, players want a "how far can we go?" challenge, and a crew record to beat.
 
 ---
 
@@ -467,8 +470,7 @@ The **River Director** quietly adjusts the difficulty so every room stays fun: n
   plugged, river health) and nudges your hidden skill rating. It works like chess ratings.
 - **It sets the river.** Before a run, the room's average rating picks a difficulty: more logs, weed and pipes
   and slightly less plastic for strong players, the opposite for beginners.
-- **It adapts in solo and co-op runs** every 10 seconds, by small steps only.
-- **It never interferes in crew-vs-crew races**, so it can't secretly help one side.
+- **It adapts during every crew run** every 10 seconds, by small steps only (not in Endless or the tutorial).
 - It never touches points, rewards or the shop.
 - Every run is logged, so a real machine-learning model could be trained on it later.
 
@@ -483,18 +485,18 @@ flowchart TD
     P[Real problem: plastic + sewage in a shared river] --> L[Game lesson: stop pollution at the source, and look after what everyone shares]
     L --> RH[River Health bar shared by all]
     L --> PI[Sewage pipes drain health until plugged]
-    PI --> GC[Gate code: needs a crewmate]
-    GC --> SG[Signals: communication, bluffing]
+    PI --> GC[Key lock: every player holds one key]
+    GC --> SG[Answer the call: communication and teamwork]
     PI --> MU[Multiplier: fixing the source makes all work count more]
-    RH --> CH[Choked: everyone halved / Revived: everyone +20]
+    RH --> CH[Choked: the river chokes / Revived: you saved the river]
     L --> RC[Two rule changes: real river events, chosen by players]
     RC --> NE[Voting and choices: negotiation]
-    CH --> CO[Crews: compete on score, cooperate on the river]
+    CH --> CO[One crew: compete against the pollution, together]
 ```
 
-In one sentence: **Clearwater Run is a fast boat race where the only way to really win is to protect the river you
-all share, and the biggest thing you can do for it is stop the pollution at its source, which you can only do by
-working with your crew.**
+In one sentence: **Clearwater Run is a fast boat race where your whole crew teams up against the pollution; the
+only way to win is to protect the river, and the biggest thing you can do for it is stop the pollution at its
+source, which you can only do when every crewmate hands over their key.**
 
 ---
 
@@ -504,13 +506,15 @@ working with your crew.**
 |---|---|
 | **Run** | One 3-minute race down the river. |
 | **Lane** | One of the 3–6 tracks across the river your boat moves between. |
-| **Crew** | The team you're on. Crewmates share a score. |
+| **Crew** | Everyone in the room: one team with one score. |
 | **River Health** | The shared 0–100 bar for how clean the river is. |
-| **Choked** | River Health hit 0: every score is halved. |
-| **Revived** | River Health ended at 60+: every crew gets +20. |
+| **Choked** | River Health hit 0: the river chokes and the score is halved. |
+| **Revived** | River Health ended at 60+: you saved the river, +20 for the crew. |
 | **Outfall / sewage pipe** | A pipe in the bank pouring waste water into the river. |
-| **Gate code** | The three-symbol code you enter to plug a pipe. |
-| **Signal** | One of six symbols you can show over your boat. |
+| **Key** | The symbol you're shown before a pipe. The lock needs every player's key. |
+| **Lock / fixer** | What opens when someone presses Action at a pipe; that player is the fixer. |
+| **Memory code** | Playing alone: a 3-symbol code shown for 2 seconds, then entered from memory. |
+| **Signal** | One of the six symbols (also your keys) you can show over your boat. |
 | **Multiplier** | How much each plastic is worth; raised by plugging pipes. |
 | **Banks greened** | Weed mats cut: +5 each. |
 | **Capsize** | Your boat flips after hitting a log or wave. |
@@ -520,7 +524,7 @@ working with your crew.**
 | **Current** | Moving water that pushes you sideways (Rapids Gorge). |
 | **Seeds** | The game's coins, earned only by playing. |
 | **Stars** | Three goals per river, kept once earned. |
-| **Endless** | Solo mode: no clock, one capsize ends it. |
+| **Endless** | No clock: alone, one capsize ends it; a crew shares 3 lives. |
 | **Host** | The player who opened the room and starts the run. |
 
 ---
@@ -529,11 +533,11 @@ working with your crew.**
 
 **Why does my score drop even though I'm collecting plastic?**
 It doesn't drop during the run, but River Health might be falling because of open pipes. If it reaches 0, everyone's
-final score is halved. Plug pipes!
+final score is halved and the river chokes. Plug pipes!
 
-**Why can't I see the gate code properly?**
-On purpose: you see the right symbols in the wrong order. Your crewmate sees the real order and must signal it to
-you. That's the teamwork puzzle.
+**Why does the lock show "…" in my friend's slot?**
+They haven't sent their key yet. Each player is shown their own key before the pipe; when you call, they press it
+and it lands in their slot. That's the teamwork puzzle.
 
 **Should I always plug pipes?**
 Usually yes: each one heals the river by 10, stops the drain for good, and makes every future plastic worth more.
@@ -542,8 +546,12 @@ But your boat stops while you plug, so timing matters.
 **What if I'm playing alone?**
 Use Practice solo or Endless. When you plug a pipe alone, the code shows in the real order for 2 seconds, then hides as ? ? ?; enter it from memory.
 
-**Why can the other crew see our signals?**
-To allow bluffing. Invent a shorthand with your crewmate, or send decoys.
+**What if my friend is far ahead or behind?**
+Distance doesn't matter: keys reach the lock from anywhere. A boat left far behind gets a catch-up current.
+
+**Do we play against each other?**
+No. Everyone in the room is one crew against the pollution. You can still chase your crew's best scores, stars and Endless
+records.
 
 **Is the rule change random?**
 No. Players choose both. Only a tie or no choice is settled by a spin, and the spin is shown on screen.

@@ -24,7 +24,6 @@ pub enum Metric {
     Weed,
     Runs,
     Revived,
-    CrewWin,
     Star,
     NoCapsize,
     Score100,
@@ -44,8 +43,8 @@ pub const POOL: &[Mission] = &[
     Mission { key: "pipes_2", text: "Plug 2 sewage pipes", metric: Metric::Pipes, goal: 2, reward: 25 },
     Mission { key: "weed_6", text: "Cut 6 weed mats", metric: Metric::Weed, goal: 6, reward: 20 },
     Mission { key: "runs_3", text: "Finish 3 runs", metric: Metric::Runs, goal: 3, reward: 20 },
-    Mission { key: "revive_1", text: "Finish a run with the river revived", metric: Metric::Revived, goal: 1, reward: 25 },
-    Mission { key: "win_1", text: "Win a crew race", metric: Metric::CrewWin, goal: 1, reward: 40 },
+    Mission { key: "revive_1", text: "Finish a run with the river revived", metric: Metric::Revived, goal: 1, reward: 30 },
+    Mission { key: "fix_1", text: "Fix a pipe yourself", metric: Metric::Pipes, goal: 1, reward: 25 },
     Mission { key: "star_1", text: "Earn a star on any river", metric: Metric::Star, goal: 1, reward: 30 },
     Mission { key: "clean_1", text: "Finish a run without capsizing", metric: Metric::NoCapsize, goal: 1, reward: 30 },
     Mission { key: "score_100", text: "Reach a crew score of 100 in one run", metric: Metric::Score100, goal: 1, reward: 25 },
@@ -67,9 +66,10 @@ pub fn draw(player: Uuid, day: i32) -> [&'static Mission; 3] {
     let mut picks: Vec<usize> = Vec::new();
     while picks.len() < 3 {
         let i = next() % POOL.len();
-        // at most one plastic mission a day
-        let plastic_twice = POOL[i].metric == Metric::Plastic && picks.iter().any(|p| POOL[*p].metric == Metric::Plastic);
-        if !picks.contains(&i) && !plastic_twice {
+        // at most one plastic mission and one pipe mission a day
+        let twice = matches!(POOL[i].metric, Metric::Plastic | Metric::Pipes)
+            && picks.iter().any(|p| POOL[*p].metric == POOL[i].metric);
+        if !picks.contains(&i) && !twice {
             picks.push(i);
         }
     }
@@ -86,7 +86,6 @@ pub fn amount(metric: Metric, run: &Run, seat: u8) -> i32 {
         Metric::Weed => b.cuts as i32,
         Metric::Runs => 1,
         Metric::Revived => i32::from(res.revived),
-        Metric::CrewWin => i32::from(res.scores.len() > 1 && res.winner == Some(b.crew)),
         Metric::Star => i32::from(run.stars(seat).iter().any(|s| *s)),
         Metric::NoCapsize => i32::from(b.capsizes == 0),
         Metric::Score100 => i32::from(score >= 100),
@@ -271,7 +270,6 @@ mod tests {
         assert_eq!(amount(Metric::Weed, &r, 0), 2);
         assert_eq!(amount(Metric::Revived, &r, 0), 1);
         assert_eq!(amount(Metric::Score100, &r, 0), 1);
-        assert_eq!(amount(Metric::CrewWin, &r, 0), 0, "no crew race when solo");
         assert_eq!(amount(Metric::Runs, &r, 7), 0, "unknown seat");
     }
 }

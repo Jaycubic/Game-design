@@ -23,6 +23,7 @@ export interface UiActions {
   leaveRoom(): void;
   ready(v: boolean): void;
   startRun(practice: boolean): void;
+  startEndless(): void;
   openHowTo(): void;
   openSettings(): void;
   openPanel(kind: "garage" | "shop" | "daily" | "road" | "rivers" | "missions"): void;
@@ -235,6 +236,7 @@ export function lobbyScreen(room: RoomView, a: UiActions): HTMLElement {
         { class: "lobby-buttons" },
         h("button", { class: "btn " + (me?.ready ? "" : "primary"), "data-autofocus": true, onclick: () => a.ready(!me?.ready) }, me?.ready ? "Not ready" : "I'm ready"),
         host ? h("button", { class: "btn primary big", disabled: !allReady, title: why, onclick: () => a.startRun(false) }, icon("play"), "Start the run") : null,
+        host ? h("button", { class: "btn ghost", onclick: () => a.startEndless(), title: "The whole crew, 3 shared lives, no clock" }, "∞ Endless") : null,
         host ? h("button", { class: "btn ghost", onclick: () => a.startRun(true) }, "Practice solo") : null,
       ),
       h("p", { class: "muted small", role: "status" }, why || (host ? "Everyone's ready — start when you like." : "The host starts the run.")),

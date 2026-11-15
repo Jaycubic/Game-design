@@ -38,6 +38,8 @@ export interface RunBoat {
   plugging: number | null;
   /** Seconds left fixing a just-plugged pipe (the boat is stopped). */
   fixing?: number;
+  /** Pipes this boat fixed this run. */
+  pipes?: number;
 }
 
 export type RunPhase =
@@ -50,7 +52,14 @@ export type RunPhase =
 
 export interface PlugView {
   pipe: number;
-  code: [number, number, number];
+  /** Solo memory code (empty for crew locks). */
+  code: number[];
+  /** A crew key lock: one slot per player. */
+  team?: boolean;
+  /** Crew locks: [seat, answered, key (shown to the fixer, and to each player for their own)]. */
+  slots?: [number, boolean, number | null][];
+  /** Crew locks: slots the fixer has typed. */
+  typed?: number;
   clear: boolean;
   /** No crewmate: a memory puzzle (shown clearly at first, then hidden). */
   memory?: boolean;
@@ -73,6 +82,8 @@ export interface Snapshot {
   river?: River;
   /** Solo Endless: no time limit, one capsize ends the run. */
   endless?: boolean;
+  /** Endless: lives the crew has left. */
+  lives?: number;
   /** Metres travelled by the leading boat. */
   distance?: number;
   duration: number;
@@ -95,6 +106,8 @@ export interface Snapshot {
   crews: [number, number, number, number, number, number][];
   objs: RunObj[];
   plugs: [number, PlugView][];
+  /** Your own key for the pipe ahead, while it is being shown. */
+  my_key?: number | null;
   results: RunResults | null;
 }
 
@@ -115,7 +128,10 @@ export type RunEvent =
   | { type: "choked" }
   | { type: "net_hit"; seat: number; id: number; left: number }
   | { type: "net_freed"; seat: number; id: number }
-  | { type: "pushed"; seat: number; dir: number };
+  | { type: "pushed"; seat: number; dir: number }
+  | { type: "keys_dealt"; pipe: number }
+  | { type: "plug_skipped"; seat: number; pipe: number }
+  | { type: "answered"; seat: number; pipe: number };
 
 export const RUN_SECONDS = 180;
 export const LANE_W = 2.4;
