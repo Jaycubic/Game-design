@@ -44,6 +44,10 @@ pub const BOOST_TIME: f32 = 2.5;
 pub const HIT_WINDOW: f32 = 0.9;
 pub const CUT_REACH: f32 = 5.0;
 pub const PLUG_TIME: f32 = 8.0;
+/// After a correct gate code the boat stays put this long while its crew fixes the pipe.
+pub const FIX_TIME: f32 = 1.0;
+/// A boat with no crewmate sees its gate code for this long, then types it from memory.
+pub const MEMORY_TIME: f32 = 2.0;
 pub const COURSE_LEN: f32 = 3300.0;
 
 pub const HEALTH_START: f32 = 70.0;
@@ -341,6 +345,9 @@ pub struct Boat {
     /// Weed mats this boat cut.
     #[serde(default)]
     pub cuts: u32,
+    /// Seconds left fixing a just-plugged pipe (the boat is stopped).
+    #[serde(default)]
+    pub fixing: f32,
     /// The last current that pushed this boat (each current pushes once).
     #[serde(default)]
     pub last_current: u32,
@@ -351,7 +358,7 @@ impl Boat {
         self.hop > 0.0
     }
     pub fn speed(&self) -> f32 {
-        if self.capsize > 0.0 || self.plug.is_some() {
+        if self.capsize > 0.0 || self.plug.is_some() || self.fixing > 0.0 {
             return 0.0;
         }
         let mut s = BASE_SPEED * self.stats.speed_mult();
@@ -576,6 +583,7 @@ impl Run {
                 capsizes: 0,
                 plugged: 0,
                 cuts: 0,
+                fixing: 0.0,
                 last_current: 0,
             })
             .collect();
@@ -1037,7 +1045,7 @@ impl Run {
             }
         }
         let b = &mut self.boats[i];
-        if b.capsize > 0.0 || b.plug.is_some() {
+        if b.capsize > 0.0 || b.plug.is_some() || b.fixing > 0.0 {
             return;
         }
         if input.steer != 0 {
@@ -1134,6 +1142,7 @@ impl Run {
             }
             let crew = self.boats[i].crew;
             self.boats[i].plugged += 1;
+            self.boats[i].fixing = FIX_TIME;
             self.crew_mut(crew).pipes += 1;
             self.heal(HEALTH_PLUG);
             self.events.push(Event::Plugged { seat, pipe });
@@ -1148,6 +1157,7 @@ impl Run {
         for (i, b) in self.boats.iter_mut().enumerate() {
             b.hop = (b.hop - DT).max(0.0);
             b.capsize = (b.capsize - DT).max(0.0);
+            b.fixing = (b.fixing - DT).max(0.0);
             b.immune = (b.immune - DT).max(0.0);
             b.slow = (b.slow - DT).max(0.0);
             b.boosting = (b.boosting - DT).max(0.0);
@@ -1479,6 +1489,8 @@ pub struct BoatView {
     pub boosting: f32,
     pub plastic: u32,
     pub plugging: Option<u32>,
+    /// Seconds left fixing a just-plugged pipe.
+    pub fixing: f32,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1487,6 +1499,10 @@ pub struct PlugView {
     /// The symbols as this viewer may see them.
     pub code: [u8; 3],
     pub clear: bool,
+    /// No crewmate: a memory puzzle (shown clearly, then hidden).
+    pub memory: bool,
+    /// Memory puzzle, after the code has been hidden: `code` carries nothing.
+    pub hidden: bool,
     pub entered: usize,
     pub left: f32,
 }
@@ -1539,13 +1555,23 @@ impl Run {
                 }
                 let alone = self.crew_size(b.crew) == 1;
                 let own = b.seat == viewer;
-                let clear = !own || (alone && p.left > PLUG_TIME - 1.5);
+                let memory = own && alone;
+                let clear = !own || (memory && p.left > PLUG_TIME - MEMORY_TIME);
+                let hidden = memory && !clear;
                 Some((
                     b.seat,
                     PlugView {
                         pipe: p.pipe,
-                        code: if clear { p.code } else { p.scrambled() },
+                        code: if hidden {
+                            [0; 3]
+                        } else if clear {
+                            p.code
+                        } else {
+                            p.scrambled()
+                        },
                         clear,
+                        memory,
+                        hidden,
                         entered: p.entered.len(),
                         left: p.left,
                     },
@@ -1582,6 +1608,7 @@ impl Run {
                     boosting: b.boosting,
                     plastic: b.plastic,
                     plugging: b.plug.as_ref().map(|p| p.pipe),
+                    fixing: b.fixing,
                 })
                 .collect(),
             crews: self.crews.iter().map(|c| (c.id, c.score(), c.plastic, c.pipes, c.banks, c.nets)).collect(),

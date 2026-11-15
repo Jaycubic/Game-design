@@ -151,3 +151,9 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
 .tc-swap .tc-left { left: auto; right: calc(14px + env(safe-area-inset-right, 0)); transform-origin: bottom right; }
 .tc-swap .tc-right { right: auto; left: calc(14px + env(safe-area-inset-left, 0)); flex-direction: row-reverse; transform-origin: bottom left; }
 .tc-swap .tc-glyphs { right: auto; left: calc(10px + env(safe-area-inset-left, 0)); }
+@media (max-height: 500px) and (orientation: landscape) {
+  .rh-pipe { top: 64px; padding: 4px 10px; width: min(340px, 52vw); }
+  .rh-pipe-head { font-size: 0.9rem; }
+  .rh-pipe-step { font-size: 0.85rem; }
+  .rh-banner.big { font-size: 1.3rem; }
+}

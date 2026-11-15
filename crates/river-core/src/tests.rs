@@ -770,3 +770,61 @@ fn endless_speeds_up_and_still_has_exactly_two_player_chosen_changes() {
     e.generate_to(COURSE_LEN + 500.0);
     assert!(e.objs.iter().any(|o| o.z > COURSE_LEN));
 }
+
+#[test]
+fn a_boat_with_no_crewmate_gets_a_memory_puzzle_not_a_scramble() {
+    let mut r = Run::new(41, &[0]);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    r.boats[0].lane = 0;
+    let z = r.boats[0].z;
+    r.spawn(Kind::Pipe, -1, z);
+    let mut i = idle(&r);
+    i[0].1.action = true;
+    r.step(&i);
+    let code = r.boats[0].plug.as_ref().expect("plugging").code;
+    let v = &r.snapshot_for(0).plugs[0].1;
+    assert!(v.memory && v.clear && !v.hidden);
+    assert_eq!(v.code, code, "shown in the real order at first");
+    for _ in 0..(TICK_HZ as f32 * MEMORY_TIME) as usize + 2 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    let v = &r.snapshot_for(0).plugs[0].1;
+    assert!(v.memory && v.hidden && !v.clear);
+    assert_eq!(v.code, [0; 3], "nothing to read once hidden");
+}
+
+#[test]
+fn plugging_holds_the_boat_for_a_moment_while_the_crew_fixes_the_pipe() {
+    let mut r = Run::new(43, &[0, 1, 2, 3]);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    r.boats[0].lane = 5;
+    let z = r.boats[0].z + 2.0;
+    r.spawn(Kind::Pipe, 1, z);
+    let mut i = idle(&r);
+    i[0].1.action = true;
+    r.step(&i);
+    let code = r.boats[0].plug.as_ref().unwrap().code;
+    for g in code {
+        let mut i = idle(&r);
+        i[0].1.glyph = Some(g);
+        r.step(&i);
+    }
+    assert!((r.boats[0].fixing - FIX_TIME).abs() < 0.05);
+    let z0 = r.boats[0].z;
+    for _ in 0..(TICK_HZ as usize / 2) {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert_eq!(r.boats[0].z, z0, "stopped while fixing");
+    for _ in 0..TICK_HZ as usize {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert!(r.boats[0].z > z0 + 3.0, "moving again after the fix");
+    assert!(r.snapshot_for(2).plugs.iter().all(|(_, v)| !v.memory), "crews never get the memory version");
+}

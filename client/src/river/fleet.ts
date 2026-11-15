@@ -69,6 +69,8 @@ function fit(node: TransformNode, size: number, by: "length" | "height") {
 
 export interface BuiltBoat {
   root: TransformNode;
+  /** The crew member (animated while fixing a pipe). */
+  person: TransformNode;
   dispose(): void;
 }
 
@@ -103,6 +105,7 @@ export async function buildBoat(scene: Scene, key: string, seat: number): Promis
   }
   return {
     root,
+    person,
     dispose() {
       boat.dispose();
       crew.dispose();

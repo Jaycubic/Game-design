@@ -161,3 +161,22 @@
 .rh-summary .mission.just { border-color: #ffd23f; }
 .rh-summary .rank-card { margin-top: 8px; background: rgba(255, 255, 255, 0.06); border-color: transparent; }
 .rh-results { max-height: 92vh; overflow-y: auto; }
+
+/* ── Pipes: steady "pipe ahead" card, floating marker, multiplier, memory code ── */
+.rh-pipe { position: absolute; left: 50%; top: 112px; transform: translateX(-50%); width: min(380px, 92vw); padding: 8px 14px; border-radius: 14px; background: rgba(28, 22, 12, 0.88); border: 3px solid #b9853a; text-align: center; display: none; pointer-events: none; }
+.rh-pipe.on { display: block; }
+.rh-pipe.now { border-color: #ffd23f; background: rgba(90, 64, 10, 0.92); }
+.rh-pipe-head { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px; font-size: 1.05rem; }
+.rh-pipe-ico { font-size: 1.4rem; }
+.rh-pipe-side { justify-self: start; color: #ffd9a0; font-weight: 800; }
+.rh-pipe-dist { font-variant-numeric: tabular-nums; font-weight: 900; color: #ffd23f; min-width: 3.5em; text-align: right; }
+.rh-pipe-step { margin-top: 2px; font-weight: 800; font-size: 0.98rem; }
+.rh-pipe.now .rh-pipe-step { color: #ffd23f; font-size: 1.1rem; }
+.rh-pipe-mark { position: absolute; left: 0; top: 0; display: grid; justify-items: center; font-size: 1.8rem; line-height: 1; pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)); animation: rh-mark-bob 1s ease-in-out infinite; }
+.rh-pipe-mark small { font-size: 0.75rem; font-weight: 800; background: rgba(28, 22, 12, 0.85); border: 2px solid #b9853a; border-radius: 8px; padding: 0 6px; margin-top: 2px; }
+@keyframes rh-mark-bob { 50% { margin-top: -6px; } }
+.rh-mult { margin-left: 6px; font-size: 0.8rem; vertical-align: middle; background: #ffd23f; color: #2a2000; border-radius: 8px; padding: 1px 6px; text-shadow: none; }
+.rh-glyph.hidden { display: inline-grid; place-items: center; min-width: 64px; min-height: 64px; color: #ffd23f; font-weight: 900; }
+.rh-code-card.memory { border-color: #ffd23f; }
+.rh-banner.big { font-size: 1.9rem; top: 30%; }
+@media (prefers-reduced-motion: reduce) { .rh-pipe-mark { animation: none; } }

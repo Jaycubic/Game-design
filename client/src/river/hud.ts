@@ -37,7 +37,12 @@ export class RunHud {
   private sigCode = "";
   private sigBottom = "";
   private lastPhase = "";
-  private promptEl = h("div", { class: "rh-prompt" });
+  // Steady "pipe ahead" card: fixed layout, only its text changes.
+  private pipeCard = h("div", { class: "rh-pipe" });
+  private pipeSide = h("span", { class: "rh-pipe-side" });
+  private pipeDist = h("span", { class: "rh-pipe-dist" });
+  private pipeStep = h("div", { class: "rh-pipe-step" });
+  private pipeMark = h("div", { class: "rh-pipe-mark" }, "🔧", h("small", null, ""));
   private tags = new Map<number, HTMLElement>();
 
   constructor(
@@ -54,7 +59,8 @@ export class RunHud {
       this.code,
       this.bottom,
       this.fx,
-      this.promptEl,
+      this.pipeCard,
+      this.pipeMark,
       h(
         "div",
         { class: "rh-keys" },
@@ -90,21 +96,7 @@ export class RunHud {
     if (this.lastPhase === "countdown" && s.phase.phase === "running") this.banner("GO!", "go");
     this.lastPhase = s.phase.phase;
     const me = s.boats.find((b) => b.seat === this.mySeat);
-    // Pipe prompt: the nearest open pipe ahead, and which way to steer.
-    const pipe = me ? s.objs.filter((o) => o.kind === "pipe" && !o.plugged && o.z > me.z - 4 && o.z < me.z + 45).sort((a, b) => a.z - b.z)[0] : undefined;
-    let prompt = "";
-    if (me && pipe && !me.plugging && (s.phase.phase === "running" || s.phase.phase === "warning")) {
-      const side = pipe.lane < 0 ? "LEFT" : "RIGHT";
-      // Pipes are plugged from the outermost open lane on their bank.
-      const edge = pipe.lane < 0 ? s.lanes[0] : s.lanes[s.lanes.length - 1];
-      const act = actionVerb();
-      const Act = act.charAt(0).toUpperCase() + act.slice(1);
-      prompt = me.lane === edge ? (pipe.z - me.z < 7 ? `🔧 ${Act} now to plug the pipe!` : `🔧 Pipe ahead on the ${side} — get ready to ${act}`) : `🔧 Sewage pipe ahead on the ${side} — move ${pipe.lane < 0 ? "◀" : "▶"} and ${act}`;
-    }
-    if (this.promptEl.textContent !== prompt) {
-      this.promptEl.textContent = prompt;
-      this.promptEl.classList.toggle("on", !!prompt);
-    }
+    this.pipePrompt(s, me);
     const myCrew = me?.crew ?? 0;
     const left = Math.max(0, (s.duration || RUN_SECONDS) - s.t);
     const mm = Math.floor(left / 60),
@@ -126,7 +118,7 @@ export class RunHud {
               "div",
               { class: "rh-crew" + (id === myCrew ? " mine" : "") },
               h("span", { class: "rh-crew-name" }, s.crews.length > 1 ? CREW_NAMES[id] : "Your crew"),
-              h("span", { class: "rh-score" }, String(score)),
+              h("span", { class: "rh-score" }, String(score), pipes > 0 ? h("span", { class: "rh-mult", title: "Every plastic is worth this much: +0.5 per pipe plugged" }, `×${1 + 0.5 * pipes}`) : null),
               h("span", { class: "rh-sub" }, `♻ ${plastic} · 🔧 ${pipes}` + (s.river === "mangrove" ? ` · 🕸 ${nets ?? 0}` : "")),
             ),
           ),
@@ -172,19 +164,35 @@ export class RunHud {
       else {
         const [seat, pv] = plug;
         const own = seat === this.mySeat;
+        const how = usesTouch() ? "tap the symbol buttons" : "press keys 1–6";
+        // Three cases: a lone boat's memory puzzle, the plugger (scrambled), a crewmate (real order).
+        const title = !own
+          ? `${this.name(seat)} is plugging a pipe — tell them the order!`
+          : pv.memory
+            ? pv.hidden
+              ? "Now enter it from memory"
+              : "Memorise the gate code!"
+            : "Gate code — scrambled!";
+        const hint = !own
+          ? `You see the real order; they see it mixed up. Send the 3 symbols in order: ${how}. The other crew sees your signals too.`
+          : pv.memory
+            ? pv.hidden
+              ? `Enter the 3 symbols in the order you saw: ${how}.`
+              : "It hides in a moment. Remember the order!"
+            : `Right symbols, wrong order. Your crewmate sees the real order — watch the symbols over their boat, then ${how}.`;
+        const glyph = (g: number, i: number) =>
+          pv.hidden
+            ? h("span", { class: "rh-glyph hidden" + (i < pv.entered ? " done" : "") }, i < pv.entered ? "✔" : "?")
+            : h("span", { class: "rh-glyph" + (i < pv.entered ? " done" : "") }, GLYPHS[g], h("kbd", null, String(g + 1)), h("small", { class: "rh-glyph-name" }, signalName(g)));
         this.code.replaceChildren(
           h(
             "div",
-            { class: "rh-code-card" + (pv.clear ? " clear" : " scrambled"), "data-tut": "code" },
-            h("div", { class: "rh-code-title" }, own ? (pv.clear ? "Memorise the gate code!" : "Gate code — scrambled!") : `${this.name(seat)} is plugging a pipe`),
-            h(
-              "div",
-              { class: "rh-code-glyphs" },
-              pv.code.map((g, i) => h("span", { class: "rh-glyph" + (i < pv.entered ? " done" : "") }, GLYPHS[g], h("kbd", null, String(g + 1)), h("small", { class: "rh-glyph-name" }, signalName(g)))),
-            ),
-            h("div", { class: "rh-code-hint" }, own ? (pv.clear ? (usesTouch() ? "Tap the symbols in order." : "Type it in order with keys 1–6.") : "Right symbols, wrong order. Your crewmate sees the real order — watch their signals.") : `Only your crew sees this order. Signal it with ${usesTouch() ? "the symbol buttons" : "keys 1–6"} — the other crew can see your signals too.`),
+            { class: "rh-code-card" + (pv.clear ? " clear" : pv.hidden ? " memory" : " scrambled"), "data-tut": "code" },
+            h("div", { class: "rh-code-title" }, title),
+            h("div", { class: "rh-code-glyphs" }, pv.code.map(glyph)),
+            h("div", { class: "rh-code-hint" }, hint),
             h("div", { class: "rh-code-time" }, `${Math.ceil(pv.left)} s`),
-            this.signalTip(),
+            pv.memory ? null : this.signalTip(),
           ),
         );
       }
@@ -204,6 +212,48 @@ export class RunHud {
         ),
       );
     }
+  }
+
+  /** The nearest open pipe ahead: a steady card saying where it is and what to do next. */
+  private pipePrompt(s: Snapshot, me: Snapshot["boats"][number] | undefined) {
+    const racing = s.phase.phase === "running" || s.phase.phase === "warning";
+    const pipe =
+      me && racing && !me.plugging && !(me.fixing ?? 0)
+        ? s.objs.filter((o) => o.kind === "pipe" && !o.plugged && o.z > me.z - 4 && o.z < me.z + 70).sort((a, b) => a.z - b.z)[0]
+        : undefined;
+    this.pipeCard.classList.toggle("on", !!pipe);
+    if (!pipe || !me) return;
+    const left = pipe.lane < 0;
+    // Pipes are plugged from the outermost open lane on their bank.
+    const edge = left ? s.lanes[0] : s.lanes[s.lanes.length - 1];
+    const dz = Math.max(0, Math.round(pipe.z - me.z));
+    const act = actionVerb();
+    const step =
+      me.lane !== edge
+        ? `Move ${left ? "◀ left" : "right ▶"} to the edge lane`
+        : dz < 7
+          ? `${act.charAt(0).toUpperCase() + act.slice(1)} NOW to plug it!`
+          : `Stay in this lane — ${act} when you reach it`;
+    if (!this.pipeCard.firstChild) {
+      this.pipeCard.append(
+        h("div", { class: "rh-pipe-head" }, h("span", { class: "rh-pipe-ico" }, "🔧"), h("b", null, "Sewage pipe"), this.pipeSide, this.pipeDist),
+        this.pipeStep,
+      );
+    }
+    this.pipeSide.textContent = left ? "◀ LEFT bank" : "RIGHT bank ▶";
+    this.pipeDist.textContent = `${dz} m`;
+    if (this.pipeStep.textContent !== step) this.pipeStep.textContent = step;
+    this.pipeCard.classList.toggle("now", me.lane === edge && dz < 7);
+  }
+
+  /** Floating marker over the nearest open pipe (screen position from the 3D scene). */
+  pipeMarker(x: number, y: number, visible: boolean, metres: number) {
+    this.pipeMark.style.display = visible ? "" : "none";
+    if (!visible) return;
+    this.pipeMark.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+    const label = this.pipeMark.lastChild as HTMLElement;
+    const text = `${Math.round(metres)} m`;
+    if (label.textContent !== text) label.textContent = text;
   }
 
   /** Shown the first time a gate code ever appears on this device. */
@@ -262,7 +312,7 @@ export class RunHud {
         h(
           "div",
           { class: "rh-choice" },
-          h("div", { class: "rh-choice-title" }, mine ? "You're behind — pick the final twist!" : `${s.crews.length > 1 ? CREW_NAMES[p.pickers ?? 0] : "Your crew"} picks the final twist…`, h("span", { class: "rh-choice-time" }, `${Math.ceil(p.left)}`)),
+          h("div", { class: "rh-choice-title" }, mine ? (s.crews.length > 1 ? "You're behind — pick the final twist!" : "Pick the final twist!") : `${s.crews.length > 1 ? CREW_NAMES[p.pickers ?? 0] : "Your crew"} picks the final twist…`, h("span", { class: "rh-choice-time" }, `${Math.ceil(p.left)}`)),
           h(
             "div",
             { class: "rh-cards two" },

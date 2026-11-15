@@ -36,6 +36,8 @@ export interface RunBoat {
   boosting: number;
   plastic: number;
   plugging: number | null;
+  /** Seconds left fixing a just-plugged pipe (the boat is stopped). */
+  fixing?: number;
 }
 
 export type RunPhase =
@@ -50,6 +52,10 @@ export interface PlugView {
   pipe: number;
   code: [number, number, number];
   clear: boolean;
+  /** No crewmate: a memory puzzle (shown clearly at first, then hidden). */
+  memory?: boolean;
+  /** Memory puzzle after the code is hidden: `code` carries nothing. */
+  hidden?: boolean;
   entered: number;
   left: number;
 }

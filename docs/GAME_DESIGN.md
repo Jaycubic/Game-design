@@ -25,7 +25,7 @@ places; the real-world case is shown in the presentation.
 | Cooperation | Crewmates share a score; 2 players form one co-op crew; all crews share River Health and the "revived" bonus. |
 | Communication | Gate codes: the plugging player sees the symbols scrambled, and only a crewmate sees the real order. |
 | Negotiation and bluffing | The Twist vote has to be argued out in the room. Signal glyphs are visible to the rival crew, so crews invent shorthand or send decoys. The Finale makes the trailing crew choose between chasing points (Second Wind) and helping everyone (Clean Sweep). |
-| Puzzles | The gate code is a cooperative logic puzzle under time pressure. Solo players get a memory version: the code shows for 1.5 s. |
+| Puzzles | The gate code is a cooperative logic puzzle under time pressure. Solo players get a memory version: the code shows in order for 2 s, then hides as ? ? ?. |
 | Simple rules | Three controls, one score formula, one shared bar. A 60-second scripted tutorial spotlights each control in place and teaches it by doing. |
 | Limited number of players | 2–4 per room, enforced by the server and the database. |
 | Reasons to come back (beyond the brief) | Three rivers with new mechanics, three stars each, best scores, daily missions, ranks, solo Endless, and difficulty that adapts to each room (§5). |

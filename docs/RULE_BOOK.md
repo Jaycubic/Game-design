@@ -91,13 +91,39 @@ new thing on top of everything above.
 
 ## 5. Plugging a pipe: the gate code
 
-- When you start plugging, a **3-symbol gate code** appears. You have 8 seconds to type it with keys 1–6.
+**Finding a pipe.** Open pipes stand out on the bank with a brown plume in the water and a floating 🔧 marker
+above them. A card at the top of the screen tells you which bank it's on, how far away it is, and what to do next.
+
+**Plugging it:**
+1. Steer into the **outermost lane** on the pipe's side and press **Action** beside it. Your boat stops.
+2. A **3-symbol gate code** appears. You have 8 seconds to enter it with keys 1–6 (or the symbol buttons).
+3. Right code: your boat stays put **1 more second** while your crew member fixes the pipe. The river heals by 10
+   and your crew's **multiplier** goes up for the rest of the run (shown as ×1.5, ×2… next to your score).
+4. Wrong code or too slow: the pipe keeps pouring. You can try again.
+
+**The puzzle: you can't read your own code.**
 - **You see the right symbols in the wrong order. Your crewmates see the real order.**
 - Crewmates can only talk through the six **signals**: 1 Leaf, 2 Drop, 3 Fish, 4 Bridge, 5 Arrow and 6 Star. They have
   no fixed meaning; your crew decides what they mean. Signals appear over the sender's boat.
 - **The rival crew sees your signals too**, so crews invent shorthand, or send decoys.
-- A player with no crewmate sees the real order for the first 1.5 seconds, then has to type it from memory.
-- A plugged pipe heals the river by 10 and raises your crew's **multiplier** for the rest of the run.
+
+**Worked example (two crewmates, Player A and Player B).**
+
+| Step | Player A (at the pipe) | Player B (crewmate, anywhere on the river) |
+|---|---|---|
+| 1 | Reaches the pipe and presses **Action**. The boat stops. | Gets a card: "A is plugging a pipe — tell them the order!" |
+| 2 | Sees the code **scrambled**: 🍃 Leaf · ➜ Arrow · 🐟 Fish. Right symbols, wrong order. | Sees the **real order**: 🐟 Fish · 🍃 Leaf · ➜ Arrow. |
+| 3 | Watches the space over B's boat. | Sends the symbols one by one: **3** (Fish), then **1** (Leaf), then **5** (Arrow). Each pops up over B's boat. |
+| 4 | Types what B sent: **3, 1, 5**. | — |
+| 5 | Correct: the boat stays put for 1 second while A's crew member hammers the pipe shut. The brown plume stops, River Health +10, and every plastic is now worth ×1.5. | Shares the score boost. |
+
+A only ever needed **which order**: they could already see the three symbols. So B's job is just to send them in
+order. Because the rival crew sees B's symbols too, a sharp crew agrees a trick in advance (for example "the
+symbol I send twice is a fake").
+
+**Playing alone (no crewmate).** It becomes a memory puzzle instead: the code is shown **in the real order for
+2 seconds**, then turns into **? ? ?**, and you enter it from memory. This happens in Practice solo, Endless, and
+for anyone whose crew is just them.
 
 ## 6. Score and River Health
 

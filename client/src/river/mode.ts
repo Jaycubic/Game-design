@@ -43,6 +43,7 @@ export class RunMode {
   private coach: Coach | null = null;
   private touch: TouchControls | null = null;
   private lastBeat = "";
+  private lastSpark = 0;
   /** Client-only freeze-frame after your own capsize; the server never pauses. */
   private freezeUntil = 0;
 
@@ -187,12 +188,19 @@ export class RunMode {
           if (mine) sound.play("boost");
           if (mine) this.hud.banner("BOOST!", "good");
           break;
-        case "plugged":
+        case "plugged": {
           sound.play("plug", { volume: mine ? 1 : 0.6 });
-          if (pose) this.scene.burst(pose.x * 1.3, pose.z, 50, new Color4(0.5, 1, 0.7, 1));
-          this.hud.banner(mine ? "Pipe plugged! Score ×1.5 more" : "A pipe was plugged — the river breathes", "good");
-          if (mine) this.scene.kick(0.25);
+          if (pose) this.scene.burst(pose.x * 1.3, pose.z, 60, new Color4(0.5, 1, 0.7, 1));
+          const me = s.boats.find((b) => b.seat === e.seat);
+          const pipes = s.crews.find(([id]) => id === me?.crew)?.[3] ?? 0;
+          const mult = 1 + 0.5 * (pipes + 1); // this snapshot is from just before the plug
+          if (mine) {
+            this.scene.kick(0.3);
+            this.hud.banner(`🔧 Pipe fixed! River +10 · every plastic now ×${mult}`, "good big");
+            if (scr?.visible) this.hud.popup(scr.x, scr.y - 50, "+10 🌊", "green");
+          } else this.hud.banner(`${me && me.crew === this.myCrew() ? "Your crewmate" : "A boat"} plugged a pipe — the river breathes`, "good");
           break;
+        }
         case "plug_failed":
           if (mine) sound.play("plugFail");
           if (mine) this.hud.banner("Wrong code — the pipe is still pouring", "bad");
@@ -235,6 +243,10 @@ export class RunMode {
           break;
       }
     }
+  }
+
+  private myCrew() {
+    return this.snap?.boats.find((b) => b.seat === this.mySeat)?.crew ?? 0;
   }
 
   /** Countdown ticks and "go", once per change. */
@@ -291,7 +303,15 @@ export class RunMode {
       const cp = capLeft > 0 ? 1 - capLeft / CAPSIZE_TIME : 0;
       const roll = capLeft > 0 ? Math.PI * 2 * cp * cp * (3 - 2 * cp) : (targetX - sm.x) * -0.12;
       const ghost = capLeft <= 0 && Math.max(0, (b.immune ?? 0) - since) > 0 && !feel.prefs.reduceFlash;
-      const pose: BoatPose = { seat: b.seat, x: sm.x, y, z: sm.z, roll, yaw: (targetX - sm.x) * 0.08, boosting: b.boosting > 0, ghost };
+      const fixing = (b.fixing ?? 0) > 0;
+      const pose: BoatPose = { seat: b.seat, x: sm.x, y, z: sm.z, roll, yaw: (targetX - sm.x) * 0.08, boosting: b.boosting > 0, ghost, fixing };
+      if (fixing && now - this.lastSpark > 140) {
+        // Sparks on the bank side and a clank, while the crew fixes the pipe.
+        this.lastSpark = now;
+        const side = b.lane === s.lanes[0] ? -1 : 1;
+        this.scene.burst(sm.x + side * 1.4, sm.z + 0.5, 10, new Color4(1, 0.85, 0.35, 1));
+        if (b.seat === this.mySeat) sound.play("bump", { volume: 0.35, rate: 1.6 });
+      }
       poses.push(pose);
       if (b.seat === this.mySeat) me = pose;
     }
@@ -300,6 +320,13 @@ export class RunMode {
     const viewer = mine && me ? { lane: this.predictedLane ?? mine.lane, z: me.z, speed: mine.speed || 14 } : null;
     this.scene.renderObjects(s.objs, s.lanes, viewer);
     this.scene.scene.render();
+    // Marker over the nearest open pipe ahead, so pipes are easy to spot.
+    const mz = me?.z ?? 0;
+    const pipe = s.objs.filter((o) => o.kind === "pipe" && !o.plugged && o.z > mz - 2 && o.z < mz + 90).sort((a, b) => a.z - b.z)[0];
+    if (pipe && me) {
+      const scr = this.scene.worldToScreen(new Vector3(this.scene.pipeX(pipe.lane), 2.6, pipe.z));
+      this.hud.pipeMarker(scr.x, scr.y, scr.visible, pipe.z - mz);
+    } else this.hud.pipeMarker(0, 0, false, 0);
     for (const p of poses) {
       const scr = this.scene.worldToScreen(new Vector3(p.x, p.y + 1.6, p.z));
       this.hud.tag(p.seat, scr.x, scr.y, scr.visible && !(p.seat === this.mySeat && poses.length === 1));

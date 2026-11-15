@@ -125,6 +125,8 @@ export interface BoatPose {
   boosting: boolean;
   /** Protected after a capsize: the boat blinks. */
   ghost?: boolean;
+  /** Fixing a just-plugged pipe: the crew member hammers away. */
+  fixing?: boolean;
 }
 
 /** The local boat, for danger hints on the water. */
@@ -214,7 +216,7 @@ export class RiverScene {
     this.plumeMat = new StandardMaterial("plume", scene);
     this.plumeMat.diffuseColor = new Color3(0.16, 0.12, 0.07);
     this.plumeMat.specularColor = Color3.Black();
-    this.plumeMat.alpha = 0.6;
+    this.plumeMat.alpha = 0.78;
 
     const flora = buildPrototypes(scene);
     for (const m of Object.values(flora)) m.isVisible = false;
@@ -333,6 +335,11 @@ export class RiverScene {
     for (const m of this.chunkMeshes.values()) m.dispose();
     this.chunkMeshes.clear();
     this.chunkKey = "";
+  }
+
+  /** World x of a pipe on bank `side` (-1 left, +1 right). */
+  pipeX(side: number) {
+    return side * (this.half + 1.2);
   }
 
   /** World x of a lane's centre (lanes are numbered from 0 on the left). */
@@ -519,10 +526,11 @@ export class RiverScene {
           for (const lane of open) if (lane !== o.lane && lane !== o.gap2) ob.debris.add(this.laneX(lane), 0.05 + bob, o.z, 0, 1);
           break;
         case "pipe": {
-          const px = o.lane * (HALF + 0.9);
-          ob.pipe.add(px, 0.2, o.z, o.lane > 0 ? 0 : Math.PI);
-          if (o.plugged) ob.plug.add(px, 0.2, o.z, o.lane > 0 ? 0 : Math.PI);
-          else ob.plume.add(o.lane * (HALF - 1.2), -0.06, o.z + 5, 0, 1, 0, 0, 1.6 + Math.sin(t * 1.5 + o.id) * 0.2, 7);
+          // Big enough to spot from far away; the brown plume spreads well into the river.
+          const px = o.lane * (HALF + 1.2);
+          ob.pipe.add(px, 0.35, o.z, o.lane > 0 ? 0 : Math.PI, 1.6);
+          if (o.plugged) ob.plug.add(px, 0.35, o.z, o.lane > 0 ? 0 : Math.PI, 1.6);
+          else ob.plume.add(o.lane * (HALF - 1.6), -0.04, o.z + 6, 0, 1, 0, 0, 2.4 + Math.sin(t * 1.5 + o.id) * 0.3, 9);
           break;
         }
       }
@@ -581,6 +589,12 @@ export class RiverScene {
       m.position.set(p.x, -0.12 + p.y + Math.sin(this.time * 3 + p.seat) * 0.03, p.z);
       m.rotation.set(Math.sin(this.time * 2.3 + p.seat) * 0.03, p.yaw, p.roll);
       if (!p.ghost || Math.floor(this.time * 10) % 2 === 0) seen.add(p.seat);
+      // Fixing a pipe: the crew member leans in and hammers.
+      const person = this.built.get(p.seat)?.person;
+      if (person) {
+        person.rotation.x = p.fixing ? -0.35 + Math.abs(Math.sin(this.time * 16)) * 0.55 : 0;
+        person.rotation.z = p.fixing ? Math.sin(this.time * 8) * 0.12 : 0;
+      }
     }
     for (const [seat, m] of this.boats) m.setEnabled(seen.has(seat));
 
