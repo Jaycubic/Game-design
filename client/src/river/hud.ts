@@ -4,6 +4,7 @@ import { h } from "../ui/dom";
 import { hint } from "../input/controls";
 import { isTouch } from "../input/touch";
 import { signalName } from "../ui/panels";
+import type { RiverResult } from "../net/api";
 import {
   CREW_NAMES,
   FINALE_INFO,
@@ -118,13 +119,13 @@ export class RunHud {
         h(
           "div",
           { class: "rh-scores" },
-          s.crews.map(([id, score, plastic, pipes]) =>
+          s.crews.map(([id, score, plastic, pipes, , nets]) =>
             h(
               "div",
               { class: "rh-crew" + (id === myCrew ? " mine" : "") },
               h("span", { class: "rh-crew-name" }, s.crews.length > 1 ? CREW_NAMES[id] : "Your crew"),
               h("span", { class: "rh-score" }, String(score)),
-              h("span", { class: "rh-sub" }, `♻ ${plastic} · 🔧 ${pipes}`),
+              h("span", { class: "rh-sub" }, `♻ ${plastic} · 🔧 ${pipes}` + (s.river === "mangrove" ? ` · 🕸 ${nets ?? 0}` : "")),
             ),
           ),
         ),
@@ -317,6 +318,40 @@ export class RunHud {
       ),
     );
     this.sigCenter = "results";
+    if (this.pendingRiver) this.riverResult(this.pendingRiver);
+  }
+
+  private pendingRiver: RiverResult | null = null;
+
+  /** Stars and best score on the results card (arrives just after the results). */
+  riverResult(r: RiverResult) {
+    const card = this.center.querySelector(".rh-results");
+    if (!card) {
+      this.pendingRiver = r;
+      return;
+    }
+    this.pendingRiver = null;
+    card.querySelector(".rh-stars")?.remove();
+    const block = h(
+      "div",
+      { class: "rh-stars" },
+      h("div", { class: "rh-stars-title" }, r.name),
+      h(
+        "ul",
+        null,
+        r.goals.map((g, i) =>
+          h(
+            "li",
+            { class: (r.stars[i] ? "on" : "") + (r.new_stars[i] ? " new" : "") },
+            h("span", { class: "star" + (r.stars[i] ? " on" : "") }, "★"),
+            g,
+            r.new_stars[i] ? h("span", { class: "chip good" }, "NEW") : null,
+          ),
+        ),
+      ),
+      h("div", { class: "rh-best" + (r.new_best ? " new" : "") }, r.new_best ? `🏆 New best score: ${r.best}` : `Best score: ${r.best}`),
+    );
+    card.insertBefore(block, card.querySelector("button"));
   }
 
   /** "+1" style popup at a screen position. */

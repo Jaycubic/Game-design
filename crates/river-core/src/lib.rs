@@ -74,6 +74,56 @@ fn one() -> f32 {
     1.0
 }
 
+// ── Rivers ──
+// Each river adds one mechanic on top of everything before it.
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum River {
+    /// Town Canal: the original river.
+    #[default]
+    Canal,
+    /// Mangrove Maze: ghost nets span two lanes and hold trapped plastic.
+    Mangrove,
+    /// Rapids Gorge: currents push boats sideways; rocks can't be hopped.
+    Gorge,
+}
+
+pub const RIVERS: [River; 3] = [River::Canal, River::Mangrove, River::Gorge];
+
+impl River {
+    pub fn key(self) -> &'static str {
+        match self {
+            River::Canal => "canal",
+            River::Mangrove => "mangrove",
+            River::Gorge => "gorge",
+        }
+    }
+    pub fn from_key(key: &str) -> Option<River> {
+        RIVERS.into_iter().find(|r| r.key() == key)
+    }
+    /// The crew score needed for the second star.
+    pub fn score_target(self) -> i32 {
+        match self {
+            River::Canal => 120,
+            River::Mangrove => 150,
+            River::Gorge => 180,
+        }
+    }
+}
+
+/// Presses (by anyone) needed to cut a ghost net free.
+pub const NET_HP: u8 = 2;
+/// Plastic a freed ghost net releases.
+pub const NET_PLASTIC: u32 = 4;
+
+fn is_zero_u8(v: &u8) -> bool {
+    *v == 0
+}
+fn is_zero_i8(v: &i8) -> bool {
+    *v == 0
+}
+
 // ── River Director (adaptive difficulty) ──
 // One factor `d` scales the river: obstacles and pipes x d, debris waves come
 // d times as often, plastic x (2 - d). It never touches scoring, River Health
@@ -131,6 +181,13 @@ pub enum Kind {
     /// A sewage pipe on a bank: `lane` is the side, -1 (left) or +1 (right).
     /// It is plugged from the outermost open lane on that side.
     Pipe,
+    /// Mangrove Maze: an abandoned fishing net across `lane` and `lane + 1`.
+    /// It slows boats like weed; cutting it (NET_HP presses, by anyone) frees trapped plastic.
+    Net,
+    /// Rapids Gorge: a current that pushes a boat one lane towards `dir` unless it hops.
+    Current,
+    /// Rapids Gorge: a rock. Capsizes like a log, but can't be hopped: steer round it.
+    Rock,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -146,6 +203,12 @@ pub struct Obj {
     /// Debris waves on wide rivers leave a second gap lane.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gap2: Option<i8>,
+    /// Ghost nets: presses still needed to cut it free.
+    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    pub hp: u8,
+    /// Currents: which way it pushes (-1 left, +1 right).
+    #[serde(default, skip_serializing_if = "is_zero_i8")]
+    pub dir: i8,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -266,6 +329,9 @@ pub struct Boat {
     pub capsizes: u32,
     #[serde(default)]
     pub plugged: u32,
+    /// The last current that pushed this boat (each current pushes once).
+    #[serde(default)]
+    pub last_current: u32,
 }
 
 impl Boat {
@@ -293,6 +359,9 @@ pub struct Crew {
     pub plastic: u32,
     pub pipes: u32,
     pub banks: u32,
+    /// Ghost nets cut free (Mangrove Maze).
+    #[serde(default)]
+    pub nets: u32,
 }
 
 impl Crew {
@@ -357,6 +426,12 @@ pub enum Event {
     WaveIncoming { id: u32 },
     RuleChanged { change: ChangeKind, choice: String },
     Choked,
+    /// A ghost net took a cut; `left` presses remain.
+    NetHit { seat: u8, id: u32, left: u8 },
+    /// A ghost net was cut free and released its plastic.
+    NetFreed { seat: u8, id: u32 },
+    /// A current pushed a boat one lane.
+    Pushed { seat: u8, dir: i8 },
 }
 
 /// One player's input since the last tick.
@@ -431,6 +506,8 @@ pub struct Run {
     pub gen_z: f32,
     #[serde(default)]
     pub gen_pipe: f32,
+    #[serde(default)]
+    pub river: River,
 }
 
 /// What the Director saw since its last check.
@@ -452,6 +529,11 @@ impl Run {
 
     /// A run whose river starts at difficulty `d` (see the River Director constants).
     pub fn with_difficulty(seed: u64, seats: &[u8], d: f32) -> Run {
+        Run::create(seed, seats, d, River::Canal)
+    }
+
+    /// A run on a chosen river at difficulty `d`.
+    pub fn create(seed: u64, seats: &[u8], d: f32, river: River) -> Run {
         let two_crews = seats.len() >= 3;
         let lane_count = lane_count_for(seats.len());
         let k = seats.len().max(1) as f32;
@@ -478,6 +560,7 @@ impl Run {
                 collected: 0,
                 capsizes: 0,
                 plugged: 0,
+                last_current: 0,
             })
             .collect();
         let crews = (0..if two_crews { 2 } else { 1 }).map(|id| Crew { id, ..Default::default() }).collect();
@@ -512,6 +595,7 @@ impl Run {
             missed: 0,
             gen_z: 45.0,
             gen_pipe: 120.0,
+            river,
         };
         run.next_wave = 30.0 / run.difficulty;
         run.generate_to(GEN_AHEAD);
@@ -587,7 +671,8 @@ impl Run {
     fn spawn(&mut self, kind: Kind, lane: i8, z: f32) -> u32 {
         let id = self.next_id;
         self.next_id += 1;
-        self.objs.push(Obj { id, kind, lane, z, alive: true, plugged: false, gap2: None });
+        let hp = if kind == Kind::Net { NET_HP } else { 0 };
+        self.objs.push(Obj { id, kind, lane, z, alive: true, plugged: false, gap2: None, hp, dir: 0 });
         id
     }
 
@@ -619,6 +704,11 @@ impl Run {
                         self.gen_plastic(keep, lane, z + k as f32 * 3.0);
                     }
                 }
+                4..=5 if self.river == River::Mangrove && n >= 2 && self.rng.unit() < 0.5 => {
+                    // a ghost net across two lanes; its plastic is trapped until it's cut
+                    let lane = self.rng.range((n - 1) as u32) as i8;
+                    self.spawn(Kind::Net, lane, z);
+                }
                 4..=5 => {
                     // weed mat guarding plastic in the same lane
                     let lane = self.rng.lane(&all);
@@ -632,12 +722,31 @@ impl Run {
                     let extra = if n >= 6 { self.rng.range(2) as i8 } else { 0 };
                     let c = (1 + self.rng.range(2) as i8 + extra).min(n - 1);
                     let start = self.rng.range((n - c + 1) as u32) as i8;
+                    let kind = if self.river == River::Gorge && self.rng.unit() < 0.5 { Kind::Rock } else { Kind::Log };
                     for l in start..start + c {
-                        self.spawn(Kind::Log, l, z);
+                        self.spawn(kind, l, z);
                     }
                     let left = start > 0 && (start + c >= n || self.rng.range(2) == 0);
                     let reward = if left { start - 1 } else { start + c };
                     self.gen_plastic(keep, reward, z);
+                }
+                _ if self.river == River::Gorge && self.rng.unit() < 0.5 => {
+                    // a current, with plastic waiting where it carries you
+                    let lane = self.rng.lane(&all);
+                    let dir = if lane == 0 {
+                        1
+                    } else if lane == n - 1 || self.rng.range(2) == 0 {
+                        -1
+                    } else {
+                        1
+                    };
+                    let id = self.spawn(Kind::Current, lane, z);
+                    if let Some(c) = self.objs.iter_mut().find(|o| o.id == id) {
+                        c.dir = dir;
+                    }
+                    for k in 0..2 {
+                        self.gen_plastic(keep, lane + dir, z + 6.0 + k as f32 * 3.0);
+                    }
                 }
                 _ => {
                     // scattered plastic
@@ -917,7 +1026,32 @@ impl Run {
             self.events.push(Event::Cut { seat, id });
             return;
         }
-        // 2) start plugging a pipe beside this lane (only from an edge lane)
+        // 2) cut at the nearest ghost net ahead that covers this lane
+        if let Some(oi) = self
+            .objs
+            .iter()
+            .enumerate()
+            .filter(|(_, o)| o.alive && o.kind == Kind::Net && covers(o, lane) && o.z >= z - 1.0 && o.z <= z + reach)
+            .min_by(|a, b| a.1.z.total_cmp(&b.1.z))
+            .map(|(i, _)| i)
+        {
+            let net = &mut self.objs[oi];
+            net.hp = net.hp.saturating_sub(1);
+            let (id, left, nl, nz) = (net.id, net.hp, net.lane, net.z);
+            self.events.push(Event::NetHit { seat, id, left });
+            if left == 0 {
+                self.objs[oi].alive = false;
+                let crew = self.boats[i].crew;
+                self.crew_mut(crew).nets += 1;
+                self.heal(HEALTH_CUT * 2.0);
+                for k in 0..NET_PLASTIC {
+                    self.spawn(Kind::Plastic, nl + (k % 2) as i8, nz + 4.0 + (k / 2) as f32 * 3.0);
+                }
+                self.events.push(Event::NetFreed { seat, id });
+            }
+            return;
+        }
+        // 3) start plugging a pipe beside this lane (only from an edge lane)
         let side = if lane == self.pipe_lane(-1) {
             -1
         } else if lane == self.pipe_lane(1) {
@@ -1005,7 +1139,7 @@ impl Run {
         let last = self.last_z();
         for oi in 0..self.objs.len() {
             let o = self.objs[oi].clone();
-            if !o.alive || o.kind == Kind::Pipe || (o.kind != Kind::Wave && !open.contains(&o.lane)) {
+            if !o.alive || o.kind == Kind::Pipe || (o.kind != Kind::Wave && !open.iter().any(|l| covers(&o, *l))) {
                 continue;
             }
             for bi in 0..self.boats.len() {
@@ -1015,10 +1149,7 @@ impl Run {
                     if (o.z - b.z).abs() > b.stats.net_window() || !lane_ok {
                         continue;
                     }
-                } else if (o.z - b.z).abs() > HIT_WINDOW || (o.kind != Kind::Wave && o.lane != b.lane) {
-                    continue;
-                }
-                if o.kind == Kind::Wave && !wave_covers(&o, b.lane) {
+                } else if (o.z - b.z).abs() > HIT_WINDOW || !covers(&o, b.lane) {
                     continue;
                 }
                 let seat = b.seat;
@@ -1035,7 +1166,7 @@ impl Run {
                         self.events.push(Event::Collected { seat, id: o.id });
                         break;
                     }
-                    Kind::Weed => {
+                    Kind::Weed | Kind::Net => {
                         if !self.boats[bi].airborne() && self.boats[bi].slow <= 0.0 && self.boats[bi].boosting <= 0.0 {
                             self.boats[bi].slow = SLOW_TIME;
                             self.events.push(Event::Slowed { seat });
@@ -1044,6 +1175,23 @@ impl Run {
                     Kind::Log | Kind::Wave => {
                         if !self.boats[bi].airborne() && self.boats[bi].immune <= 0.0 {
                             self.capsize(bi);
+                        }
+                    }
+                    Kind::Rock => {
+                        if self.boats[bi].immune <= 0.0 {
+                            self.capsize(bi);
+                        }
+                    }
+                    Kind::Current => {
+                        let b = &mut self.boats[bi];
+                        if !b.airborne() && b.last_current != o.id && b.capsize <= 0.0 && b.plug.is_none() {
+                            b.last_current = o.id;
+                            let (min, max) = (*open.first().unwrap(), *open.last().unwrap());
+                            let to = (b.lane + o.dir).clamp(min, max);
+                            if to != b.lane {
+                                b.lane = to;
+                                self.events.push(Event::Pushed { seat, dir: o.dir });
+                            }
                         }
                     }
                     Kind::Pipe => {}
@@ -1202,8 +1350,42 @@ impl Run {
         self.phase = Phase::Finished;
     }
 
+    /// The three stars this seat earned in a finished run: clean river, score
+    /// target, and the river's own goal. Tutorials earn none.
+    pub fn stars(&self, seat: u8) -> [bool; 3] {
+        let (Some(res), Some(b)) = (&self.results, self.boats.iter().find(|b| b.seat == seat)) else {
+            return [false; 3];
+        };
+        if self.tutorial {
+            return [false; 3];
+        }
+        let score = res.scores.iter().find(|(c, _)| *c == b.crew).map(|(_, s)| *s).unwrap_or(0);
+        let crew = self.crews.iter().find(|c| c.id == b.crew);
+        let goal = match self.river {
+            // every pipe the boats reached is plugged (and there was at least one)
+            River::Canal => {
+                let leader = self.leader_z();
+                let open = self.objs.iter().any(|o| o.kind == Kind::Pipe && !o.plugged && o.z <= leader);
+                let plugged: u32 = self.crews.iter().map(|c| c.pipes).sum();
+                !open && plugged > 0
+            }
+            River::Mangrove => crew.map(|c| c.nets).unwrap_or(0) >= 3,
+            River::Gorge => b.capsizes == 0,
+        };
+        [res.revived, score >= self.river.score_target(), goal]
+    }
+
     pub fn drain_events(&mut self) -> Vec<Event> {
         std::mem::take(&mut self.events)
+    }
+}
+
+/// Whether an object occupies `lane` (nets span two lanes, waves all but their gaps).
+pub fn covers(o: &Obj, lane: i8) -> bool {
+    match o.kind {
+        Kind::Wave => wave_covers(o, lane),
+        Kind::Net => lane == o.lane || lane == o.lane + 1,
+        _ => lane == o.lane,
     }
 }
 
@@ -1248,6 +1430,7 @@ pub struct PlugView {
 #[derive(Clone, Debug, Serialize)]
 pub struct Snapshot {
     pub tick: u64,
+    pub river: River,
     pub duration: f32,
     pub tutorial: bool,
     pub t: f32,
@@ -1263,7 +1446,8 @@ pub struct Snapshot {
     /// Lanes in the full-width river (the open ones are `lanes`).
     pub lane_count: u8,
     pub boats: Vec<BoatView>,
-    pub crews: Vec<(u8, i32, u32, u32, u32)>,
+    /// (crew, score, plastic, pipes, banks, ghost nets freed)
+    pub crews: Vec<(u8, i32, u32, u32, u32, u32)>,
     pub objs: Vec<Obj>,
     /// Gate codes this viewer is involved in (own plug, or a crewmate's).
     pub plugs: Vec<(u8, PlugView)>,
@@ -1333,7 +1517,7 @@ impl Run {
                     plugging: b.plug.as_ref().map(|p| p.pipe),
                 })
                 .collect(),
-            crews: self.crews.iter().map(|c| (c.id, c.score(), c.plastic, c.pipes, c.banks)).collect(),
+            crews: self.crews.iter().map(|c| (c.id, c.score(), c.plastic, c.pipes, c.banks, c.nets)).collect(),
             objs: self
                 .objs
                 .iter()
@@ -1343,6 +1527,7 @@ impl Run {
             plugs,
             duration: self.duration(),
             tutorial: self.tutorial,
+            river: self.river,
             results: self.results.clone(),
         }
     }

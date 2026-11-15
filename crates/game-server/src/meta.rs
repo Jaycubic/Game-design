@@ -118,7 +118,9 @@ pub async fn profile(state: web::Data<AppState>, player: AuthPlayer) -> ApiResul
         .fetch_all(&state.db)
         .await?;
     let owned: Vec<&String> = items.iter().map(|(k, _, _)| k).collect();
+    let rivers = crate::rivers::profile(&state.db, pid).await?;
     Ok(HttpResponse::Ok().json(json!({
+        "rivers": rivers["rivers"], "stars": rivers["stars"],
         "seeds": seeds, "runs": runs, "wins": wins, "best_score": best, "equipped": equipped,
         "owned": owned,
         "refundable": items.iter().filter(|(_, _, r)| *r).map(|(k, _, _)| k).collect::<Vec<_>>(),

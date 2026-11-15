@@ -10,6 +10,7 @@ mod meta;
 mod persist;
 mod ratelimit;
 mod river;
+mod rivers;
 mod room;
 mod ws;
 

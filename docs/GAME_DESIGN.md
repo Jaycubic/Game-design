@@ -97,6 +97,18 @@ The hub follows the mobile pattern of a big PLAY button, side tiles and a curren
 | River Road | Milestones for runs completed, unlocking two boats. |
 | Fair-play rules | No real money, no loot boxes or paid randomness, a 10-minute undo on purchases, and a daily cap on the win bonus. |
 
+### 5.0 Rivers, stars and best scores (replay value)
+
+Three rivers, each adding one mechanic on top of everything before it, so there is always a next thing to learn:
+Town Canal (the base game), **Mangrove Maze** (ghost nets across two lanes that need two cuts, which rewards
+crewmates working together) and **Rapids Gorge** (currents that shove you sideways unless you hop, and rocks that
+can't be hopped). A river unlocks with runs or stars, whichever comes first (3 runs / 3 ★, 8 runs / 7 ★), so
+players who play well and players who play a lot both move on.
+
+Each river has three stars (clean river, a score target, the river's own goal) that are kept once earned, and a
+best score per player. The results screen shows both. Two more rivers (Night Delta, Harbour Port) are designed in the
+round-2 spec for later.
+
 ### 5.1 River Director (adaptive difficulty, internal)
 
 The River Director keeps each room in "flow": never trivially easy, never hopeless. It is a design-side system and

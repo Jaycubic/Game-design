@@ -241,14 +241,28 @@ impl Hub {
             return self.hint(&entry, &pid).await;
         }
         match cmd {
-            Command::RunStart { practice, tutorial } => {
+            Command::RunStart { practice, tutorial, river } => {
+                let river = if tutorial {
+                    river_core::River::Canal
+                } else {
+                    let r = river
+                        .as_deref()
+                        .map(|k| river_core::River::from_key(k).ok_or_else(|| GameError::new("bad_river", "Unknown river.")))
+                        .transpose()?
+                        .unwrap_or_default();
+                    let open = crate::rivers::unlocked(db, player, r).await.unwrap_or(r == river_core::River::Canal);
+                    if !open {
+                        return Err(GameError::new("river_locked", "That river is still locked."));
+                    }
+                    r
+                };
                 let racers = crate::river::racers(&*entry.lock().await);
                 let ids: Vec<Uuid> = racers.iter().map(|(_, p)| *p).collect();
                 let equipped = crate::meta::skins(db, &ids).await;
                 let skins = racers.iter().filter_map(|(s, p)| equipped.get(p).map(|c| (*s, c.clone()))).collect();
                 let difficulty = if tutorial { 1.0 } else { crate::director::room_difficulty(db, &ids).await };
                 let mut g = entry.lock().await;
-                crate::river::start(entry.clone(), &mut g, &pid, practice || tutorial, tutorial, skins, difficulty, db.clone())?;
+                crate::river::start(entry.clone(), &mut g, &pid, practice || tutorial, tutorial, skins, difficulty, river, db.clone())?;
                 return Ok(Outcome2::default());
             }
             Command::RunInput { steer, hop, action, glyph } => {

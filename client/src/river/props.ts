@@ -226,3 +226,51 @@ export function bridgeMesh(scene: Scene, span: number): Mesh {
   }
   return merge("footbridge", parts);
 }
+
+/** Ghost net (Mangrove Maze): a sagging fishing net across two lanes, orange
+ *  floats on top and plastic caught in the mesh. `width` is two lanes. */
+export function netMesh(scene: Scene, width: number): Mesh {
+  const r = seeded(61);
+  const parts: Mesh[] = [];
+  // cyl() grows up from its base, so after turning it on its side it runs from x to x - width.
+  for (const y of [0.28, -0.12]) {
+    const line = cyl(scene, width, 0.07, 0.07, 5);
+    place(line, [width / 2, y, 0], 1, [0, 0, Math.PI / 2]);
+    line.bakeCurrentTransformIntoVertices();
+    parts.push(paint(line, hex("#e6e0cc"), 0.05, r));
+  }
+  for (let i = 0; i <= 6; i++) {
+    const f = blob(scene, 0.13, 70 + i, 1);
+    place(f, [-width / 2 + (i * width) / 6, 0.3, 0], [1, 0.8, 1]);
+    f.bakeCurrentTransformIntoVertices();
+    parts.push(paint(f, hex("#e8743b"), 0.06, r));
+  }
+  for (let i = 0; i <= 18; i++) {
+    const strand = MeshBuilder.CreateBox("strand", { width: 0.06, height: 0.5, depth: 0.06 }, scene);
+    place(strand, [-width / 2 + (i * width) / 18, 0.08, 0], 1, [0, 0, i % 2 ? 0.5 : -0.5]);
+    strand.bakeCurrentTransformIntoVertices();
+    parts.push(paint(strand, hex("#c9d6c4"), 0.08, r));
+  }
+  for (let i = 0; i < 4; i++) {
+    const junk = cyl(scene, 0.32, 0.12, 0.13, 6);
+    place(junk, [(r() - 0.5) * width * 0.8, 0.05, (r() - 0.5) * 0.2], 1, [Math.PI / 2, r() * 3, 0]);
+    junk.bakeCurrentTransformIntoVertices();
+    parts.push(paint(junk, [hex("#9fd3e8"), hex("#7fbf7a"), hex("#e9e6dc"), hex("#e0c341")][i], 0.05, r));
+  }
+  return merge("net", parts);
+}
+
+/** Current (Rapids Gorge): three flat chevrons pointing +x, laid on the water. */
+export function currentMesh(scene: Scene): Mesh {
+  const r = seeded(63);
+  const parts: Mesh[] = [];
+  for (let i = 0; i < 3; i++) {
+    for (const s of [-1, 1]) {
+      const bar = MeshBuilder.CreateBox("chev", { width: 0.62, height: 0.02, depth: 0.14 }, scene);
+      place(bar, [-0.55 + i * 0.55, 0, s * 0.2], 1, [0, s * 0.75, 0]);
+      bar.bakeCurrentTransformIntoVertices();
+      parts.push(paint(bar, hex("#e8fbff"), 0.02, r));
+    }
+  }
+  return merge("current", parts);
+}

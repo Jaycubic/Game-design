@@ -63,6 +63,17 @@ to pass.
 **Boost:** collecting plastic fills your boost meter. When it is full, your boat surges at 1.5× speed for
 2.5 seconds, and weed can't slow you while you boost.
 
+### Rivers
+
+Pick the river from the river button above **PLAY** (in a crew, the host picks it in the lobby). Each river adds one
+new thing on top of everything above.
+
+| River | What's new | Unlocks at |
+|---|---|---|
+| **Town Canal** | Everything above. | Start |
+| **Mangrove Maze** | **Ghost nets**: old fishing nets across two lanes. They slow you like weed. Cut one with **Action** twice (or a crewmate cuts once too) to free the 4 plastic trapped inside. | 3 runs or 3 ★ |
+| **Rapids Gorge** | **Currents** (white arrows) push you one lane sideways unless you hop over them. **Rocks** capsize you even if you hop: steer round them. | 8 runs or 7 ★ |
+
 ## 5. Plugging a pipe: the gate code
 
 - When you start plugging, a **3-symbol gate code** appears. You have 8 seconds to type it with keys 1–6.
@@ -130,6 +141,17 @@ The Finale lets the trailing crew either chase points or help the shared river.
 
 - **Two crews:** the higher crew score wins. Both crews still live with the shared river result.
 - **One crew:** you "win" by keeping the river revived (River Health of 60 or more at the end).
+
+**Stars.** Every river has three stars to earn, and each one stays earned:
+
+| Star | Town Canal | Mangrove Maze | Rapids Gorge |
+|---|---|---|---|
+| ★ Clean river | River Health 60 % or more at the end | same | same |
+| ★★ Score | Crew score 120 or more | 150 or more | 180 or more |
+| ★★★ River goal | Plug every pipe you pass | Free 3 ghost nets | Finish without capsizing |
+
+The results screen shows the stars from this run (new ones are marked) and your best score on that river. Stars
+help unlock the next river.
 
 ## 9. Seeds and boats
 

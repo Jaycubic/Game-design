@@ -9,7 +9,7 @@
 use crate::hub::{broadcast, envelope, RoomEntry};
 use crate::meta;
 use crate::room::GameError;
-use river_core::{Input, Phase as RunPhase, Run, TICK_HZ};
+use river_core::{Input, Phase as RunPhase, River, Run, TICK_HZ};
 use serde_json::json;
 use sqlx::PgPool;
 use std::collections::{HashMap, VecDeque};
@@ -68,6 +68,7 @@ pub fn start(
     tutorial: bool,
     skins: HashMap<u8, String>,
     difficulty: f32,
+    river: River,
     db: PgPool,
 ) -> Result<(), GameError> {
     if g.state.roster.host != player {
@@ -87,7 +88,7 @@ pub fn start(
         return Err(GameError::new("no_players", "Nobody is connected."));
     }
     let seed = rand::random::<u64>();
-    let mut run = if tutorial { Run::tutorial(seed, &seats) } else { Run::with_difficulty(seed, &seats, difficulty) };
+    let mut run = if tutorial { Run::tutorial(seed, &seats) } else { Run::create(seed, &seats, difficulty, river) };
     // Each boat's upgrade levels come from the boat its player has equipped.
     for (&seat, key) in &skins {
         run.equip(seat, river_core::boat_stats(key));
@@ -104,7 +105,7 @@ pub fn start(
         "run.started",
         g.state.id,
         g.state.version,
-        json!({ "seed": seed, "boats": boats, "names": names, "skins": skins, "practice": practice, "tutorial": tutorial }),
+        json!({ "seed": seed, "boats": boats, "names": names, "skins": skins, "practice": practice, "tutorial": tutorial, "river": run.river }),
     );
     for c in g.conns.values() {
         let _ = c.tx.send(msg.clone());
@@ -165,6 +166,10 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
             if let Err(e) = crate::director::record(&db, room, host.practice, &host.run, &seats).await {
                 tracing::error!(error = %e, room = %room, "recording the run for the River Director failed");
             }
+            let river_results = crate::rivers::record(&db, &host.run, &seats).await.unwrap_or_else(|e| {
+                tracing::error!(error = %e, room = %room, "recording river stars failed");
+                HashMap::new()
+            });
             match meta::award(&db, room, host.practice, outcomes).await {
                 Ok(paid) => {
                     let g = entry.lock().await;
@@ -175,7 +180,7 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
                             "run.rewards",
                             room,
                             tick_no,
-                            json!({ "seeds": seeds, "practice": host.practice }),
+                            json!({ "seeds": seeds, "practice": host.practice, "river": river_results.get(&seat) }),
                         ));
                     }
                 }

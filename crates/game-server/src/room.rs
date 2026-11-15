@@ -122,6 +122,9 @@ pub enum Command {
         practice: bool,
         #[serde(default)]
         tutorial: bool,
+        /// River key ("canal", "mangrove", "gorge"); the host must have it unlocked.
+        #[serde(default)]
+        river: Option<String>,
     },
     /// River run: one player's input (applied on the next tick).
     #[serde(rename = "run.input")]

@@ -10,6 +10,9 @@ import { TouchControls, isTouch } from "../input/touch";
 import { sound } from "../audio/sound";
 import { feel } from "../ui/feel";
 import type { RunEvent, RunResults, Snapshot } from "./types";
+import type { RiverResult } from "../net/api";
+
+const RIVER_TITLES: Record<string, string> = { canal: "🏘️ Town Canal", mangrove: "🌿 Mangrove Maze", gorge: "⛰️ Rapids Gorge" };
 
 export interface RunSender {
   input(i: { steer?: number; hop?: boolean; action?: boolean; glyph?: number }): void;
@@ -111,6 +114,12 @@ export class RunMode {
     if (skins) this.scene.setSkins(skins);
   }
 
+  /** Stars and best score for the river, sent with the rewards after a run. */
+  riverResult(r: RiverResult) {
+    if (r.new_stars.some(Boolean)) sound.play("win", { volume: 0.6 });
+    this.hud.riverResult(r);
+  }
+
   rewards(seeds: number, practice: boolean) {
     this.hud.banner(`+${seeds} Seeds${practice ? " (practice)" : ""} 🌱`, "good");
   }
@@ -121,6 +130,8 @@ export class RunMode {
     this.snapAt = performance.now();
     this.scene.setHealth(s.health);
     this.scene.setLanes(s.lane_count ?? 3);
+    if (s.river) this.scene.setRiver(s.river);
+    if (first && s.river && s.river !== "canal" && !s.tutorial) this.hud.banner(RIVER_TITLES[s.river], "go");
     this.beats(s);
     if (first) for (const b of s.boats) this.smooth.set(b.seat, { x: this.scene.laneX(b.lane), z: b.z });
     const me = s.boats.find((b) => b.seat === this.mySeat);
@@ -194,6 +205,23 @@ export class RunMode {
           break;
         case "rule_changed":
           sound.play("rule");
+          break;
+        case "net_hit":
+          sound.play("cut", { volume: mine ? 1 : 0.4 });
+          if (pose) this.scene.burst(pose.x, pose.z + 2, 20, new Color4(0.9, 0.6, 0.3, 0.9));
+          if (mine && e.left > 0 && scr?.visible) this.hud.popup(scr.x, scr.y - 40, "Cut once more!", "green");
+          break;
+        case "net_freed":
+          sound.play("plug", { volume: mine ? 0.8 : 0.5 });
+          if (pose) this.scene.burst(pose.x, pose.z + 3, 50, new Color4(0.5, 1, 0.7, 1));
+          if (scr?.visible) this.hud.popup(scr.x, scr.y - 40, mine ? "Net cut free! Grab the plastic ♻" : "Ghost net freed", "green");
+          break;
+        case "pushed":
+          if (mine) {
+            sound.play("wave", { volume: 0.45 });
+            this.scene.kick(0.2);
+            if (scr?.visible) this.hud.popup(scr.x, scr.y - 30, e.dir > 0 ? "Current ▶" : "◀ Current");
+          }
           break;
         case "bumped":
           if (mine) sound.play("bump", { volume: 0.7 });

@@ -4,14 +4,16 @@ import { api, ApiError, type CatalogBoat, type Profile } from "../net/api";
 import { store } from "../store";
 import { icon } from "./icons";
 import { h, toast } from "./dom";
+import { riverCards } from "./rivers";
 
-export type HubPanel = "garage" | "shop" | "daily" | "road";
+export type HubPanel = "garage" | "shop" | "daily" | "road" | "rivers";
 
 export const PANEL_TITLES: Record<HubPanel, string> = {
   garage: "Garage",
   shop: "Shop",
   daily: "Daily reward",
   road: "River Road",
+  rivers: "Rivers",
 };
 
 export async function loadProfile(): Promise<Profile | null> {
@@ -89,6 +91,8 @@ export function hubPanel(kind: HubPanel): HTMLElement {
 function content(kind: HubPanel, p: Profile, redraw: () => void): HTMLElement[] {
   const owned = new Set(p.owned);
   switch (kind) {
+    case "rivers":
+      return riverCards(p, redraw);
     case "garage":
       return [
         h("p", { class: "muted" }, "Every boat has its own speed, net, cutter and boost. Pick one to sail — your crew sees it in the run."),

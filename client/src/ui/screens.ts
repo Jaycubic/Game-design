@@ -1,10 +1,11 @@
 // Menu screens: title → sign in → hub → crew lobby.
 
 import { isTouch } from "../input/touch";
-import type { AppState } from "../store";
+import { store, type AppState } from "../store";
 import type { RoomView } from "../types";
 import { h } from "./dom";
 import { icon, logoMark, type IconName } from "./icons";
+import { riverChip } from "./rivers";
 
 export const GAME_TITLE = "Clearwater Run";
 export const GAME_TAGLINE = "Keep the river alive";
@@ -22,7 +23,7 @@ export interface UiActions {
   startRun(practice: boolean): void;
   openHowTo(): void;
   openSettings(): void;
-  openPanel(kind: "garage" | "shop" | "daily" | "road"): void;
+  openPanel(kind: "garage" | "shop" | "daily" | "road" | "rivers"): void;
   tutorial(): Promise<void>;
 }
 
@@ -149,6 +150,7 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
     h(
       "section",
       { class: "hub-play" },
+      riverChip(p ?? null, () => a.openPanel("rivers")),
       h("button", { class: "play-btn", "data-autofocus": true, onclick: guard(a.play) }, h("span", { class: "play-main" }, icon("play"), "PLAY"), h("span", { class: "play-sub" }, "Crew run · 2–4 players")),
       h("button", { class: "btn ghost wide", onclick: guard(a.practice) }, icon("solo"), "Practice solo"),
       h("form", { class: "join-row", onsubmit: (e: Event) => (e.preventDefault(), guard(() => a.joinRoom(code.value))()) }, code, h("button", { class: "btn", type: "submit" }, "Join")),
@@ -216,6 +218,9 @@ export function lobbyScreen(room: RoomView, a: UiActions): HTMLElement {
         ),
       ),
       memberList(room),
+      host
+        ? riverChip(store.state.profile, () => a.openPanel("rivers"), "The river you'll race")
+        : h("p", { class: "muted small" }, "The host picks the river."),
       h(
         "div",
         { class: "lobby-buttons" },

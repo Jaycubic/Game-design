@@ -576,3 +576,150 @@ fn performance_counters_track_each_boat() {
     assert_eq!(r.boats[0].capsizes, 1);
     assert!(r.missed >= 1);
 }
+
+fn bare_on(river: River, seats: &[u8]) -> Run {
+    let mut r = Run::create(3, seats, 1.0, river);
+    r.objs.clear();
+    r.gen_z = f32::MAX;
+    r.phase = Phase::Running;
+    r
+}
+
+#[test]
+fn each_river_brings_its_own_mechanic() {
+    let kinds = |river: River| -> Vec<Kind> {
+        let mut r = Run::create(21, &[0, 1], 1.0, river);
+        r.generate_to(COURSE_LEN);
+        r.objs.iter().map(|o| o.kind).collect()
+    };
+    let (canal, mangrove, gorge) = (kinds(River::Canal), kinds(River::Mangrove), kinds(River::Gorge));
+    assert!(!canal.iter().any(|k| matches!(k, Kind::Net | Kind::Current | Kind::Rock)));
+    assert!(mangrove.contains(&Kind::Net));
+    assert!(gorge.contains(&Kind::Current) && gorge.contains(&Kind::Rock));
+    for river in RIVERS {
+        assert_eq!(River::from_key(river.key()), Some(river));
+    }
+    assert_eq!(River::from_key("ocean"), None);
+}
+
+#[test]
+fn a_ghost_net_needs_two_cuts_by_anyone_and_frees_plastic() {
+    let mut r = bare_on(River::Mangrove, &[0, 1]);
+    r.boats[0].lane = 1;
+    r.boats[1].lane = 2;
+    let z = r.boats[1].z + 4.0; // within reach of both boats
+    let net = r.spawn(Kind::Net, 1, z); // covers lanes 1 and 2
+    // One press from each crewmate.
+    let mut i = idle(&r);
+    i[0].1.action = true;
+    r.step(&i);
+    assert!(r.drain_events().iter().any(|e| matches!(e, Event::NetHit { left: 1, .. })));
+    let mut i = idle(&r);
+    i[1].1.action = true;
+    r.step(&i);
+    let n = r.objs.iter().find(|o| o.id == net).unwrap().clone();
+    assert!(!n.alive, "net {n:?}, boats {:?}, events {:?}", r.boats.iter().map(|b| (b.lane, b.z)).collect::<Vec<_>>(), r.drain_events());
+    assert_eq!(r.crews[0].nets, 1);
+    let freed = r.objs.iter().filter(|o| o.kind == Kind::Plastic && o.alive).count() as u32;
+    assert_eq!(freed, NET_PLASTIC);
+}
+
+#[test]
+fn an_uncut_net_slows_like_weed() {
+    let mut r = bare_on(River::Mangrove, &[0]);
+    let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+    r.spawn(Kind::Net, lane - 1, z + 3.0); // its second lane is ours
+    for _ in 0..12 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert!(r.boats[0].slow > 0.0);
+}
+
+#[test]
+fn currents_push_once_unless_you_hop() {
+    let mut r = bare_on(River::Gorge, &[0]);
+    let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+    let id = r.spawn(Kind::Current, lane, z + 2.0);
+    r.objs.iter_mut().find(|o| o.id == id).unwrap().dir = 1;
+    for _ in 0..15 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert_eq!(r.boats[0].lane, lane + 1, "pushed exactly one lane");
+
+    let mut r = bare_on(River::Gorge, &[0]);
+    let id = r.spawn(Kind::Current, lane, z + 4.0);
+    r.objs.iter_mut().find(|o| o.id == id).unwrap().dir = -1;
+    for k in 0..15 {
+        let mut i = idle(&r);
+        i[0].1.hop = k == 2;
+        r.step(&i);
+    }
+    assert_eq!(r.boats[0].lane, lane, "hopping rides over the current");
+}
+
+#[test]
+fn rocks_cannot_be_hopped() {
+    let mut r = bare_on(River::Gorge, &[0]);
+    let (lane, z) = (r.boats[0].lane, r.boats[0].z);
+    r.spawn(Kind::Rock, lane, z + 4.0);
+    for k in 0..20 {
+        let mut i = idle(&r);
+        i[0].1.hop = k == 3;
+        r.step(&i);
+    }
+    assert_eq!(r.boats[0].capsizes, 1);
+}
+
+#[test]
+fn stars_for_clean_river_score_and_the_river_goal() {
+    // Gorge: a clean, capsize-free run with a big score earns all three.
+    let mut r = bare_on(River::Gorge, &[0]);
+    r.crews[0].plastic = 200;
+    r.health = 80.0;
+    r.t = r.duration();
+    let i = idle(&r);
+    r.step(&i);
+    assert_eq!(r.phase, Phase::Finished);
+    assert_eq!(r.stars(0), [true, true, true]);
+    // The same run with a capsize loses only the Gorge goal.
+    r.boats[0].capsizes = 1;
+    assert_eq!(r.stars(0), [true, true, false]);
+    assert_eq!(r.stars(9), [false; 3], "unknown seat");
+
+    // Canal: an open pipe the boats passed blocks the third star.
+    let mut r = bare_on(River::Canal, &[0]);
+    let z = r.boats[0].z;
+    r.spawn(Kind::Pipe, 1, z - 5.0);
+    r.crews[0].pipes = 1;
+    r.t = r.duration();
+    let i = idle(&r);
+    r.step(&i);
+    assert!(!r.stars(0)[2]);
+    for o in r.objs.iter_mut().filter(|o| o.kind == Kind::Pipe) {
+        o.plugged = true;
+    }
+    assert!(r.stars(0)[2]);
+
+    // The tutorial never earns stars.
+    let mut t = Run::tutorial(1, &[0]);
+    until(&mut t, |r| r.phase == Phase::Finished);
+    assert_eq!(t.stars(0), [false; 3]);
+}
+
+#[test]
+fn solo_gorge_has_currents_near_the_start() {
+    let mut r = Run::create(77, &[0], 1.0, River::Gorge);
+    r.generate_to(1200.0);
+    let n = r.objs.iter().filter(|o| o.kind == Kind::Current).count();
+    assert!(n >= 3, "currents in the first 1200 m: {n}");
+    let total: usize = (0..20u64)
+        .map(|seed| {
+            let mut r = Run::create(seed, &[0], 1.0, River::Gorge);
+            r.generate_to(1200.0);
+            r.objs.iter().filter(|o| o.kind == Kind::Current).count()
+        })
+        .sum();
+    assert!(total >= 60, "about one row in ten has a current: {total} over 20 courses");
+}

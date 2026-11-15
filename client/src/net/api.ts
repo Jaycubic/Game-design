@@ -89,6 +89,32 @@ export interface Profile {
   daily: { claims: number; claimed_today: boolean; track: number[]; next: number };
   road: { runs: number; seeds: number; item: string | null; reached: boolean; claimed: boolean }[];
   rules: { win_bonus_per_day: number; refund_minutes: number };
+  /** Total stars across rivers. */
+  stars: number;
+  rivers: RiverCard[];
+}
+export interface RiverCard {
+  key: string;
+  name: string;
+  line: string;
+  /** The three star goals, in words. */
+  goals: string[];
+  stars: boolean[];
+  best: number;
+  unlocked: boolean;
+  need_runs: number;
+  need_stars: number;
+}
+/** What the results screen shows for the river after a run. */
+export interface RiverResult {
+  river: string;
+  name: string;
+  goals: string[];
+  stars: boolean[];
+  new_stars: boolean[];
+  score: number;
+  best: number;
+  new_best: boolean;
 }
 export interface RoomResponse {
   room_id: string;

@@ -39,8 +39,48 @@ import {
   reedMesh,
   stepsMesh,
   weedMesh,
+  netMesh,
+  currentMesh,
 } from "./props";
-import { LANE_W, SEAT_COLOURS, type RunObj } from "./types";
+import { LANE_W, SEAT_COLOURS, type River, type RunObj } from "./types";
+
+/** Per-river look: water colour when clean, bank colours and heights, what lines the banks. */
+interface Theme {
+  water: Color3;
+  /** [mud edge, path, land] */
+  bank: [Color3, Color3, Color3];
+  /** Bank profile heights from the water outwards. */
+  ys: number[];
+  houses: boolean;
+  trees: number;
+  rocks: number;
+}
+const THEMES: Record<River, Theme> = {
+  canal: {
+    water: new Color3(0.1, 0.42, 0.46),
+    bank: [new Color3(0.55, 0.5, 0.42), new Color3(0.62, 0.56, 0.44), new Color3(0.38, 0.5, 0.26)],
+    ys: [-0.5, 0.45, 0.62, 0.66, 0.8, 1.6],
+    houses: true,
+    trees: 0.45,
+    rocks: 0.3,
+  },
+  mangrove: {
+    water: new Color3(0.07, 0.24, 0.2),
+    bank: [new Color3(0.32, 0.28, 0.2), new Color3(0.3, 0.38, 0.2), new Color3(0.2, 0.42, 0.18)],
+    ys: [-0.5, 0.25, 0.4, 0.5, 0.7, 1.4],
+    houses: false,
+    trees: 1,
+    rocks: 0.1,
+  },
+  gorge: {
+    water: new Color3(0.13, 0.42, 0.55),
+    bank: [new Color3(0.45, 0.43, 0.4), new Color3(0.55, 0.52, 0.48), new Color3(0.5, 0.47, 0.42)],
+    ys: [-0.5, 1.4, 2.6, 3.6, 5.5, 9],
+    houses: false,
+    trees: 0.25,
+    rocks: 1,
+  },
+};
 
 /** Water edge (x) for a river of `lanes` lanes. */
 const halfFor = (lanes: number) => (LANE_W * lanes) / 2 + 1.0;
@@ -200,6 +240,9 @@ export class RiverScene {
     };
     this.objBatches = {
       danger: new Batch(disc("danger", new Color3(0.35, 0.05, 0.04), 0.5)),
+      net: new Batch(withMat(netMesh(scene, LANE_W * 2))),
+      current: new Batch(withMat(currentMesh(scene), this.currentMat())),
+      boulder: new Batch(withMat(flora.rock.clone("boulder"))),
       gap: new Batch(disc("gap", new Color3(0.45, 1, 0.6), 0.35)),
       bottle: new Batch(withMat(bottleMesh(scene, "#9fd3e8", 1))),
       bottle2: new Batch(withMat(bottleMesh(scene, "#7fbf7a", 2))),
@@ -268,6 +311,29 @@ export class RiverScene {
 
   private laneCount = 3;
   private half = HALF3;
+  private theme: Theme = THEMES.canal;
+  private riverKey: River = "canal";
+  private healthNow = 70;
+
+  private currentMat() {
+    const m = new StandardMaterial("current-mat", this.scene);
+    m.diffuseColor = new Color3(0.85, 0.97, 1);
+    m.emissiveColor = new Color3(0.5, 0.75, 0.8);
+    m.specularColor = Color3.Black();
+    m.alpha = 0.75;
+    return m;
+  }
+
+  /** Switch the river's look (water, banks, what lines them). */
+  setRiver(river: River) {
+    if (river === this.riverKey || !THEMES[river]) return;
+    this.riverKey = river;
+    this.theme = THEMES[river];
+    this.setHealth(this.healthNow);
+    for (const m of this.chunkMeshes.values()) m.dispose();
+    this.chunkMeshes.clear();
+    this.chunkKey = "";
+  }
 
   /** World x of a lane's centre (lanes are numbered from 0 on the left). */
   laneX(lane: number) {
@@ -289,8 +355,9 @@ export class RiverScene {
 
   /** River Health 0..100 → water colour and murk. */
   setHealth(h: number) {
+    this.healthNow = h;
     const t = Math.max(0, Math.min(1, h / 100));
-    const clean = new Color3(0.1, 0.42, 0.46),
+    const clean = this.theme.water,
       murky = new Color3(0.3, 0.26, 0.14);
     const c = Color3.Lerp(murky, clean, t);
     this.waterMat.diffuseColor = c;
@@ -322,7 +389,8 @@ export class RiverScene {
   private bankChunk(i: number): Mesh {
     const z0 = i * CHUNK;
     const xs = [0, 0.9, 1.6, 6, 14, 40];
-    const ys = [-0.5, 0.45, 0.62, 0.66, 0.8, 1.6];
+    const ys = this.theme.ys;
+    const [mud, path, land] = this.theme.bank;
     const parts: Mesh[] = [];
     for (const side of [-1, 1]) {
       const paths: Vector3[][] = [];
@@ -333,7 +401,7 @@ export class RiverScene {
           const z = z0 + (s / 8) * CHUNK;
           const n = fbm(z * 0.05 + side * 7, k * 1.3);
           row.push(new Vector3(side * (this.half + xs[k]), ys[k] + (k > 1 ? (n - 0.5) * 0.4 : 0), z));
-          const base = k <= 1 ? new Color3(0.55, 0.5, 0.42) : k === 2 ? new Color3(0.62, 0.56, 0.44) : new Color3(0.38, 0.5, 0.26);
+          const base = k <= 1 ? mud : k === 2 ? path : land;
           const c = base.scale(0.85 + n * 0.3);
           colors.push(new Color4(c.r, c.g, c.b, 1));
         }
@@ -363,9 +431,11 @@ export class RiverScene {
     const HALF = this.half;
     for (const side of [-1, 1]) {
       const edge = side * (HALF + 0.9);
-      // Riverside stairs and lamps
-      if (r() > 0.45) b.steps.add(side * (HALF + 0.2), 0, z0 + 8 + r() * 20, side > 0 ? 0 : Math.PI);
-      for (let k = 0; k < 3; k++) b.lamp.add(edge + side * 0.6, 0.62, z0 + k * 13 + 3);
+      const th = this.theme;
+      const top = th.ys[2];
+      // Riverside stairs and lamps (towns only)
+      if (th.houses && r() > 0.45) b.steps.add(side * (HALF + 0.2), 0, z0 + 8 + r() * 20, side > 0 ? 0 : Math.PI);
+      if (th.houses) for (let k = 0; k < 3; k++) b.lamp.add(edge + side * 0.6, 0.62, z0 + k * 13 + 3);
       // Reeds at the water's edge
       for (let k = 0; k < 5; k++) b.reed.add(side * (HALF + 0.3 + r() * 0.5), -0.1, z0 + r() * CHUNK, r() * 6, 0.9 + r() * 0.6);
       // Row of houses with trees between
@@ -373,24 +443,29 @@ export class RiverScene {
       while (z < z0 + CHUNK) {
         const x = side * (HALF + 4.5 + r() * 3);
         const pick = r();
-        if (pick < 0.55) {
+        if (!th.houses && r() > th.trees) {
+          // gorge: boulders on the cliff tops instead of buildings
+          b.rock.add(x, top, z, r() * 6, 3 + r() * 3);
+          z += 3 + r() * 2;
+        } else if (th.houses && pick < 0.55) {
           const key = (["houseA", "houseB", "houseC"] as const)[Math.floor(r() * 3)];
           b[key].add(x, 0.6, z, side > 0 ? 0 : Math.PI, 1);
           z += 3.2 + r() * 1.5;
         } else {
           const key = r() > 0.85 ? "fig" : r() > 0.5 ? "tree0" : "tree1";
-          b[key].add(x + side * r() * 3, 0.6, z, r() * 6, 2.6 + r() * 1.4);
-          z += 2.5 + r() * 2;
+          b[key].add(x + side * r() * 3, top, z, r() * 6, 2.6 + r() * 1.4);
+          z += (th.houses ? 2.5 : 1.6) + r() * 2;
         }
       }
-      for (let k = 0; k < 4; k++) b.grass.add(side * (HALF + 2 + r() * 8), 0.62, z0 + r() * CHUNK, r() * 6, 2);
-      if (r() > 0.7) b.rock.add(side * (HALF + 0.7), 0.1, z0 + r() * CHUNK, r() * 6, 2 + r());
+      for (let k = 0; k < 4; k++) b.grass.add(side * (HALF + 2 + r() * 8), th.ys[3] - 0.04, z0 + r() * CHUNK, r() * 6, 2);
+      if (r() > 1 - th.rocks) b.rock.add(side * (HALF + 0.7), 0.1, z0 + r() * CHUNK, r() * 6, 2 + r());
+      if (th.rocks >= 1) for (let k = 0; k < 3; k++) b.rock.add(side * (HALF + 1.2 + r() * 2), top * 0.6, z0 + r() * CHUNK, r() * 6, 4 + r() * 4);
     }
     // Dry season: the closed lanes on the right become mud flats with rocks.
     for (let lane = open; lane < this.laneCount; lane++) {
       for (let k = 0; k < 6; k++) b.rock.add(this.laneX(lane) + (r() - 0.5) * 1.6, -0.15, z0 + r() * CHUNK, r() * 6, 2.5 + r() * 2);
     }
-    if (i % 6 === 3) b.footbridge.add(0, 0, z0 + 20, 0, 1, 0, 0, (HALF * 2 + 4) / (HALF3 * 2 + 4), 1);
+    if (this.theme.houses && i % 6 === 3) b.footbridge.add(0, 0, z0 + 20, 0, 1, 0, 0, (HALF * 2 + 4) / (HALF3 * 2 + 4), 1);
   }
 
   /** Per-frame render of world objects (positions come from the server snapshot). */
@@ -412,9 +487,22 @@ export class RiverScene {
         case "weed":
           if (o.alive) ob.weed.add(x, -0.03 + bob * 0.4, o.z, o.id, 1.5);
           break;
+        case "net":
+          if (!o.alive) break;
+          // spans its lane and the next; a cut net sags lower
+          ob.net.add(x + LANE_W / 2, -0.02 + bob * 0.5, o.z, 0, 1, 0, 0, 1, (o.hp ?? 2) < 2 ? 0.55 : 1);
+          break;
+        case "current": {
+          const d = o.dir ?? 1;
+          const slide = ((t * 1.6 + o.id) % 1) * 0.5 * d;
+          for (const dz of [-1.6, 0, 1.6]) ob.current.add(x + slide, 0.03, o.z + dz, d > 0 ? 0 : Math.PI, 1);
+          break;
+        }
+        case "rock":
         case "log":
           if (!o.alive) break;
-          ob.log.add(x, 0.02 + bob, o.z, 0.15 * Math.sin(o.id), 1);
+          if (o.kind === "rock") ob.boulder.add(x, -0.2, o.z, o.id, 6.5);
+          else ob.log.add(x, 0.02 + bob, o.z, 0.15 * Math.sin(o.id), 1);
           if (me && o.lane === me.lane) {
             // A dark shadow grows under a log in your lane as it gets close.
             const secs = (o.z - me.z) / Math.max(me.speed, 1);

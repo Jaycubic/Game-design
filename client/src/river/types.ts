@@ -1,6 +1,7 @@
 // Data sent by the server's river run (crates/river-core).
 
-export type ObjKind = "plastic" | "weed" | "log" | "wave" | "pipe";
+export type ObjKind = "plastic" | "weed" | "log" | "wave" | "pipe" | "net" | "current" | "rock";
+export type River = "canal" | "mangrove" | "gorge";
 export type Twist = "monsoon_surge" | "dry_season" | "volunteer_day";
 export type Finale = "second_wind" | "clean_sweep";
 export type ChangeKind = "twist" | "finale";
@@ -14,6 +15,10 @@ export interface RunObj {
   plugged: boolean;
   /** Waves on a wide river: a second gap lane. */
   gap2?: number;
+  /** Ghost nets: cuts still needed. */
+  hp?: number;
+  /** Currents: push direction (-1 left, +1 right). */
+  dir?: number;
 }
 
 export interface RunBoat {
@@ -59,6 +64,7 @@ export interface RunResults {
 
 export interface Snapshot {
   tick: number;
+  river?: River;
   duration: number;
   tutorial: boolean;
   t: number;
@@ -75,8 +81,8 @@ export interface Snapshot {
   /** Lanes in the full-width river: 3, 4 or 6. */
   lane_count: number;
   boats: RunBoat[];
-  /** [crew id, score, plastic, pipes, banks] */
-  crews: [number, number, number, number, number][];
+  /** [crew id, score, plastic, pipes, banks, ghost nets freed] */
+  crews: [number, number, number, number, number, number][];
   objs: RunObj[];
   plugs: [number, PlugView][];
   results: RunResults | null;
@@ -96,7 +102,10 @@ export type RunEvent =
   | { type: "ping"; seat: number; glyph: number }
   | { type: "wave_incoming"; id: number }
   | { type: "rule_changed"; change: ChangeKind; choice: string }
-  | { type: "choked" };
+  | { type: "choked" }
+  | { type: "net_hit"; seat: number; id: number; left: number }
+  | { type: "net_freed"; seat: number; id: number }
+  | { type: "pushed"; seat: number; dir: number };
 
 export const RUN_SECONDS = 180;
 export const LANE_W = 2.4;

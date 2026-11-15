@@ -15,6 +15,7 @@ import { howToPlay, settings } from "./ui/panels";
 import { MenuBackdrop } from "./river/backdrop";
 import { RunMode } from "./river/mode";
 import { hubPanel, loadProfile, PANEL_TITLES } from "./ui/hub";
+import { selectedRiver } from "./ui/rivers";
 import { sound } from "./audio/sound";
 
 const uiRoot = document.getElementById("ui")!;
@@ -61,7 +62,7 @@ function onMessage(m: Envelope) {
   if (p.state) store.set({ room: p.state as RoomView });
   if (m.type === "room.joined" && pendingPractice) {
     pendingPractice = false;
-    send("run.start", { practice: true });
+    send("run.start", { practice: true, river: selectedRiver() });
   }
   if (m.type === "room.joined" && pendingTutorial) {
     pendingTutorial = false;
@@ -90,6 +91,7 @@ function handleRun(type: string, p: any) {
     runMode?.onSnapshot(p.snapshot);
   } else if (type === "run.rewards") {
     runMode?.rewards(p.seeds ?? 0, !!p.practice);
+    if (p.river) runMode?.riverResult(p.river);
     void loadProfile();
   } else if (type === "run.events") runMode?.onEvents(p.events ?? []);
 }
@@ -226,7 +228,7 @@ const ui: UiActions = {
     setTimeout(leaveToHub, 150);
   },
   ready: (v) => send("room.ready", { ready: v }),
-  startRun: (practice) => send("run.start", { practice }),
+  startRun: (practice) => send("run.start", { practice, river: selectedRiver() }),
   openHowTo: () => modals.push("howto", "How to play", howToPlay()),
   openPanel: (kind) => modals.push("panel-" + kind, PANEL_TITLES[kind], hubPanel(kind), { wide: true, onClose: () => render(true) }),
   openSettings: () =>

@@ -142,3 +142,17 @@
 .rh-glyph { display: inline-grid; justify-items: center; }
 .rh-glyph-name { font-size: 0.7rem; opacity: 0.85; line-height: 1; }
 .rh-code-tip { margin-top: 6px; font-size: 0.85rem; background: rgba(255, 210, 63, 0.18); border-radius: 10px; padding: 6px 10px; }
+
+/* ── Results: river stars and best score ── */
+.rh-stars { margin: 10px auto 4px; text-align: left; width: min(420px, 100%); background: rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 8px 14px; }
+.rh-stars-title { font-weight: 800; text-align: center; margin-bottom: 4px; }
+.rh-stars ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rh-stars li { display: flex; gap: 8px; align-items: center; opacity: 0.7; }
+.rh-stars li.on { opacity: 1; }
+.rh-stars .star { font-size: 1.4rem; color: rgba(255, 255, 255, 0.25); }
+.rh-stars .star.on { color: #ffc94a; text-shadow: 0 0 8px rgba(255, 201, 74, 0.6); }
+.rh-stars li.new .star { animation: rh-star-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes rh-star-pop { 0% { transform: scale(0.2) rotate(-40deg); } 100% { transform: scale(1) rotate(0); } }
+.rh-best { text-align: center; margin-top: 6px; font-weight: 700; }
+.rh-best.new { color: #ffd23f; }
+@media (prefers-reduced-motion: reduce) { .rh-stars li.new .star { animation: none; } }
