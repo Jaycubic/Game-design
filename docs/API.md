@@ -106,19 +106,20 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 | `run.started` | `{seed, boats: [{seat, crew}], names: {seat: name}, skins: {seat: boat_key}, practice, tutorial, river, endless}` |
 | `run.snapshot` | `{snapshot, you, skins}`, 15 times a second, filtered for each viewer (see below) |
 | `run.events` | `{events: [...]}`, sent on each tick that has events |
-| `run.rewards` | `{seeds, practice, river}` after a run finishes (not after the tutorial). `river` is `{river, name, goals, stars, new_stars, score, best, new_best}` for this player (for Endless: `{river, name, endless: true, distance, score, best, new_best}`); `missions` is today's three `{key, text, progress, goal, reward, done, just_done}`; `rank` is `{name, index, next, progress, change}` |
+| `run.rewards` | `{seeds, practice, river, missions, rank}` after a run finishes (not after the tutorial). `river` is `{river, name, goals, stars, new_stars, score, best, new_best}` for this player (for Endless: `{river, name, endless: true, distance, score, best, new_best}`); `missions` is today's three `{key, text, progress, goal, reward, done, just_done}`; `rank` is `{name, index, next, progress, change}` (absent after Endless, which doesn't change the rating) |
 
 **Snapshot fields:**
 
 | Field | Contents |
 |---|---|
-| Timing | `tick`, `duration`, `tutorial`, `t` |
+| Timing | `tick`, `duration` (0 in Endless, which has no time limit), `tutorial`, `t` |
+| Mode | `river` (`canal`, `mangrove`, `gorge`), `endless`, `distance` (metres travelled by the leading boat) |
 | `phase` | One of `countdown`, `running`, `warning`, `choosing`, `reveal` or `finished`, plus its `left` and the details of the change |
 | River | `health`, `choked`, `lanes` (open lanes, numbered from 0 on the left), `lane_count` (3, 4 or 6) |
 | Rule changes | `twist`, `finale`, `finale_crew`, `changes`, `votes: [[seat, option]]` |
 | `boats` | Per boat: `seat`, `crew`, `lane`, `z`, `speed`, `hop`, `capsize`, `immune` (protection left after a capsize), `slow`, `boost`, `boosting`, `plastic` and `plugging` |
-| `crews` | `[[id, score, plastic, pipes, banks]]` |
-| `objs` | Only the stretch of river near the boats. Each has `id`, `kind`, `lane` (for pipes: the bank side, -1 or +1), `z`, `alive`, `plugged`, and for waves on a 6-lane river `gap2`, the second gap lane |
+| `crews` | `[[id, score, plastic, pipes, banks, nets]]` (`nets`: ghost nets freed) |
+| `objs` | Only the stretch of river near the boats. Each has `id`, `kind`, `lane` (for pipes: the bank side, -1 or +1), `z`, `alive`, `plugged`, and for waves on a 6-lane river `gap2`, the second gap lane. `kind` is `plastic`, `weed`, `log`, `wave`, `pipe`, `net` (spans `lane` and `lane + 1`, with `hp` cuts left), `current` (with `dir`, -1 or +1) or `rock` |
 | `plugs` | Only gate codes this viewer is involved in, each with `code`, `clear`, `entered` and `left`. `clear` is true only for crewmates, or briefly for a lone boat. |
 | `results` | `{scores, winner, health, choked, revived}` once the run is finished |
 
@@ -127,6 +128,7 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 - boat state: `slowed`, `capsized` (with `dropped`, the plastic spilled), `bumped`, `boost`;
 - pipes: `plug_started`, `plugged`, `plug_failed`;
 - signals and waves: `ping`, `wave_incoming`;
+- river mechanics: `net_hit {left}`, `net_freed`, `pushed {dir}`;
 - river: `rule_changed {change, choice}`, `choked`.
 
 When a run ends, every member's Ready flag resets and the room returns to the lobby.
@@ -156,5 +158,5 @@ scripted game.
 | Messages and access | `unauthorized`, `bad_message`, `unknown_command`, `not_member`, `not_host`, `rate_limited` |
 | Rooms | `room_not_found`, `room_full`, `invalid_code`, `stale_state`, `database_unavailable` |
 | Accounts | `invalid_handle`, `weak_password`, `handle_taken`, `invalid_credentials` |
-| Runs | `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players` |
+| Runs | `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players`, `bad_river`, `river_locked`, `endless_solo` |
 | Economy | `already_claimed`, `not_reached`, `not_enough_seeds`, `already_owned`, `not_refundable`, `not_owned` |

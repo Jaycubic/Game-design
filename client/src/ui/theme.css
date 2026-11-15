@@ -353,3 +353,10 @@ button.hub-tile:hover .hub-tile-icon { color: var(--ink); background: linear-gra
 /* Practice and Endless side by side under PLAY */
 .solo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .solo-row .btn { width: 100%; justify-content: center; }
+
+/* How to play: the six signals with number and name */
+.htp-signals { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+.htp-signal { display: grid; justify-items: center; gap: 2px; padding: 6px 4px; border-radius: 12px; background: rgba(20, 36, 15, 0.6); border: 2px solid var(--wood-d); }
+.htp-signal b { font-size: 1.4rem; font-weight: 400; }
+.htp-signal small { font-size: 0.75rem; color: var(--muted); }
+@media (max-width: 520px) { .htp-signals { grid-template-columns: repeat(3, 1fr); } }

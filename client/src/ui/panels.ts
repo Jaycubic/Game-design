@@ -87,6 +87,9 @@ export function howToPlay(): HTMLElement {
       row("🔧", isTouch() ? "Tap" : "1–6", "Type gate codes · signal your crew"),
       row("🌊", "", "River Health is shared — if it chokes, everyone loses half"),
       row("⚡", "", "Twice per run, players change the rules"),
+      row("💥", "", "Capsize and you stop for a moment and spill 3 plastic — net it back"),
+      row("🗺️", "", "New rivers add ghost nets, currents and rocks — earn 3 stars on each"),
+      row("∞", "", "Endless: solo, no clock, one capsize ends it — how far can you go?"),
     ),
     h("h3", null, "Signals"),
     h(

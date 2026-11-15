@@ -21,13 +21,14 @@ places; the real-world case is shown in the presentation.
 | Requirement | How Clearwater Run meets it |
 |---|---|
 | Environmental awareness, addressed indirectly | River Health is a shared resource. Missed plastic and open pipes damage it; a choked river halves every score; a revived river rewards every crew. Players learn the lesson by losing points, not by reading. |
-| Players change the rules dynamically, exactly twice | Every run has a **Twist** vote by all players at about 35 % of the run, and a **Finale** pick by the trailing crew at about 78 %. Both are player-chosen; a spin settles only ties and missing choices. The engine enforces exactly two changes, and a test proves it. |
+| Players change the rules dynamically, exactly twice | Every run has a **Twist** vote by all players at about 35 % of the run, and a **Finale** pick by the trailing crew at about 78 %. Both are player-chosen; a spin settles only ties and missing choices. The engine enforces exactly two changes in every mode (Endless too, at 60 s and 150 s), and tests prove it. |
 | Cooperation | Crewmates share a score; 2 players form one co-op crew; all crews share River Health and the "revived" bonus. |
 | Communication | Gate codes: the plugging player sees the symbols scrambled, and only a crewmate sees the real order. |
 | Negotiation and bluffing | The Twist vote has to be argued out in the room. Signal glyphs are visible to the rival crew, so crews invent shorthand or send decoys. The Finale makes the trailing crew choose between chasing points (Second Wind) and helping everyone (Clean Sweep). |
 | Puzzles | The gate code is a cooperative logic puzzle under time pressure. Solo players get a memory version: the code shows for 1.5 s. |
-| Simple rules | Three controls, one score formula, one shared bar. A 60-second scripted tutorial teaches everything. |
+| Simple rules | Three controls, one score formula, one shared bar. A 60-second scripted tutorial spotlights each control in place and teaches it by doing. |
 | Limited number of players | 2–4 per room, enforced by the server and the database. |
+| Reasons to come back (beyond the brief) | Three rivers with new mechanics, three stars each, best scores, daily missions, ranks, solo Endless, and difficulty that adapts to each room (§5). |
 
 ## 3. The elements of game design
 
@@ -44,8 +45,8 @@ places; the real-world case is shown in the presentation.
 - **Long term:** earn Seeds to unlock and upgrade boats; complete River Road milestones.
 
 ### 3.3 Procedures
-Steer between lanes (3, 4 or 6, by boat count), hop, press one context action (cut weed or start plugging), type gate codes, send signal
-glyphs, and vote. Plastic is collected by contact.
+Steer between lanes (3, 4 or 6, by boat count), hop, press one context action (cut weed, cut a ghost net or
+start plugging), type gate codes, send signals, and vote. Plastic is collected by contact.
 
 ### 3.4 Rules
 See the [Rule Book](RULE_BOOK.md). The core rules — controls, score formula, win condition — never change. Only the
@@ -55,7 +56,8 @@ two player-chosen rule changes alter the river.
 - **River Health:** shared, contested and visible to everyone.
 - **Boost:** personal, charged by plastic.
 - **Pipe multiplier:** per crew, raised by each plugged pipe.
-- **Seeds:** the meta currency, earned only by playing.
+- **Seeds:** the meta currency, earned only by playing (runs, daily reward, River Road, missions).
+- **Stars and best scores:** per river, kept once earned; stars unlock rivers.
 
 ### 3.6 Conflict
 - The river is the opponent: logs, weed, debris waves and pipes.
@@ -182,8 +184,17 @@ competitive play. It is disclosed here, in the design documentation.
 - **3D models:** Kenney CC0 boats, each with a seated character (rowing or driving), on a code-built river and banks.
 - **Rendering:** WebGPU where available, otherwise WebGL2.
 - **Graphics quality setting:** keeps the game playable on an integrated laptop GPU.
-- **Tutorial:** teaches one control at a time with a coach card (steer, grab plastic, hop, cut weed, plug the pipe).
-  It can be skipped at any point.
+- **Rivers:** each has its own look: town houses and footbridges (Canal), dense trees and dark water (Mangrove),
+  rocky cliffs and boulders (Gorge).
+- **Game feel:** a capsize gets a short freeze-frame, smooth trauma-based camera shake, a red edge flash and a full
+  flip; logs in your lane get a red warning shadow, and wave gaps glow. Settings → Comfort scales the shake down and
+  replaces flashes and blinking with steady tints.
+- **Sound:** CC0 effects for every action, a river ambience and separate hub and race music, each with its own
+  volume (see `THIRD_PARTY_NOTICES.md`).
+- **Phones:** on-screen thumb buttons, swipes and a landscape-first layout.
+- **Tutorial:** one step at a time (steer, boost meter, River Health, hop, cut weed, plug the pipe, signals). Each
+  step spotlights its control or meter: the screen dims briefly, a ring and a tapping hand point at it, and a bubble
+  explains it. It can be skipped at any point.
 
 ## 7. Emerging strategies
 
@@ -193,6 +204,8 @@ competitive play. It is disclosed here, in the design documentation.
 - **Decoy signalling** confuses the rival crew.
 - **Lane-splitting** within a crew covers more plastic.
 - **Voting tactics:** Volunteer Day suits a plastic-heavy crew; Dry Season punishes crews that ignore pipes.
+- **Net partners (Mangrove):** two crewmates cut a ghost net together, one press each, then split the plastic.
+- **Current riding (Gorge):** let a current carry you into the plastic waiting beside it, or hop to hold your lane.
 
 ## 8. Design thinking process
 
@@ -229,3 +242,10 @@ Rate fun and clarity separately for 2-player and 4-player rooms.
 - Spawn rates, health changes and Seeds rewards are untested with players.
 - The boat upgrades are small on purpose. Confirm that new players never feel outclassed.
 - Dry Season may be too harsh on crews that start far behind on pipes.
+- Capsize cost (1.2 s, 3 plastic spilled, 1 s protection): check it stings without feeling unfair.
+- Wide rivers (×1.8 plastic, ×1.4 obstacles on 6 lanes): check there is enough for four boats without clutter.
+- River Director: the flow band (55–80 % of plastic, ≤ 1 capsize per 10 s window), the ±0.1 in-run swing and the
+  rating-to-difficulty mapping are first guesses; the run log (`director_runs`) is there to tune them.
+- Star targets (120 / 150 / 180), unlock thresholds (3 runs or 3 ★, 8 runs or 7 ★), mission rewards (20–40 Seeds)
+  and rank thresholds are all adjustable after playtesting.
+- Endless speed-up (+2 % per 15 s): check a strong player's run ends in a few minutes rather than never.

@@ -10,7 +10,9 @@
 2. Friends press **Join** on their own devices and type the code. 2–4 players can join.
 3. Everyone presses **Ready**, and the host starts the run.
 
-**Practice solo** starts a run with just you. It pays half Seeds.
+**Practice solo** starts a run with just you. It pays half Seeds. **∞ Endless** is a solo run with no clock (§11).
+
+The **river chip** above PLAY chooses the river (§4); in a crew room the host's choice counts.
 
 **Tutorial** is a 60-second course that teaches each control in turn. You can skip it at any time, and it pays
 nothing.
@@ -27,13 +29,13 @@ Crews compete on score, but **everyone shares one River Health bar**.
 
 ## 3. Controls
 
-| Action | Keyboard | Gamepad |
-|---|---|---|
-| Steer left / right | ◀ ▶ or A / D | D-pad or left stick |
-| Hop | ▲, W or Space | A |
-| Action (cut weed, start plugging) | ▼, S or E | B or X |
-| Send signal glyph 1–6 | keys 1–6 | hold RT + A/B/X/Y/LB/RB |
-| Vote during a rule change | keys 1–3 | A / B / X |
+| Action | Keyboard | Gamepad | Phone / tablet |
+|---|---|---|---|
+| Steer left / right | ◀ ▶ or A / D | D-pad or left stick | ◀ ▶ buttons, or swipe left / right |
+| Hop | ▲, W or Space | A | ▲ button, or swipe up |
+| Action (cut weed or nets, start plugging) | ▼, S or E | B or X | ✂ button, or swipe down |
+| Send a signal 1–6 | keys 1–6, or the signal bar | hold RT + A/B/X/Y/LB/RB | the six signal buttons |
+| Vote during a rule change | keys 1–3 | A / B / X | tap a card |
 
 Your boat moves forward on its own. The letter keys can be rebound in **Settings**; the arrow keys always work.
 
@@ -78,8 +80,8 @@ new thing on top of everything above.
 
 - When you start plugging, a **3-symbol gate code** appears. You have 8 seconds to type it with keys 1–6.
 - **You see the right symbols in the wrong order. Your crewmates see the real order.**
-- Crewmates can only talk through the six **signal glyphs**: leaf, drop, fish, bridge, arrow and star. Signals appear
-  over the sender's boat.
+- Crewmates can only talk through the six **signals**: 1 Leaf, 2 Drop, 3 Fish, 4 Bridge, 5 Arrow and 6 Star. They have
+  no fixed meaning; your crew decides what they mean. Signals appear over the sender's boat.
 - **The rival crew sees your signals too**, so crews invent shorthand, or send decoys.
 - A player with no crewmate sees the real order for the first 1.5 seconds, then has to type it from memory.
 - A plugged pipe heals the river by 10 and raises your crew's **multiplier** for the rest of the run.
@@ -237,3 +239,5 @@ moving forward on its own until you return.
 | Paying to win | There is no real money, and upgrades are capped and modest. |
 | A regretted purchase | Undo within 10 minutes for a full refund. |
 | Missing a day | The daily track pauses; it never resets. |
+| Grinding missions | Each mission pays once, and there are only three a day. |
+| One bad day wiping out a rank | A rank drops at most one step per day. |

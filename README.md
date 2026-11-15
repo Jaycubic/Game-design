@@ -42,16 +42,23 @@ and the rival crew sees those signals too.
 - **Hub:**
   - **PLAY** opens a crew room with a six-character invitation code.
   - **Practice solo** gives a run alone for half Seeds.
+  - **∞ Endless** is a solo run with no clock where one capsize ends it; score is metres + plastic × 5.
   - **Join** takes a friend's code.
-- **Tutorial:** a skippable 60-second scripted course that teaches one control at a time. It is offered on first
-  sign-in and is available later from the cap icon.
+  - The **river chip** above PLAY picks the river.
+- **Rivers:** Town Canal, Mangrove Maze (ghost nets) and Rapids Gorge (currents and rocks), unlocked by runs or
+  stars. Each has three stars to earn and a best score.
+- **Missions and ranks:** three daily missions that pay Seeds, and a rank from Rookie to River Guardian.
+- **Tutorial:** a skippable 60-second scripted course. Each step spotlights the control it teaches (dim, ring,
+  tapping hand, bubble). It is offered on first sign-in and is available later from the cap icon.
+- **Phones and tablets:** on-screen buttons and swipes, with a layout for portrait and landscape.
 - **Seeds:** the only currency. Earned by playing, never bought.
 - **Garage and Shop:** seven boats, from the starter rowboat to a jet boat and a cleanup tug. Each boat is a model
   with a person aboard, and each has four stats: speed, net, cutter and boost. Pricier boats are modestly better, at
   most 8 % faster than the starter.
 - **Daily reward:** a 7-day track. A missed day pauses the track instead of resetting it.
 - **River Road:** milestone rewards for runs completed, including two boats.
-- **Settings:** graphics quality and rebindable keys.
+- **Settings:** graphics quality, sound (music, effects), comfort (screen shake, reduce flashing), rebindable keys
+  and the gamepad layout.
 
 ## 4. Architecture
 
@@ -67,8 +74,8 @@ Clients only send inputs (steer, hop, action, signal, vote).
 
 | Folder | Contents |
 |---|---|
-| `crates/river-core` | The run: lanes, obstacles, pipes and gate codes, River Health, scoring, the two rule changes, boat stats, the tutorial course. No I/O; seeded and deterministic; unit-tested. |
-| `crates/game-server` | Actix HTTP and WebSocket on one port. Argon2id accounts, revocable tokens, rate limiting, rooms, the run loop (`river.rs`), the hub economy (`meta.rs`), SQL persistence, optional TLS. |
+| `crates/river-core` | The run: 3/4/6 lanes, obstacles, the three rivers, pipes and gate codes, River Health, scoring, stars, the two rule changes, boat stats, Endless, the tutorial course, and the in-run part of the adaptive difficulty. No I/O; seeded and deterministic; unit-tested. |
+| `crates/game-server` | Actix HTTP and WebSocket on one port. Argon2id accounts, revocable tokens, rate limiting, rooms, the run loop (`river.rs`), the hub economy (`meta.rs`), rivers and stars (`rivers.rs`), missions and ranks (`missions.rs`), skill ratings (`director.rs`, see GAME_DESIGN §5.1), SQL persistence, optional TLS. |
 | `crates/game-core` | The earlier turn-based board game. It is still compiled and tested, and its rooms code is reused, but the client no longer plays it. |
 | `client/` | Vite + TypeScript + Babylon.js. River scene, boats and crew (`src/river/`), HUD, tutorial coach, menus, River Nature theme (`src/ui/theme.css`), icons. |
 | `client/public/models/` | Kenney CC0 boat and character models, with their licence files. |
@@ -269,9 +276,10 @@ make build
 ```
 
 `make test` runs:
-- the river-core tests, covering determinism, crews, every obstacle, gate codes, River Health, exactly two
-  player-chosen rule changes, ties, the tutorial, boat stats and a bot-played run;
-- the server tests, including the Seeds reward rules;
+- the river-core tests, covering determinism, crews, lane counts, every obstacle and river mechanic, capsizes,
+  gate codes, River Health, stars, exactly two player-chosen rule changes (also in Endless), ties, the tutorial,
+  boat stats, difficulty and a bot-played run;
+- the server tests, including the Seeds reward rules, ratings, river unlocks, mission draws and rank rules;
 - the earlier board-game tests;
 - the client tests.
 
@@ -312,10 +320,11 @@ make verify-package
 ## 15. Known limitations
 
 - Balance values (speeds, spawn rates, health changes, Seeds rewards) are not yet playtested.
-- Gamepad input is implemented (D-pad or stick to steer, A to hop, B or X to act), but it is untested and has no
-  settings screen yet.
+- Gamepad input is implemented (D-pad or stick to steer, A to hop, B or X to act; the layout is listed in
+  Settings), but it is untested on real pads.
+- Touch controls are tested in a phone-sized browser view, not yet on a real phone.
 - The puzzle in the current build is the gate code only. Pipe routing and a word hunt are planned.
-- There is no audio yet.
+- Rivers 4 and 5 (Night Delta, Harbour Port) are designed but not built.
 
 ## 16. Security
 
