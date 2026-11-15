@@ -17,6 +17,8 @@ The environmental issue is **plastic and sewage pollution in rivers**, carried b
 
 The game uses no real place names; the real-world link belongs in the presentation.
 
+- **Source code:** [github.com/Jaycubic/Game-design](https://github.com/Jaycubic/Game-design)
+- **Play it:** [cleanwaterrun.work.gd:8081](https://cleanwaterrun.work.gd:8081) (when the server is running)
 - **Rules:** [docs/RULE_BOOK.md](docs/RULE_BOOK.md)
 - **Design and how the brief is met:** [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)
 
@@ -111,7 +113,7 @@ Internal names still use the earlier project name: the package `natures-thread`,
 ## 7. Get the code and install dependencies
 
 ```bash
-git clone <your-repo-url> clearwater-run
+git clone https://github.com/Jaycubic/Game-design.git clearwater-run
 cd clearwater-run
 make setup
 ```
