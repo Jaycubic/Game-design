@@ -1,12 +1,12 @@
 // Hub panels: Garage, Shop, Daily, River Road. Everything is earned by playing.
 
-import { api, ApiError, type CatalogBoat, type Profile } from "../net/api";
+import { api, ApiError, type CatalogBoat, type MissionView, type Profile, type RankView } from "../net/api";
 import { store } from "../store";
 import { icon } from "./icons";
 import { h, toast } from "./dom";
 import { riverCards } from "./rivers";
 
-export type HubPanel = "garage" | "shop" | "daily" | "road" | "rivers";
+export type HubPanel = "garage" | "shop" | "daily" | "road" | "rivers" | "missions";
 
 export const PANEL_TITLES: Record<HubPanel, string> = {
   garage: "Garage",
@@ -14,7 +14,48 @@ export const PANEL_TITLES: Record<HubPanel, string> = {
   daily: "Daily reward",
   road: "River Road",
   rivers: "Rivers",
+  missions: "Daily missions",
 };
+
+/** Mission rows with progress bars (hub panel and results screen). */
+export function missionList(ms: MissionView[]) {
+  return h(
+    "ul",
+    { class: "mission-list" },
+    ms.map((m) =>
+      h(
+        "li",
+        { class: "mission" + (m.done ? " done" : "") + (m.just_done ? " just" : "") },
+        h("span", { class: "mission-check" }, m.done ? icon("check") : null),
+        h("span", { class: "mission-text" }, m.text),
+        h("span", { class: "mission-bar" }, h("span", { style: `width:${Math.round((100 * Math.min(m.progress, m.goal)) / m.goal)}%` })),
+        h("span", { class: "mission-count" }, `${Math.min(m.progress, m.goal)}/${m.goal}`),
+        h("span", { class: "mission-reward" + (m.just_done ? " paid" : "") }, m.just_done ? `+${m.reward} paid` : `${m.reward}`, icon("sprout")),
+      ),
+    ),
+  );
+}
+
+export const RANK_ICONS = ["🛶", "⚓", "🧭", "🎖️", "🌊"];
+
+/** Rank name with progress towards the next one. */
+export function rankCard(r: RankView | undefined) {
+  if (!r) return null;
+  return h(
+    "div",
+    { class: "rank-card" },
+    h("span", { class: "rank-ico" }, RANK_ICONS[r.index] ?? "🛶"),
+    h(
+      "div",
+      { class: "rank-body" },
+      h("b", null, r.name, r.change > 0 ? h("span", { class: "chip good" }, "Rank up!") : r.change < 0 ? h("span", { class: "chip" }, "Rank down") : null),
+      r.next
+        ? h("span", { class: "rank-bar" }, h("span", { style: `width:${Math.round(r.progress * 100)}%` }))
+        : h("small", { class: "muted" }, "The highest rank"),
+      r.next ? h("small", { class: "muted" }, `Next: ${r.next}`) : null,
+    ),
+  );
+}
 
 export async function loadProfile(): Promise<Profile | null> {
   try {
@@ -93,6 +134,12 @@ function content(kind: HubPanel, p: Profile, redraw: () => void): HTMLElement[] 
   switch (kind) {
     case "rivers":
       return riverCards(p, redraw);
+    case "missions":
+      return ([
+        h("p", { class: "muted" }, "Three new missions every day. Progress counts in every run, practice too, and the Seeds are paid the moment a mission is done."),
+        missionList(p.missions ?? []),
+        rankCard(p.rank),
+      ] as (HTMLElement | null)[]).filter((x): x is HTMLElement => !!x);
     case "garage":
       return [
         h("p", { class: "muted" }, "Every boat has its own speed, net, cutter and boost. Pick one to sail — your crew sees it in the run."),

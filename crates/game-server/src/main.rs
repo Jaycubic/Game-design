@@ -7,6 +7,7 @@ mod error;
 mod http;
 mod hub;
 mod meta;
+mod missions;
 mod persist;
 mod ratelimit;
 mod river;

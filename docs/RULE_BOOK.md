@@ -201,12 +201,22 @@ Each level above 2 gives:
 The upgrades are deliberately small, so new players can still keep up. Equip a boat in the **Garage**. You can undo
 any purchase for a full refund within 10 minutes.
 
-## 10. Disconnections
+## 10. Daily missions and ranks
+
+**Missions.** Every day (UTC) you get three missions, such as "Collect 60 plastic", "Plug 2 sewage pipes", "Earn a
+star on any river" or "Win a crew race". Progress counts in every run, practice included (not the tutorial). A
+mission pays 20–40 Seeds the moment it is done. Open **Missions** in the hub to see today's three.
+
+**Ranks.** Your rank shows how well you've been playing: Rookie, Deckhand, Skipper, Captain, River Guardian. It
+goes up as you play well, and it can drop by at most one step in a day. The bar shows how close you are to the next
+rank. The results screen shows your missions and rank after every run.
+
+## 11. Disconnections
 
 If your connection drops, the game reconnects automatically and you keep your seat. During a run your boat keeps
 moving forward on its own until you return.
 
-## 11. Fair play
+## 12. Fair play
 
 | Possible loophole | How the rules stop it |
 |---|---|

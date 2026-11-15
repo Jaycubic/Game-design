@@ -10,7 +10,7 @@ import { TouchControls, isTouch } from "../input/touch";
 import { sound } from "../audio/sound";
 import { feel } from "../ui/feel";
 import type { RunEvent, RunResults, Snapshot } from "./types";
-import type { RiverResult } from "../net/api";
+import type { MissionView, RankView, RiverResult } from "../net/api";
 
 const RIVER_TITLES: Record<string, string> = { canal: "🏘️ Town Canal", mangrove: "🌿 Mangrove Maze", gorge: "⛰️ Rapids Gorge" };
 
@@ -118,6 +118,12 @@ export class RunMode {
   riverResult(r: RiverResult) {
     if (r.new_stars.some(Boolean)) sound.play("win", { volume: 0.6 });
     this.hud.riverResult(r);
+  }
+
+  /** Missions and rank after a run, under the stars on the results card. */
+  runSummary(missions: MissionView[], rank: RankView | null) {
+    if (missions.some((m) => m.just_done) || (rank?.change ?? 0) > 0) sound.play("boost", { volume: 0.6 });
+    this.hud.runSummary(missions, rank);
   }
 
   rewards(seeds: number, practice: boolean) {

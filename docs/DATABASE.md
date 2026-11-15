@@ -16,6 +16,7 @@ instead.
 | `0002_hub_economy.sql` | Seeds wallet, owned boats, daily claims, River Road claims, run rewards |
 | `0003_river_director.sql` | Skill ratings and the River Director's run log (internal, see below) |
 | `0004_rivers.sql` | Stars, best score and runs per player per river |
+| `0005_missions_ranks.sql` | Daily missions; shown rank columns on `player_skill` |
 
 The run itself is never written row by row. It lives in server memory for its 3 minutes; when it ends, each player's
 reward is stored, and the River Director logs one summary row for the run and one per player.
@@ -42,6 +43,7 @@ reward is stored, and the River Director logs one summary row for the run and on
 | `daily_claims` | One daily reward per UTC day | Primary key (player, day): a second claim the same day is impossible |
 | `road_claims` | River Road milestones collected | Primary key (player, milestone): each milestone is paid once |
 | `run_rewards` | Every finished run's reward per player | `seeds >= 0`; indexed by (player, time) for the daily cap on the win bonus |
+| `player_missions` | Three missions per player per UTC day: mission key, progress, goal, reward, `completed_at` (paid once, when set) | Primary key (player, day, slot); `slot` 0–2; `progress >= 0` |
 | `player_rivers` | Each player's progress per river: `stars` as a bitmask (1 clean river, 2 score target, 4 river goal; never lost), `best_score`, `runs` | Primary key (player, river); `river` is `canal`, `mangrove` or `gorge`; `stars` 0–7 |
 
 The boat catalog, daily track and River Road milestones are constants in `crates/game-server/src/meta.rs`; river
@@ -54,7 +56,7 @@ The adaptive-difficulty system described in `docs/GAME_DESIGN.md` §5.1. Players
 
 | Table | Purpose | Key constraints |
 |---|---|---|
-| `player_skill` | One skill rating per player (starts at 1000), its `confidence` (0–1) and the `runs` counted | Primary key player; `confidence` between 0 and 1 |
+| `player_skill` | One skill rating per player (starts at 1000), its `confidence` (0–1) and the `runs` counted; `shown_rank` (0–4) with `rank_day`/`rank_day_start`, so the shown rank falls at most one step a day | Primary key player; `confidence` between 0 and 1 |
 | `director_runs` | One row per finished run (tutorials excluded): boats, crews, lanes, whether the Director could adapt in-run, starting and final difficulty `d_start`/`d_end`, final River Health | Serial id; `room_id` is kept even after the room closes |
 | `director_players` | Each player's part in a logged run: performance score, rating before and after, plastic collected, capsizes, pipes plugged | Primary key (run, player); indexed by (player, run) |
 

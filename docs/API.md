@@ -46,7 +46,12 @@ The profile response contains:
                 "stats": { "speed", "net", "cutter", "boost" } }],
   "daily": { "claims", "claimed_today", "track": [20,25,30,40,50,60,100], "next" },
   "road": [{ "runs", "seeds", "item", "reached", "claimed" }],
-  "rules": { "win_bonus_per_day": 3, "refund_minutes": 10 }
+  "rules": { "win_bonus_per_day": 3, "refund_minutes": 10 },
+  "stars": 0,
+  "rivers": [{ "key", "name", "line", "goals": ["…", "…", "…"], "stars": [false, false, false], "best",
+               "unlocked", "need_runs", "need_stars" }],
+  "missions": [{ "key", "text", "progress", "goal", "reward", "done", "just_done" }],
+  "rank": { "name": "Deckhand", "index": 1, "next": "Skipper", "progress": 0.67, "change": 0 }
 }
 ```
 
@@ -101,7 +106,7 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 | `run.started` | `{seed, boats: [{seat, crew}], names: {seat: name}, skins: {seat: boat_key}, practice, tutorial, river}` |
 | `run.snapshot` | `{snapshot, you, skins}`, 15 times a second, filtered for each viewer (see below) |
 | `run.events` | `{events: [...]}`, sent on each tick that has events |
-| `run.rewards` | `{seeds, practice, river}` after a run finishes (not after the tutorial). `river` is `{river, name, goals, stars, new_stars, score, best, new_best}` for this player |
+| `run.rewards` | `{seeds, practice, river}` after a run finishes (not after the tutorial). `river` is `{river, name, goals, stars, new_stars, score, best, new_best}` for this player; `missions` is today's three `{key, text, progress, goal, reward, done, just_done}`; `rank` is `{name, index, next, progress, change}` |
 
 **Snapshot fields:**
 

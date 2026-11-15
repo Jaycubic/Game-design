@@ -14,7 +14,9 @@
 //! - Every scored run is logged for tuning and for a future trained model.
 
 use river_core::{Run, D_MAX, D_MIN};
+use serde_json::Value;
 use sqlx::PgPool;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 pub const START_RATING: f32 = 1000.0;
@@ -67,8 +69,16 @@ pub fn learn(rating: f32, runs: i32, perf: f32) -> (f32, f32) {
     (rating + k * (perf - rating), runs as f32 / (runs as f32 + 4.0))
 }
 
-/// Update ratings and log the run. `players` maps seats to player ids.
-pub async fn record(db: &PgPool, room: Uuid, practice: bool, run: &Run, players: &[(u8, Uuid)]) -> sqlx::Result<()> {
+/// Update ratings and ranks, and log the run. `players` maps seats to player ids.
+/// Returns each seat's rank as the results screen shows it.
+pub async fn record(
+    db: &PgPool,
+    room: Uuid,
+    practice: bool,
+    run: &Run,
+    players: &[(u8, Uuid)],
+) -> sqlx::Result<HashMap<u8, Value>> {
+    let mut ranks = HashMap::new();
     let mut tx = db.begin().await?;
     let run_id: i64 = sqlx::query_scalar(
         "INSERT INTO director_runs (room_id, practice, boats, crews, lanes, adaptive, d_start, d_end, final_health)
@@ -88,22 +98,33 @@ pub async fn record(db: &PgPool, room: Uuid, practice: bool, run: &Run, players:
     for &(seat, player) in players {
         let Some(perf) = performance(run, seat) else { continue };
         let b = run.boats.iter().find(|b| b.seat == seat).expect("boat for seat");
-        let (rating, runs): (f32, i32) =
-            sqlx::query_as("SELECT rating, runs FROM player_skill WHERE player_id = $1 FOR UPDATE")
-                .bind(player)
-                .fetch_optional(&mut *tx)
-                .await?
-                .unwrap_or((START_RATING, 0));
+        let start_rank = crate::missions::rank_for(START_RATING);
+        // shown rank, and the rank today started with (a new day starts from the shown rank)
+        let (rating, runs, shown, day_start): (f32, i32, i16, i16) = sqlx::query_as(
+            "SELECT rating, runs, shown_rank,
+                    CASE WHEN rank_day = (now() AT TIME ZONE 'utc')::date THEN rank_day_start ELSE shown_rank END
+             FROM player_skill WHERE player_id = $1 FOR UPDATE",
+        )
+        .bind(player)
+        .fetch_optional(&mut *tx)
+        .await?
+        .unwrap_or((START_RATING, 0, start_rank, start_rank));
         let (after, confidence) = learn(rating, runs, perf);
+        let new_rank = crate::missions::shown_rank(crate::missions::rank_for(after), day_start);
         sqlx::query(
-            "INSERT INTO player_skill (player_id, rating, confidence, runs, updated_at) VALUES ($1, $2, $3, 1, now())
-             ON CONFLICT (player_id) DO UPDATE SET rating = $2, confidence = $3, runs = player_skill.runs + 1, updated_at = now()",
+            "INSERT INTO player_skill (player_id, rating, confidence, runs, updated_at, shown_rank, rank_day, rank_day_start)
+             VALUES ($1, $2, $3, 1, now(), $4, (now() AT TIME ZONE 'utc')::date, $5)
+             ON CONFLICT (player_id) DO UPDATE SET rating = $2, confidence = $3, runs = player_skill.runs + 1,
+               updated_at = now(), shown_rank = $4, rank_day = (now() AT TIME ZONE 'utc')::date, rank_day_start = $5",
         )
         .bind(player)
         .bind(after)
         .bind(confidence)
+        .bind(new_rank)
+        .bind(day_start)
         .execute(&mut *tx)
         .await?;
+        ranks.insert(seat, crate::missions::rank_view(after, new_rank, Some(shown)));
         sqlx::query(
             "INSERT INTO director_players (run_id, player_id, performance, rating_before, rating_after, collected, capsizes, pipes)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
@@ -119,7 +140,8 @@ pub async fn record(db: &PgPool, room: Uuid, practice: bool, run: &Run, players:
         .execute(&mut *tx)
         .await?;
     }
-    tx.commit().await
+    tx.commit().await?;
+    Ok(ranks)
 }
 
 #[cfg(test)]

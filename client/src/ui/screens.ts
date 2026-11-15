@@ -6,6 +6,7 @@ import type { RoomView } from "../types";
 import { h } from "./dom";
 import { icon, logoMark, type IconName } from "./icons";
 import { riverChip } from "./rivers";
+import { RANK_ICONS } from "./hub";
 
 export const GAME_TITLE = "Clearwater Run";
 export const GAME_TAGLINE = "Keep the river alive";
@@ -23,7 +24,7 @@ export interface UiActions {
   startRun(practice: boolean): void;
   openHowTo(): void;
   openSettings(): void;
-  openPanel(kind: "garage" | "shop" | "daily" | "road" | "rivers"): void;
+  openPanel(kind: "garage" | "shop" | "daily" | "road" | "rivers" | "missions"): void;
   tutorial(): Promise<void>;
 }
 
@@ -111,7 +112,7 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
     }
   };
   const p = s.profile;
-  const tile = (kind: "garage" | "shop" | "daily" | "road", ic: IconName, name: string, note: string, alert = false) =>
+  const tile = (kind: "garage" | "shop" | "daily" | "road" | "missions", ic: IconName, name: string, note: string, alert = false) =>
     h(
       "button",
       { class: "hub-tile" + (alert ? " alert" : ""), onclick: () => a.openPanel(kind) },
@@ -133,6 +134,7 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
         h("span", { class: "seeds-chip", title: "Seeds — earned by playing" }, icon("sprout"), h("b", null, String(s.profile?.seeds ?? 0))),
         h("span", { class: "hub-avatar" }, (s.player?.display_name ?? "?").slice(0, 1).toUpperCase()),
         h("span", null, s.player?.display_name ?? ""),
+        p?.rank ? h("span", { class: "rank-chip", title: `Rank: ${p.rank.name}` }, RANK_ICONS[p.rank.index] ?? "🛶", " ", p.rank.name) : null,
         h("button", { class: "icon-btn", title: "Tutorial", "aria-label": "Tutorial", onclick: () => void a.tutorial() }, icon("cap")),
         h("button", { class: "icon-btn", title: "How to play", "aria-label": "How to play", onclick: () => a.openHowTo() }, icon("help")),
         h("button", { class: "icon-btn", title: "Settings", "aria-label": "Settings", onclick: () => a.openSettings() }, icon("gear")),
@@ -146,6 +148,7 @@ export function hubScreen(a: UiActions, s: AppState, rooms: { room_id: string; c
       tile("shop", "shop", "Shop", "Spend your Seeds"),
       tile("daily", "calendar", "Daily", p && !p.daily.claimed_today ? `${p.daily.next} Seeds waiting!` : "Come back tomorrow", !!p && !p.daily.claimed_today),
       tile("road", "road", "River Road", roadReady ? "Reward ready!" : `${p?.runs ?? 0} runs`, roadReady),
+      tile("missions", "trophy", "Missions", p?.missions ? `${p.missions.filter((m) => m.done).length}/${p.missions.length} done today` : "Today's goals"),
     ),
     h(
       "section",

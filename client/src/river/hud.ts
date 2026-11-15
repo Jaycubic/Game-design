@@ -4,7 +4,8 @@ import { h } from "../ui/dom";
 import { hint } from "../input/controls";
 import { isTouch } from "../input/touch";
 import { signalName } from "../ui/panels";
-import type { RiverResult } from "../net/api";
+import type { MissionView, RankView, RiverResult } from "../net/api";
+import { missionList, rankCard } from "../ui/hub";
 import {
   CREW_NAMES,
   FINALE_INFO,
@@ -319,9 +320,30 @@ export class RunHud {
     );
     this.sigCenter = "results";
     if (this.pendingRiver) this.riverResult(this.pendingRiver);
+    if (this.pendingSummary) this.runSummary(...this.pendingSummary);
   }
 
   private pendingRiver: RiverResult | null = null;
+  private pendingSummary: [MissionView[], RankView | null] | null = null;
+
+  /** Today's missions and the rank, under the stars on the results card. */
+  runSummary(missions: MissionView[], rank: RankView | null) {
+    const card = this.center.querySelector(".rh-results");
+    if (!card) {
+      this.pendingSummary = [missions, rank];
+      return;
+    }
+    this.pendingSummary = null;
+    card.querySelector(".rh-summary")?.remove();
+    const block = h(
+      "div",
+      { class: "rh-summary" },
+      missions.length ? h("div", { class: "rh-stars-title" }, "Daily missions") : null,
+      missions.length ? missionList(missions) : null,
+      rankCard(rank ?? undefined),
+    );
+    card.insertBefore(block, card.querySelector("button"));
+  }
 
   /** Stars and best score on the results card (arrives just after the results). */
   riverResult(r: RiverResult) {

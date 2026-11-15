@@ -163,14 +163,21 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
             }
             // Learn from the run (River Director), then pay out, after releasing the room lock.
             let seats: Vec<(u8, Uuid)> = outcomes.iter().map(|o| (o.seat, o.player)).collect();
-            if let Err(e) = crate::director::record(&db, room, host.practice, &host.run, &seats).await {
+            let ranks = crate::director::record(&db, room, host.practice, &host.run, &seats).await.unwrap_or_else(|e| {
                 tracing::error!(error = %e, room = %room, "recording the run for the River Director failed");
-            }
+                HashMap::new()
+            });
             let river_results = crate::rivers::record(&db, &host.run, &seats).await.unwrap_or_else(|e| {
                 tracing::error!(error = %e, room = %room, "recording river stars failed");
                 HashMap::new()
             });
-            match meta::award(&db, room, host.practice, outcomes).await {
+            let paid = meta::award(&db, room, host.practice, outcomes).await;
+            // Missions after the payout, so every player has a wallet to pay into.
+            let missions = crate::missions::record(&db, &host.run, &seats).await.unwrap_or_else(|e| {
+                tracing::error!(error = %e, room = %room, "recording missions failed");
+                HashMap::new()
+            });
+            match paid {
                 Ok(paid) => {
                     let g = entry.lock().await;
                     for c in g.conns.values() {
@@ -180,7 +187,8 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
                             "run.rewards",
                             room,
                             tick_no,
-                            json!({ "seeds": seeds, "practice": host.practice, "river": river_results.get(&seat) }),
+                            json!({ "seeds": seeds, "practice": host.practice, "river": river_results.get(&seat),
+                                    "missions": missions.get(&seat), "rank": ranks.get(&seat) }),
                         ));
                     }
                 }

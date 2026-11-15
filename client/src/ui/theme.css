@@ -325,3 +325,27 @@ button.hub-tile:hover .hub-tile-icon { color: var(--ink); background: linear-gra
 .river-goals li.done { color: var(--text); }
 .river-best { font-size: 0.9rem; color: var(--muted); }
 .river-best b { color: var(--text); }
+
+/* ── Missions and rank ── */
+.mission-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mission { display: grid; grid-template-columns: 22px 1fr 90px 52px 64px; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(20, 36, 15, 0.6); border: 2px solid var(--wood-d); }
+.mission.done { border-color: var(--leaf-deep); }
+.mission.just { border-color: var(--amber); }
+.mission-check { color: var(--leaf); display: grid; place-items: center; }
+.mission-text { font-size: 0.95rem; }
+.mission-bar, .rank-bar { height: 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.mission-bar > span, .rank-bar > span { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--leaf-deep), var(--leaf)); }
+.mission-count { font-variant-numeric: tabular-nums; font-size: 0.85rem; color: var(--muted); text-align: right; }
+.mission-reward { display: inline-flex; gap: 3px; align-items: center; justify-content: flex-end; font-weight: 700; font-size: 0.9rem; }
+.mission-reward.paid { color: var(--amber); }
+.rank-card { display: flex; gap: 12px; align-items: center; margin-top: 12px; padding: 10px 14px; border-radius: 14px; background: rgba(20, 36, 15, 0.6); border: 2px solid var(--wood-d); }
+.rank-ico { font-size: 1.8rem; }
+.rank-body { display: grid; gap: 4px; flex: 1; }
+.rank-body b { display: flex; gap: 8px; align-items: center; }
+.rank-chip { padding: 2px 10px; border-radius: 999px; background: rgba(255, 201, 74, 0.16); border: 1px solid rgba(255, 201, 74, 0.45); font-size: 0.85rem; white-space: nowrap; }
+@media (max-width: 760px) {
+  .mission { grid-template-columns: 22px 1fr 56px; }
+  .mission-bar { grid-column: 2 / 4; grid-row: 2; }
+  .mission-count { display: none; }
+  .rank-chip { display: none; }
+}

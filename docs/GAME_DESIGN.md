@@ -109,6 +109,17 @@ Each river has three stars (clean river, a score target, the river's own goal) t
 best score per player. The results screen shows both. Two more rivers (Night Delta, Harbour Port) are designed in the
 round-2 spec for later.
 
+### 5.0.1 Daily missions and ranks
+
+- **Missions:** three a day per player from a pool of ten (plastic, pipes, weed, runs, a revived river, a crew win,
+  a star, a capsize-free run, a 100-point run), drawn with a per-player, per-day seed and at most one plastic
+  mission a day. Progress counts across runs and modes; each pays 20–40 Seeds automatically when done. Missions give
+  a reason to try other parts of the game (pipes, weed, other rivers) rather than repeat one routine.
+- **Ranks:** the River Director's rating shown only as a name (Rookie < 900, Deckhand 900, Skipper 1050, Captain
+  1200, River Guardian 1350). The number itself is never shown. A rank rises at once but falls at most one step per
+  UTC day, so a bad evening doesn't undo a week of progress.
+- **Results screen:** score, stars, best score, mission progress (with Seeds paid) and rank progress.
+
 ### 5.1 River Director (adaptive difficulty, internal)
 
 The River Director keeps each room in "flow": never trivially easy, never hopeless. It is a design-side system and

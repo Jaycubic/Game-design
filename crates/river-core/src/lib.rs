@@ -329,6 +329,9 @@ pub struct Boat {
     pub capsizes: u32,
     #[serde(default)]
     pub plugged: u32,
+    /// Weed mats this boat cut.
+    #[serde(default)]
+    pub cuts: u32,
     /// The last current that pushed this boat (each current pushes once).
     #[serde(default)]
     pub last_current: u32,
@@ -560,6 +563,7 @@ impl Run {
                 collected: 0,
                 capsizes: 0,
                 plugged: 0,
+                cuts: 0,
                 last_current: 0,
             })
             .collect();
@@ -1021,6 +1025,7 @@ impl Run {
             w.alive = false;
             let id = w.id;
             let crew = self.boats[i].crew;
+            self.boats[i].cuts += 1;
             self.crew_mut(crew).banks += 1;
             self.heal(HEALTH_CUT);
             self.events.push(Event::Cut { seat, id });

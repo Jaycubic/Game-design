@@ -156,3 +156,8 @@
 .rh-best { text-align: center; margin-top: 6px; font-weight: 700; }
 .rh-best.new { color: #ffd23f; }
 @media (prefers-reduced-motion: reduce) { .rh-stars li.new .star { animation: none; } }
+.rh-summary { margin: 8px auto 4px; width: min(460px, 100%); text-align: left; }
+.rh-summary .mission { grid-template-columns: 22px 1fr 70px 46px 72px; padding: 6px 8px; background: rgba(255, 255, 255, 0.06); border-color: transparent; }
+.rh-summary .mission.just { border-color: #ffd23f; }
+.rh-summary .rank-card { margin-top: 8px; background: rgba(255, 255, 255, 0.06); border-color: transparent; }
+.rh-results { max-height: 92vh; overflow-y: auto; }

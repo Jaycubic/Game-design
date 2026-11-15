@@ -92,6 +92,27 @@ export interface Profile {
   /** Total stars across rivers. */
   stars: number;
   rivers: RiverCard[];
+  missions: MissionView[];
+  rank: RankView;
+}
+export interface MissionView {
+  key: string;
+  text: string;
+  progress: number;
+  goal: number;
+  reward: number;
+  done: boolean;
+  /** Completed by the run that just finished. */
+  just_done: boolean;
+}
+export interface RankView {
+  name: string;
+  index: number;
+  next: string | null;
+  /** 0–1 towards the next rank. */
+  progress: number;
+  /** -1, 0 or +1 compared with before the run. */
+  change: number;
 }
 export interface RiverCard {
   key: string;

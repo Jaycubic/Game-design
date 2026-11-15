@@ -92,6 +92,7 @@ function handleRun(type: string, p: any) {
   } else if (type === "run.rewards") {
     runMode?.rewards(p.seeds ?? 0, !!p.practice);
     if (p.river) runMode?.riverResult(p.river);
+    if (p.missions || p.rank) runMode?.runSummary(p.missions ?? [], p.rank ?? null);
     void loadProfile();
   } else if (type === "run.events") runMode?.onEvents(p.events ?? []);
 }

@@ -119,7 +119,10 @@ pub async fn profile(state: web::Data<AppState>, player: AuthPlayer) -> ApiResul
         .await?;
     let owned: Vec<&String> = items.iter().map(|(k, _, _)| k).collect();
     let rivers = crate::rivers::profile(&state.db, pid).await?;
+    let missions = crate::missions::list(&state.db, pid).await?;
+    let rank = crate::missions::rank(&state.db, pid).await?;
     Ok(HttpResponse::Ok().json(json!({
+        "missions": missions, "rank": rank,
         "rivers": rivers["rivers"], "stars": rivers["stars"],
         "seeds": seeds, "runs": runs, "wins": wins, "best_score": best, "equipped": equipped,
         "owned": owned,
