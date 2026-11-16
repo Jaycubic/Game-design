@@ -90,29 +90,56 @@ const HALF_MAX = halfFor(6);
 const CHUNK = 40;
 const AHEAD = 9;
 
-/** Thin-instance batch rebuilt from a list of matrices. */
+// Scratch objects shared by every batch (no allocation per instance per frame).
+const T_SCALE = new Vector3();
+const T_POS = new Vector3();
+const T_ROT = new Quaternion();
+const T_MAT = new Matrix();
+
+/**
+ * Thin-instance batch rebuilt every frame. Matrices are written into one growing
+ * Float32Array that is reused, and the GPU buffer is updated in place unless it
+ * has to grow, so a frame allocates nothing here.
+ */
 class Batch {
-  private data: number[] = [];
+  private buf = new Float32Array(16 * 16);
+  private count = 0;
+  private bound: Float32Array | null = null;
   constructor(readonly mesh: Mesh) {
     mesh.isVisible = false;
     mesh.isPickable = false;
     mesh.alwaysSelectAsActiveMesh = true;
   }
   begin() {
-    this.data.length = 0;
+    this.count = 0;
   }
   add(x: number, y: number, z: number, yaw = 0, s = 1, pitch = 0, roll = 0, sx = s, sz = s) {
-    const m = Matrix.Compose(new Vector3(sx, s, sz), Quaternion.RotationYawPitchRoll(yaw, pitch, roll), new Vector3(x, y, z));
-    for (const v of m.asArray()) this.data.push(v);
+    if ((this.count + 1) * 16 > this.buf.length) {
+      const bigger = new Float32Array(this.buf.length * 2);
+      bigger.set(this.buf);
+      this.buf = bigger;
+    }
+    T_SCALE.set(sx, s, sz);
+    T_POS.set(x, y, z);
+    Quaternion.RotationYawPitchRollToRef(yaw, pitch, roll, T_ROT);
+    Matrix.ComposeToRef(T_SCALE, T_ROT, T_POS, T_MAT);
+    T_MAT.copyToArray(this.buf, this.count * 16);
+    this.count++;
   }
   commit() {
-    if (this.data.length) {
-      this.mesh.thinInstanceSetBuffer("matrix", new Float32Array(this.data), 16, false);
-      this.mesh.isVisible = true;
-    } else {
+    if (!this.count) {
       this.mesh.thinInstanceCount = 0;
       this.mesh.isVisible = false;
+      return;
     }
+    if (this.bound !== this.buf) {
+      this.mesh.thinInstanceSetBuffer("matrix", this.buf, 16, false);
+      this.bound = this.buf;
+    } else {
+      this.mesh.thinInstanceBufferUpdated("matrix");
+    }
+    this.mesh.thinInstanceCount = this.count;
+    this.mesh.isVisible = true;
   }
 }
 
@@ -200,6 +227,15 @@ export class RiverScene {
     this.bankMat = new StandardMaterial("bankMat", scene);
     this.bankMat.specularColor = Color3.Black();
     this.bankMat.backFaceCulling = false;
+
+    // Dry Season: a mud flat covers the closed lanes, so the narrower river is obvious.
+    this.mud = MeshBuilder.CreateGround("mud", { width: 1, height: 420, subdivisions: 1 }, scene);
+    const mudMat = new StandardMaterial("mudMat", scene);
+    mudMat.diffuseColor = new Color3(0.42, 0.33, 0.22);
+    mudMat.specularColor = Color3.Black();
+    this.mud.material = mudMat;
+    this.mud.isPickable = false;
+    this.mud.setEnabled(false);
 
     // Water: one plane that follows the camera; colour tracks River Health.
     this.water = MeshBuilder.CreateGround("water", { width: HALF_MAX * 2 + 2, height: 420, subdivisions: 1 }, scene);
@@ -313,6 +349,7 @@ export class RiverScene {
     dome.isPickable = false;
   }
 
+  private mud: Mesh;
   private laneCount = 3;
   private half = HALF3;
   private theme: Theme = THEMES.canal;
@@ -626,6 +663,15 @@ export class RiverScene {
       this.fovBoost += ((focus.boosting ? 1 : 0) - this.fovBoost) * Math.min(1, dt * 4);
       cam.fov = 0.95 + this.fovBoost * 0.18;
       this.water.position.set(0, -0.05, Math.floor(focus.z / 6) * 6 + 170);
+      // Closed lanes (Dry Season) become dry mud from the last open lane to the right bank.
+      const closed = this.laneCount - open;
+      this.mud.setEnabled(closed > 0);
+      if (closed > 0) {
+        const left = this.laneX(open) - LANE_W / 2;
+        const right = this.half + 0.2;
+        this.mud.scaling.x = right - left;
+        this.mud.position.set((left + right) / 2, 0.02, this.water.position.z);
+      }
       this.waterTex.vOffset -= dt * 0.12;
       this.waterTex.uOffset = Math.sin(this.time * 0.3) * 0.02;
       this.banks(focus.z, open);

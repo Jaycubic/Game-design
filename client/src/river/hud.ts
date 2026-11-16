@@ -472,7 +472,14 @@ export class RunHud {
         h(
           "div",
           { class: "rh-river-state " + (r.revived ? "good" : r.choked ? "bad" : "") },
-          r.revived ? `🌊 River health ${Math.round(r.health)}% — everyone +20 for keeping it alive` : r.choked ? "🟤 The river choked — everyone's score was halved" : `🌊 River health ${Math.round(r.health)}%`,
+          // Endless scores are metres + plastic, so the revive bonus and choke penalty don't apply there.
+          s?.endless
+            ? `🌊 River health ${Math.round(r.health)}%`
+            : r.revived
+              ? `🌊 River health ${Math.round(r.health)}% — the crew gets +20 for keeping it alive`
+              : r.choked
+                ? "🟤 The river choked — the crew's score was halved"
+                : `🌊 River health ${Math.round(r.health)}%`,
         ),
         h("button", { class: "btn primary big", onclick: () => this.cb.leave() }, host ? "Back to the dock" : "Back to the dock"),
       ),

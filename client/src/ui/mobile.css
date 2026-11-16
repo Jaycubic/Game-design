@@ -163,3 +163,16 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .rh-slot { min-width: 58px; padding: 4px 6px; }
   .rh-slot-key { font-size: 1.5rem; min-height: 1.7rem; }
 }
+/* Portrait phones: the River health bar takes its own row, so the pipe card sits below it. */
+@media (max-width: 760px) and (orientation: portrait) {
+  .rh-pipe { top: 128px; }
+}
+/* Phones: keep the player bar on one row (smaller icon buttons, the name truncates). */
+@media (max-width: 760px) {
+  .hub-player { flex-wrap: nowrap; gap: 6px; }
+  .hub-player .icon-btn { width: 34px; height: 34px; }
+  .hub-player > span:not(.seeds-chip):not(.hub-avatar):not(.rank-chip) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30vw; }
+}
+@media (max-width: 440px) {
+  .hub-player > span:not(.seeds-chip):not(.hub-avatar):not(.rank-chip) { display: none; }
+}

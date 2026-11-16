@@ -211,7 +211,7 @@
 .rh-quit.confirm { background: #c0392b; border-color: #ffb0a0; left: calc(50% - 132px); }
 
 /* Results: hide everything that belongs to racing, so only the results card shows. */
-body:has(.rh-results) :is(.rh-bottom, .rh-quit, .rh-signals, .rh-keys, .rh-pipe, .rh-pipe-mark, .rh-key, .rh-code, .rh-tag) { display: none !important; }
+body:has(.rh-results) :is(.rh-top, .rh-bottom, .rh-quit, .rh-signals, .rh-keys, .rh-pipe, .rh-pipe-mark, .rh-key, .rh-code, .rh-tag) { display: none !important; }
 
 /* Quit: Esc on a computer; the X button only with on-screen controls, placed clear of the HUD. */
 .rh-quit { display: none; }
