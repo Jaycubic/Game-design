@@ -39,8 +39,9 @@ together against the pollution. A grumpy brown smog cloud sulks over every open 
 
 Your boat moves forward on its own. The letter keys can be rebound in **Settings**; the arrow keys always work.
 
-**Quit:** the **✕** next to the timer leaves a run early. Tap it once (it turns into "Quit?"), then again to go back
-to the hub. Your crew keeps playing without you.
+**Quit:** on a computer, press **Esc** to leave a run early (once to ask, again to confirm). With on-screen controls,
+tap the **✕** at the top of the screen (once, it turns into "Quit?", then again). You go back to the hub, and your crew
+keeps playing without you.
 
 **On-screen controls** (Settings → Controls), as in most mobile games:
 

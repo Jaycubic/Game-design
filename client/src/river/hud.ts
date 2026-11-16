@@ -73,6 +73,7 @@ export class RunHud {
         h("span", { "data-tut": "hop" }, `${hint("hop")} hop`),
         " · ",
         h("span", { "data-tut": "action" }, `${hint("action")} cut / plug`),
+        " · Esc quit",
       ),
       // Desktop signal bar: the six symbols with their key and name (touch has its own buttons).
       h(

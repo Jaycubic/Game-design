@@ -44,6 +44,7 @@ export class RunMode {
   private touch: TouchControls | null = null;
   private lastBeat = "";
   private lastSpark = 0;
+  private escUntil = 0;
   /** Client-only freeze-frame after your own capsize; the server never pauses. */
   private freezeUntil = 0;
 
@@ -73,6 +74,16 @@ export class RunMode {
     if (e.repeat || (e.target as HTMLElement).closest?.("input, textarea")) return;
     const s = this.snap;
     if (!s) return;
+    // Esc quits on a computer: press once to ask, again within 3 s to leave.
+    if (e.key === "Escape" && !this.finished && !document.querySelector(".modal")) {
+      e.preventDefault();
+      if (performance.now() < this.escUntil) this.onQuit();
+      else {
+        this.escUntil = performance.now() + 3000;
+        this.hud.banner("Press Esc again to quit the run", "warn");
+      }
+      return;
+    }
     const it = intentForKey(e.key, s.phase.phase === "choosing");
     if (!it) return;
     e.preventDefault();
