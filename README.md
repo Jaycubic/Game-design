@@ -21,6 +21,7 @@ The game uses no real place names; the real-world link belongs in the presentati
 - **Play it:** [cleanwaterrun.work.gd:8081](https://cleanwaterrun.work.gd:8081) (when the server is running)
 - **New to the game? Start here:** [docs/GAME_EXPLAINED.md](docs/GAME_EXPLAINED.md), every feature explained from
   the environmental problem up
+- **Every feature and number in one document:** [docs/GAME_REFERENCE.md](docs/GAME_REFERENCE.md)
 - **Rules:** [docs/RULE_BOOK.md](docs/RULE_BOOK.md)
 - **Design and how the brief is met:** [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)
 
