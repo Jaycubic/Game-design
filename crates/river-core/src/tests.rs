@@ -1051,3 +1051,54 @@ fn a_pipe_everyone_rowed_past_costs_once_then_stops_draining() {
     let p = r.objs.iter().find(|o| o.id == pipe);
     assert!(p.is_none_or(|p| !p.alive));
 }
+
+#[test]
+fn a_paused_or_departed_player_waits_while_the_crew_races_on() {
+    let mut r = Run::new(91, &[0, 1]);
+    r.phase = Phase::Running;
+    for _ in 0..TICK_HZ as usize {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    // Seat 1 pauses (or quits): their boat parks.
+    r.set_away(vec![1]);
+    let parked_z = r.boats[1].z;
+    for _ in 0..(TICK_HZ as usize * 5) {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert!(r.boats[1].parked);
+    assert_eq!(r.boats[1].z, parked_z, "a parked boat does not move");
+    assert!(r.boats[0].z > parked_z + 30.0, "the other player keeps racing");
+    assert!((r.last_z() - r.boats[0].z).abs() < 0.01, "a parked boat does not hold the crew back");
+    assert!(r.snapshot_for(0).boats.iter().any(|b| b.seat == 1 && b.parked));
+    // Coming back: the boat rejoins just behind the crew, protected for a moment.
+    r.set_away(vec![]);
+    assert!(!r.boats[1].parked);
+    assert!(r.boats[0].z - r.boats[1].z <= 10.0, "rejoins near the crew");
+    assert!(r.boats[1].immune > 0.0);
+}
+
+#[test]
+fn a_lone_player_left_in_a_crew_run_can_still_fix_pipes() {
+    // Two players at a pipe; seat 1 quits. Seat 0's lock still needs both keys,
+    // and seat 1's key fills in by itself.
+    let mut r = crew_at_pipe(93, 2);
+    r.set_away(vec![1]);
+    let i = idle(&r);
+    r.step(&i);
+    let pipe = open_lock(&mut r, 0);
+    let keys = keys_for(&r, pipe);
+    type_keys(&mut r, 0, &keys);
+    assert!(r.objs.iter().any(|o| o.id == pipe && o.plugged), "the lone player plugged the pipe");
+}
+
+#[test]
+fn a_vote_does_not_wait_for_a_player_who_is_away() {
+    let mut r = Run::new(95, &[0, 1]);
+    until(&mut r, |r| matches!(r.phase, Phase::Choosing { change: ChangeKind::Twist, .. }));
+    r.set_away(vec![1]);
+    assert!(r.choose(1, 2).is_err(), "an away player can't vote");
+    r.choose(0, 0).unwrap();
+    assert_eq!(r.twist, Some(Twist::MonsoonSurge), "settled at once by the one player still racing");
+}

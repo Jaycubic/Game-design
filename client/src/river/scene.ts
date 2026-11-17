@@ -215,6 +215,8 @@ export class RiverScene {
     const sun = new DirectionalLight("sun", new Vector3(-0.4, -1, 0.6), scene);
     sun.intensity = 1.8;
     sun.diffuse = new Color3(1, 0.92, 0.78);
+    this.hemi = hemi;
+    this.sun = sun;
 
     this.skyDome();
 
@@ -325,6 +327,7 @@ export class RiverScene {
     ctx.fillRect(0, 0, 32, 32);
     dot.hasAlpha = true;
     dot.update();
+    this.dot = dot;
     this.splash = particles(scene, dot, 400, new Color4(0.9, 0.97, 1, 0.9), 3.5);
     this.splash.manualEmitCount = 0;
     this.splash.start();
@@ -361,6 +364,70 @@ export class RiverScene {
   private theme: Theme = THEMES.canal;
   private riverKey: River = "canal";
   private healthNow = 70;
+  private hemi!: HemisphericLight;
+  private sun!: DirectionalLight;
+  private dot!: DynamicTexture;
+  private rain: ParticleSystem | null = null;
+  private weather: string | null = null;
+  /** Monsoon darkens the haze. */
+  private fogDim = 1;
+  private confetti = 0;
+
+  /**
+   * The Twist shows in the world, so every player sees which one won:
+   * Monsoon Surge = rain and an overcast sky, Dry Season = a hot, bleached sky
+   * (plus the mud flats), Volunteer Day = a bright sky and a burst of confetti.
+   */
+  setWeather(twist: string | null) {
+    if (twist === this.weather) return;
+    this.weather = twist;
+    const dome = this.scene.getMeshByName("skydome")?.material as StandardMaterial | undefined;
+    this.hemi.intensity = 0.75;
+    this.sun.intensity = 1.8;
+    this.fogDim = 1;
+    this.rain?.stop();
+    if (dome) dome.emissiveColor = Color3.White();
+    if (twist === "monsoon_surge") {
+      this.hemi.intensity = 0.55;
+      this.sun.intensity = 0.9;
+      this.fogDim = 0.78;
+      if (dome) dome.emissiveColor = new Color3(0.58, 0.62, 0.68);
+      if (!this.rain) {
+        const r = new ParticleSystem("rain", perf.low ? 700 : 1600, this.scene);
+        r.particleTexture = this.dot;
+        r.color1 = new Color4(0.78, 0.86, 0.95, 0.55);
+        r.color2 = new Color4(0.7, 0.8, 0.92, 0.4);
+        r.colorDead = new Color4(0.7, 0.8, 0.92, 0);
+        r.minSize = 0.05;
+        r.maxSize = 0.09;
+        r.minScaleY = 6;
+        r.maxScaleY = 9;
+        r.minLifeTime = 0.55;
+        r.maxLifeTime = 0.75;
+        r.minEmitBox = new Vector3(-22, 14, -6);
+        r.maxEmitBox = new Vector3(22, 16, 70);
+        r.direction1 = new Vector3(-0.05, -1, -0.15);
+        r.direction2 = new Vector3(0.05, -1, -0.1);
+        r.minEmitPower = 22;
+        r.maxEmitPower = 26;
+        r.gravity = Vector3.Zero();
+        r.emitRate = perf.low ? 700 : 1600;
+        r.billboardMode = ParticleSystem.BILLBOARDMODE_STRETCHED;
+        r.blendMode = ParticleSystem.BLENDMODE_STANDARD;
+        r.emitter = Vector3.Zero();
+        this.rain = r;
+      }
+      this.rain.start();
+    } else if (twist === "dry_season") {
+      this.sun.intensity = 2.2;
+      if (dome) dome.emissiveColor = new Color3(1, 0.9, 0.74);
+    } else if (twist === "volunteer_day") {
+      this.sun.intensity = 2;
+      this.hemi.intensity = 0.85;
+      this.confetti = 6;
+    }
+    this.setHealth(this.healthNow);
+  }
 
   private currentMat() {
     const m = new StandardMaterial("current-mat", this.scene);
@@ -419,7 +486,7 @@ export class RiverScene {
     this.waterMat.diffuseColor = c;
     this.waterMat.emissiveColor = c.scale(0.18);
     this.waterMat.alpha = 0.86 + (1 - t) * 0.12;
-    this.scene.fogColor = Color3.Lerp(new Color3(0.62, 0.58, 0.48), new Color3(0.8, 0.84, 0.82), t);
+    this.scene.fogColor = Color3.Lerp(new Color3(0.62, 0.58, 0.48), new Color3(0.8, 0.84, 0.82), t).scale(this.fogDim);
   }
 
   /** Rebuild bank chunks around the camera when it moves into a new chunk. */
@@ -689,12 +756,18 @@ export class RiverScene {
       this.banks(focus.z, open);
       this.wake.emitter = new Vector3(focus.x, 0.05, focus.z - 1.1);
       this.wake.emitRate = (focus.boosting ? 160 : 55) * (perf.low ? 0.5 : 1);
+      if (this.rain) (this.rain.emitter as Vector3).set(focus.x, 0, focus.z);
+      if (this.confetti > 0 && Math.floor(this.time * 4) !== Math.floor((this.time - dt) * 4)) {
+        this.confetti--;
+        const hue = [new Color4(1, 0.82, 0.25, 1), new Color4(0.3, 0.85, 0.5, 1), new Color4(0.95, 0.45, 0.35, 1), new Color4(0.4, 0.7, 1, 1)];
+        this.burst(focus.x + (Math.random() - 0.5) * 6, focus.z + 6 + Math.random() * 6, 40, hue[this.confetti % 4]);
+      }
     }
   }
 
   burst(x: number, z: number, count = 24, colour?: Color4) {
     this.splash.emitter = new Vector3(x, 0.2, z);
-    if (colour) this.splash.color1 = colour;
+    this.splash.color1 = colour ?? new Color4(0.9, 0.97, 1, 0.9);
     this.splash.manualEmitCount = perf.low ? Math.ceil(count / 2) : count;
   }
 

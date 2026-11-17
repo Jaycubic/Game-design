@@ -42,8 +42,10 @@ Your boat moves forward on its own. The letter keys can be rebound in **Settings
 **Pause and quit:** tap the **⏸ Pause** button in the top-left corner (or press **Esc** or **P** on a computer).
 The menu has **Resume** and **Quit run** (Quit asks once more). Playing alone, the river really stops until you resume
 (it resumes by itself after 10 minutes, and the game pauses when you switch away from the tab). In a crew run
-the river keeps flowing for your crew while the menu is open; quitting takes you back to the hub and your crew keeps
-playing without you. The tutorial has its own **Skip tutorial** button instead.
+**only your boat waits**: it stops, nothing can hit it, and the others keep racing; your keys fill in by themselves so
+their pipe locks still work. Press Resume and your boat rejoins just behind the crew, protected for a moment. Quitting
+takes you back to the hub; the others finish the run without you (even one player alone can still fix every pipe), and
+votes no longer wait for you. The tutorial has its own **Skip tutorial** button instead.
 
 **On-screen controls** (Settings → Controls), as in most mobile games:
 
@@ -193,6 +195,9 @@ players), a tie goes to the option that got the **first vote** (the result card 
 | **Monsoon Surge** | Extra plastic appears. | Debris waves come every 15 s. |
 | **Dry Season** | Fewer lanes to watch. | The river loses a third of its lanes (6 → 4, 4 → 3, 3 → 2), and pipes pour twice as fast. |
 | **Volunteer Day** | Each plastic counts double. | Weed mats spread. |
+
+Every screen shows the Twist that won: **Monsoon Surge** brings rain and a grey sky, **Dry Season** a hot, pale sky
+over mud flats, **Volunteer Day** a bright sky and a burst of confetti. A badge under the timer names it for the rest of the run.
 
 ### Rule change 2: Finale (about 2:20 into the run)
 

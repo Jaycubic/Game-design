@@ -38,6 +38,8 @@ export interface RunBoat {
   plugging: number | null;
   /** Seconds left fixing a just-plugged pipe (the boat is stopped). */
   fixing?: number;
+  /** Paused, disconnected or quit: the boat waits out of the race. */
+  parked?: boolean;
   /** Pipes this boat fixed this run. */
   pipes?: number;
 }

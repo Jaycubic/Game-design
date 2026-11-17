@@ -99,17 +99,22 @@ export class RunMode {
     return (this.snap?.boats.length ?? 0) <= 1;
   }
 
+  /** The pause menu is open (a solo run is then stopped on the server, so it goes quiet). */
+  get menuOpen() {
+    return this.hud.menuOpen;
+  }
+
   private openMenu() {
     if (this.finished || this.hud.menuOpen || !this.snap || this.snap.tutorial) return;
-    const solo = this.solo();
-    this.hud.showMenu(solo);
-    if (solo) this.send.pause(true);
+    this.hud.showMenu(this.solo());
+    // Alone the run stops; in a crew run only your boat waits while the others keep going.
+    this.send.pause(true);
   }
 
   private closeMenu() {
     if (!this.hud.menuOpen) return;
     this.hud.hideMenu();
-    if (this.solo()) this.send.pause(false);
+    this.send.pause(false);
   }
 
   private apply(it: Intent) {
@@ -178,6 +183,7 @@ export class RunMode {
     this.snapAt = performance.now();
     this.scene.setHealth(s.health);
     this.scene.setLanes(s.lane_count ?? 3);
+    this.scene.setWeather(s.twist);
     if (s.river) this.scene.setRiver(s.river);
     if (first && s.river && s.river !== "canal" && !s.tutorial) this.hud.banner(RIVER_TITLES[s.river], "go");
     if (first && this.touch && matchMedia("(max-width: 760px) and (orientation: portrait)").matches) {
@@ -387,12 +393,14 @@ export class RunMode {
     if (pipe && me) {
       const scr = this.scene.worldToScreen(new Vector3(this.scene.pipeX(pipe.lane), 2.6, pipe.z));
       // Suggested fixer: the player with the fewest pipes fixed (ties: the lowest seat).
-      const turn = s.boats.length > 1 ? [...s.boats].sort((a, b) => (a.pipes ?? 0) - (b.pipes ?? 0) || a.seat - b.seat)[0].seat : null;
+      const racing = s.boats.filter((b) => !b.parked);
+      const turn = racing.length > 1 ? [...racing].sort((a, b) => (a.pipes ?? 0) - (b.pipes ?? 0) || a.seat - b.seat)[0].seat : null;
       this.hud.pipeMarker(scr.x, scr.y, scr.visible, pipe.z - mz, turn);
     } else this.hud.pipeMarker(0, 0, false, 0);
     for (const p of poses) {
       const scr = this.scene.worldToScreen(new Vector3(p.x, p.y + 1.6, p.z));
-      this.hud.tag(p.seat, scr.x, scr.y, scr.visible && !(p.seat === this.mySeat && poses.length === 1));
+      const parked = !!s.boats.find((b) => b.seat === p.seat)?.parked;
+      this.hud.tag(p.seat, scr.x, scr.y, scr.visible && !(p.seat === this.mySeat && poses.length === 1), parked);
     }
   }
 

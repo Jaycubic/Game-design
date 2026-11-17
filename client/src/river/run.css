@@ -324,3 +324,7 @@ body:has(.rh-code-card) .rh-banners > .rh-banner:nth-child(n + 2) { display: non
   .touch-run { --reserve-right: 0px; --reserve-bottom: 168px; }
   body:has(.tc-swipe-only) { --reserve-bottom: 92px; }
 }
+
+/* A paused, disconnected or departed player's boat waits: its tag says so. */
+.rh-tag.parked { opacity: 0.75; }
+.rh-tag.parked::after { content: " ⏸ away"; font-weight: 700; }

@@ -560,7 +560,7 @@ Settings are saved per browser.
   (portrait suggests turning the phone sideways).
 - Thumb buttons (◀ ▶ bottom left, ✂ ▲ bottom right), six symbol buttons with numbers and names, swipe gestures on
   the river (36 px threshold), haptic buzzes.
-- The ⏸ Pause button sits in the top-left corner on every device (labelled "Pause" on wide screens); the top bar moves right to make room. Solo runs really pause on the server (`run.pause`, auto-resume after 10 minutes); crew runs keep going while the menu is open.
+- The ⏸ Pause button sits in the top-left corner on every device (labelled "Pause" on wide screens); the top bar moves right to make room. Solo runs really pause on the server (`run.pause`, auto-resume after 10 minutes). In crew runs the paused player's boat parks (stops, can't be hit, doesn't hold the crew back, keys fill in by themselves) while the others keep racing; on Resume it rejoins just behind the crew. Players who quit or disconnect are parked the same way, and votes don't wait for them.
 - Touch wording everywhere ("tap ✂", "swipe down") follows the chosen control scheme.
 
 ---

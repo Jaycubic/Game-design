@@ -402,6 +402,10 @@ pub struct Boat {
     /// The last current that pushed this boat (each current pushes once).
     #[serde(default)]
     pub last_current: u32,
+    /// The player is away (paused in a crew run, disconnected or quit): the boat waits,
+    /// out of the race, and their keys fill in by themselves.
+    #[serde(default)]
+    pub parked: bool,
 }
 
 impl Boat {
@@ -409,7 +413,7 @@ impl Boat {
         self.hop > 0.0
     }
     pub fn speed(&self) -> f32 {
-        if self.capsize > 0.0 || self.plug.is_some() || self.fixing > 0.0 {
+        if self.parked || self.capsize > 0.0 || self.plug.is_some() || self.fixing > 0.0 {
             return 0.0;
         }
         let mut s = BASE_SPEED * self.stats.speed_mult();
@@ -660,6 +664,7 @@ impl Run {
                 cuts: 0,
                 fixing: 0.0,
                 last_current: 0,
+                parked: false,
             })
             .collect();
         let crews = vec![Crew { id: 0, ..Default::default() }];
@@ -922,12 +927,19 @@ impl Run {
         }
     }
 
-    pub fn leader_z(&self) -> f32 {
-        self.boats.iter().map(|b| b.z).fold(f32::MIN, f32::max)
+    /// Boats still racing (not parked); every boat if all are parked.
+    fn active(&self) -> impl Iterator<Item = &Boat> {
+        let any = self.boats.iter().any(|b| !b.parked);
+        self.boats.iter().filter(move |b| !any || !b.parked)
     }
 
+    pub fn leader_z(&self) -> f32 {
+        self.active().map(|b| b.z).fold(f32::MIN, f32::max)
+    }
+
+    /// The rearmost racing boat (parked boats don't hold the crew back).
     pub fn last_z(&self) -> f32 {
-        self.boats.iter().map(|b| b.z).fold(f32::MAX, f32::min)
+        self.active().map(|b| b.z).fold(f32::MAX, f32::min)
     }
 
     fn crew_mut(&mut self, id: u8) -> &mut Crew {
@@ -964,9 +976,14 @@ impl Run {
             return Err("not in this run");
         }
         let _ = pickers;
+        if self.boats.iter().any(|b| b.seat == seat && b.parked) {
+            return Err("you are away");
+        }
         self.votes.retain(|(s, _)| *s != seat);
         self.votes.push((seat, option));
-        if self.votes.len() == self.boats.len() {
+        // Everyone still racing has voted (players who are away don't hold the vote up).
+        let racing = self.boats.iter().filter(|b| !b.parked).count().max(1);
+        if self.votes.len() >= racing {
             match change {
                 ChangeKind::Twist => self.resolve_twist(),
                 ChangeKind::Finale => self.resolve_finale_vote(),
@@ -1111,6 +1128,9 @@ impl Run {
         let lanes = self.lanes();
         let (min, max) = (*lanes.first().unwrap(), *lanes.last().unwrap());
         let Some(i) = self.boats.iter().position(|b| b.seat == seat) else { return };
+        if self.boats[i].parked {
+            return;
+        }
         if let Some(g) = input.glyph.filter(|g| *g < GLYPHS) {
             if let Some(plug) = &mut self.boats[i].plug {
                 plug.entered.push(g);
@@ -1268,8 +1288,34 @@ impl Run {
         }
     }
 
-    /// Mark players as away (disconnected): their keys fill in by themselves.
+    /// Mark players as away (paused in a crew run, disconnected, or quit). Their boats
+    /// park (stop, can't be hit, don't hold the crew back) and their keys fill in by
+    /// themselves. A boat coming back rejoins just behind the crew, briefly protected.
     pub fn set_away(&mut self, seats: Vec<u8>) {
+        if self.boats.len() > 1 {
+            let mut back: Vec<usize> = Vec::new();
+            for (i, b) in self.boats.iter_mut().enumerate() {
+                let away = seats.contains(&b.seat);
+                if away && !b.parked {
+                    b.parked = true;
+                    b.plug = None; // an open lock closes without a penalty
+                    b.boosting = 0.0;
+                } else if !away && b.parked {
+                    b.parked = false;
+                    back.push(i);
+                }
+            }
+            if !back.is_empty() {
+                let rear = self.boats.iter().enumerate().filter(|(i, b)| !b.parked && !back.contains(i)).map(|(_, b)| b.z).fold(f32::MAX, f32::min);
+                for i in back {
+                    let b = &mut self.boats[i];
+                    if rear < f32::MAX && b.z < rear - 10.0 {
+                        b.z = rear - 8.0;
+                    }
+                    b.immune = b.immune.max(2.0);
+                }
+            }
+        }
         self.away = seats;
     }
 
@@ -1373,7 +1419,7 @@ impl Run {
                 }
                 let (ba, bb) = (&self.boats[a], &self.boats[b]);
                 let dz = bb.z - ba.z;
-                if ba.lane == bb.lane && dz > 0.0 && dz < 1.1 && !ba.airborne() && !bb.airborne() && ba.slow <= 0.0 {
+                if ba.lane == bb.lane && dz > 0.0 && dz < 1.1 && !ba.parked && !bb.parked && !ba.airborne() && !bb.airborne() && ba.slow <= 0.0 {
                     let by = bb.seat;
                     self.boats[a].slow = 0.4;
                     self.events.push(Event::Bumped { seat: self.boats[a].seat, by });
@@ -1393,6 +1439,9 @@ impl Run {
             }
             for bi in 0..self.boats.len() {
                 let b = &self.boats[bi];
+                if b.parked {
+                    continue;
+                }
                 if o.kind == Kind::Plastic {
                     let lane_ok = o.lane == b.lane || (b.stats.wide_net() && (o.lane - b.lane).abs() == 1);
                     if (o.z - b.z).abs() > b.stats.net_window() || !lane_ok {
@@ -1711,6 +1760,9 @@ pub struct BoatView {
     pub fixing: f32,
     /// Pipes this boat has fixed this run (for the suggested fixer).
     pub pipes: u32,
+    /// Paused, disconnected or quit: waiting out of the race.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub parked: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1871,6 +1923,7 @@ impl Run {
                     plugging: b.plug.as_ref().map(|p| p.pipe),
                     fixing: b.fixing,
                     pipes: b.plugged,
+                    parked: b.parked,
                 })
                 .collect(),
             crews: self.crews.iter().map(|c| (c.id, c.score(), c.plastic, c.pipes, c.banks, c.nets)).collect(),

@@ -12,7 +12,7 @@ use crate::room::GameError;
 use river_core::{Input, Phase as RunPhase, River, Run, TICK_HZ};
 use serde_json::json;
 use sqlx::PgPool;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
@@ -43,17 +43,27 @@ pub struct RunHost {
     pending: HashMap<u8, VecDeque<Input>>,
     /// When a solo player paused (the loop does not step while set).
     paused: Option<Instant>,
+    /// Crew runs: players in the pause menu. Their boats wait; the crew keeps going.
+    paused_seats: HashSet<u8>,
 }
 
 impl RunHost {
-    /// Pause or resume. Only works when one player is racing; returns whether the run is now paused.
-    pub fn set_paused(&mut self, paused: bool) -> bool {
+    /// Pause or resume for `seat`. Alone, the whole run stops. In a crew run only that
+    /// player's boat waits (parked) while the others keep going. Returns whether `seat` is now paused.
+    pub fn set_paused(&mut self, seat: u8, paused: bool) -> bool {
         let solo = self.run.boats.len() == 1;
-        self.paused = if paused && solo && self.run.phase != RunPhase::Finished { Some(Instant::now()) } else { None };
-        if self.paused.is_some() {
-            self.pending.clear();
+        let paused = paused && self.run.phase != RunPhase::Finished;
+        if solo {
+            self.paused = if paused { Some(Instant::now()) } else { None };
+        } else if paused {
+            self.paused_seats.insert(seat);
+        } else {
+            self.paused_seats.remove(&seat);
         }
-        self.paused.is_some()
+        if paused {
+            self.pending.remove(&seat);
+        }
+        paused
     }
 
     pub fn queue(&mut self, seat: u8, input: Input) {
@@ -142,7 +152,7 @@ pub fn start(
     for c in g.conns.values() {
         let _ = c.tx.send(msg.clone());
     }
-    g.run = Some(RunHost { run, practice, tutorial, endless, skins, pending: HashMap::new(), paused: None });
+    g.run = Some(RunHost { run, practice, tutorial, endless, skins, pending: HashMap::new(), paused: None, paused_seats: HashSet::new() });
     tokio::spawn(run_loop(entry_arc, db));
     Ok(())
 }
@@ -154,9 +164,12 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
         tick.tick().await;
         let mut g = entry.lock().await;
         let room = g.state.id;
-        // Disconnected players' keys fill in by themselves, so a pipe lock is never impossible.
-        let away: Vec<u8> = g.state.roster.members.iter().filter(|m| !m.connected).map(|m| m.seat).collect();
+        // Players who are disconnected, quit (no longer in the room) or paused are away:
+        // their boats wait and their keys fill in by themselves, so a lock is never impossible.
+        let here: HashSet<u8> = g.state.roster.members.iter().filter(|m| m.connected).map(|m| m.seat).collect();
         let Some(host) = g.run.as_mut() else { return };
+        let away: Vec<u8> =
+            host.run.boats.iter().map(|b| b.seat).filter(|s| !here.contains(s) || host.paused_seats.contains(s)).collect();
         if let Some(since) = host.paused {
             if since.elapsed() < MAX_PAUSE {
                 continue;

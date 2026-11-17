@@ -360,6 +360,17 @@ function renderBanner() {
   banner.textContent = s.socket === "connecting" ? "Connecting…" : `Connection lost — ${s.socketDetail ?? "reconnecting…"}`;
 }
 
+// ── connection watchdog ──────────────────────────────────────────────────
+// During a run the server sends 15 snapshots a second. If a phone's connection goes
+// quiet (screen dimmed, Wi-Fi napped) it can stay "open" but dead, and the screen would
+// freeze on old news (an old rule change). Reconnect as soon as it goes quiet.
+setInterval(() => {
+  if (runMode && !runMode.menuOpen && socket?.silentFor(3000)) socket.reconnectNow();
+}, 1000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && runMode && !runMode.menuOpen && socket?.silentFor(1500)) socket.reconnectNow();
+});
+
 // ── frame-rate watch (Auto quality) ─────────────────────────────────────────
 
 /**

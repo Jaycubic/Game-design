@@ -287,14 +287,20 @@ export class RunHud {
       quit.textContent = "Yes, quit";
       note.textContent = solo
         ? "Quitting ends this run. You go back to the dock with no Seeds for it."
-        : "You leave the room. Your crew keeps playing without you.";
+        : "You leave the run. Your crew finishes it without you; your keys fill in by themselves.";
     };
     this.menu.replaceChildren(
       h(
         "div",
         { class: "rh-menu-card" },
         h("div", { class: "rh-menu-title" }, solo ? "Paused" : "Menu"),
-        h("p", { class: "rh-menu-sub" }, solo ? "The river is waiting for you." : "Your crew is still rowing — the river doesn't stop in team games."),
+        h(
+          "p",
+          { class: "rh-menu-sub" },
+          solo
+            ? "The river is waiting for you."
+            : "Your boat waits here while your crew keeps rowing (your keys fill in by themselves). Resume to rejoin them.",
+        ),
         resume,
         quit,
         note,
@@ -644,7 +650,7 @@ export class RunHud {
   }
 
   /** Name tag above each boat (screen position from the 3D scene). */
-  tag(seat: number, x: number, y: number, visible: boolean) {
+  tag(seat: number, x: number, y: number, visible: boolean, parked = false) {
     let el = this.tags.get(seat);
     if (!el) {
       el = h("div", { class: "rh-tag" + (seat === this.mySeat ? " me" : ""), style: `--c:${SEAT_COLOURS[seat % 4]}` }, seat === this.mySeat ? "You" : this.name(seat));
@@ -652,6 +658,7 @@ export class RunHud {
       this.tags.set(seat, el);
     }
     el.style.display = visible ? "" : "none";
+    el.classList.toggle("parked", parked);
     el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
   }
 

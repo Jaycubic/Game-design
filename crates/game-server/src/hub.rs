@@ -276,11 +276,11 @@ impl Hub {
             }
             Command::RunPause { paused } => {
                 let mut g = entry.lock().await;
-                g.state.seat_of(&pid)?;
+                let seat = g.state.seat_of(&pid)?;
                 let host = g.run.as_mut().ok_or_else(|| GameError::new("no_run", "No run is under way."))?;
-                let now = host.set_paused(paused);
+                let now = host.set_paused(seat, paused);
                 let tick = host.run.tick;
-                let msg = crate::hub::envelope("run.paused", g.state.id, tick, serde_json::json!({ "paused": now }));
+                let msg = crate::hub::envelope("run.paused", g.state.id, tick, serde_json::json!({ "paused": now, "seat": seat }));
                 for c in g.conns.values() {
                     let _ = c.tx.send(msg.clone());
                 }

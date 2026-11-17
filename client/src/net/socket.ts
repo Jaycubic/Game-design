@@ -23,6 +23,8 @@ export class RoomSocket {
   private closedByUser = false;
   private timer: number | undefined;
   private pingTimer: number | undefined;
+  /** When the last message arrived (a live run sends 15 a second). */
+  private lastMsgAt = 0;
 
   constructor(
     private roomId: string,
@@ -40,6 +42,7 @@ export class RoomSocket {
       ws.send(JSON.stringify({ v: 1, type: "auth", payload: { token: this.token } }));
     };
     ws.onmessage = (ev) => {
+      this.lastMsgAt = performance.now();
       let m: Envelope;
       try {
         m = JSON.parse(ev.data);
@@ -84,6 +87,18 @@ export class RoomSocket {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
     this.ws.send(JSON.stringify({ v: 1, type, payload }));
     return true;
+  }
+
+  /** Open, but nothing heard for `ms` (a phone that slept can keep a dead socket "open"). */
+  silentFor(ms: number): boolean {
+    return this.ws?.readyState === WebSocket.OPEN && this.lastMsgAt > 0 && performance.now() - this.lastMsgAt > ms;
+  }
+
+  /** Drop the connection and reconnect straight away. */
+  reconnectNow() {
+    this.attempts = 0;
+    this.lastMsgAt = performance.now();
+    this.ws?.close();
   }
 
   close() {
