@@ -135,8 +135,15 @@ export class RunMode {
         break;
       case "glyph":
         this.send.input({ glyph: it.g });
-        sound.play("ping", { volume: 0.6 });
         break;
+      case "tile": {
+        // Gamepad: the i-th number on screen — a tile of your open lock, else your own number.
+        const s = this.snap;
+        const lock = s?.plugs.find(([seat]) => seat === this.mySeat)?.[1];
+        const d = lock ? lock.tiles.filter((t) => t.digit !== undefined && !t.used)[it.i]?.digit : s?.key_sent ? undefined : s?.my_key ?? undefined;
+        if (d) this.send.input({ glyph: d });
+        break;
+      }
     }
     this.coach?.input(it);
   }
@@ -254,7 +261,7 @@ export class RunMode {
         }
         case "plug_failed":
           sound.play("plugFail", { volume: mine ? 1 : 0.7 });
-          this.hud.banner(s.boats.length > 1 ? "Lock failed! River −5 — new keys for the next try" : "Wrong code! River −5", "bad");
+          this.hud.banner(s.boats.length > 1 ? "The lock ran out of time! River −5 — new numbers coming" : "The lock ran out of time! River −5", "bad");
           break;
         case "pipe_missed":
           if (!s.tutorial) {
@@ -269,11 +276,15 @@ export class RunMode {
           if (s.boats.length > 1) sound.play("countdown", { volume: 0.6 });
           break;
         case "answered":
-          if (s.boats.some((b) => b.seat === this.mySeat && b.plugging === e.pipe)) sound.play("ping", { volume: 0.7 });
+          // A number was sent: a tick over that boat, a chime for the sender and any fixer.
+          if (mine || s.boats.some((b) => b.seat === this.mySeat && b.plugging === e.pipe)) sound.play("ping", { volume: 0.7 });
+          if (scr?.visible) this.hud.bubble(scr.x, scr.y - 60, "✔", e.seat);
           break;
-        case "ping":
-          if (!mine) sound.play("ping", { volume: 0.5 });
-          if (scr?.visible) this.hud.bubble(scr.x, scr.y - 60, e.glyph, e.seat);
+        case "wrong_key":
+          if (mine) {
+            sound.play("plugFail", { volume: 0.35 });
+            this.hud.wrong();
+          }
           break;
         case "wave_incoming":
           sound.play("wave");

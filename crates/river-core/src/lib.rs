@@ -53,18 +53,20 @@ pub const CUT_REACH: f32 = 5.0;
 pub const PLUG_TIME: f32 = 8.0;
 /// After a correct gate code the boat stays put this long while its crew fixes the pipe.
 pub const FIX_TIME: f32 = 1.0;
-/// A boat with no crewmate sees its gate code for this long, then types it from memory.
-pub const MEMORY_TIME: f32 = 2.0;
 
-// ── Crew key locks (2+ players) ──
-// When the front boat nears an open pipe, every player is dealt a different
-// secret key and sees only their own, briefly. A pipe's lock has one slot per
-// player (seat order); teammates answer by pressing their key, and a fixer
-// types the full set. Several fixers may open locks at the same pipe: answers go
-// to all of them and the first correct entry fixes it. A wrong entry or running
-// out of time costs River Health and deals new keys.
-pub const KEY_DEAL_AT: f32 = 70.0;
-pub const KEY_SHOW: f32 = 3.0;
+// ── Number locks ──
+// Crew (2+ players): when the front boat nears an open pipe, every player is
+// dealt a different number 1–9, shown big on their own screen. Pressing your
+// number sends it to the crew (a wrong press is ignored). Whoever stops at the
+// pipe sees their own number plus every number sent so far, and types them in
+// increasing order. A player who doesn't press simply doesn't take part; the lock
+// needs at least one crewmate's number. Several fixers may open locks at the
+// same pipe; the first to finish fixes it. Running out of time costs River
+// Health and deals new numbers.
+// Solo: the lock shows three numbers; type them in increasing order.
+pub const KEY_DEAL_AT: f32 = 90.0;
+/// How long a number stays on screen if its player hasn't pressed it yet.
+pub const KEY_SHOW: f32 = 8.0;
 pub const LOCK_TIME: f32 = 12.0;
 pub const LOCK_FAIL_COST: f32 = 5.0;
 
@@ -72,11 +74,11 @@ pub const LOCK_FAIL_COST: f32 = 5.0;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Deal {
     pub pipe: u32,
-    /// (seat, key glyph), in seat order.
+    /// (seat, number 1–9), in seat order.
     pub keys: Vec<(u8, u8)>,
-    /// Seconds each player still sees their own key.
+    /// Seconds each player still sees their own number.
     pub shown: f32,
-    /// Keys teammates have sent for this pipe: (seat, glyph).
+    /// Numbers players have sent for this pipe: (seat, number).
     pub answers: Vec<(u8, u8)>,
 }
 pub const COURSE_LEN: f32 = 3300.0;
@@ -93,7 +95,8 @@ pub const PIPE_MISS_GAP: f32 = 15.0;
 pub const REVIVED_AT: f32 = 60.0;
 pub const REVIVED_BONUS: i32 = 20;
 
-pub const GLYPHS: u8 = 6; // leaf, drop, fish, bridge, arrow, star
+/// Lock numbers run 1..=DIGITS.
+pub const DIGITS: u8 = 9;
 
 /// Lanes for a number of boats: more boats get a wider river.
 pub fn lane_count_for(boats: usize) -> u8 {
@@ -186,6 +189,9 @@ fn is_zero_u8(v: &u8) -> bool {
 }
 fn is_zero_i8(v: &i8) -> bool {
     *v == 0
+}
+fn is_zero(v: &f32) -> bool {
+    *v == 0.0
 }
 
 // ── River Director (adaptive difficulty) ──
@@ -304,13 +310,17 @@ pub const FINALES: [Finale; 2] = [Finale::SecondWind, Finale::CleanSweep];
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plug {
     pub pipe: u32,
-    /// Solo: a 3-symbol code. Crew lock: every player's key, in seat order.
+    /// The numbers to type, in increasing order. Crew locks fill this in when the
+    /// fixer types their first number (their own plus every number sent so far).
     pub code: Vec<u8>,
     pub entered: Vec<u8>,
     pub left: f32,
-    /// A crew key lock (rather than the solo memory code).
+    /// A crew number lock (rather than the solo lock).
     #[serde(default)]
     pub team: bool,
+    /// Solo: the numbers in the order they are shown.
+    #[serde(default)]
+    pub tiles: Vec<u8>,
 }
 
 /// A boat's upgrade levels, 1–5 each. Level 2 is the starter boat and
@@ -502,7 +512,8 @@ pub enum Event {
     PlugFailed { seat: u8, pipe: u32 },
     /// Every boat rowed past this pipe without plugging it.
     PipeMissed { pipe: u32 },
-    Ping { seat: u8, glyph: u8 },
+    /// A press that wasn't the player's number (or the next number in a lock).
+    WrongKey { seat: u8 },
     WaveIncoming { id: u32 },
     RuleChanged { change: ChangeKind, choice: String },
     Choked,
@@ -512,11 +523,11 @@ pub enum Event {
     NetFreed { seat: u8, id: u32 },
     /// A current pushed a boat one lane.
     Pushed { seat: u8, dir: i8 },
-    /// New keys for the pipe ahead (each player sees only their own).
+    /// New numbers for the pipe ahead (each player sees only their own).
     KeysDealt { pipe: u32 },
     /// A fixer pressed hop to leave a lock and sail on.
     PlugSkipped { seat: u8, pipe: u32 },
-    /// A teammate sent their key to an open lock.
+    /// A player sent their number for this pipe.
     Answered { seat: u8, pipe: u32 },
 }
 
@@ -530,7 +541,7 @@ pub struct Input {
     pub hop: bool,
     #[serde(default)]
     pub action: bool,
-    /// Glyph 0..5: a ping, or a gate-code entry while plugging.
+    /// A number 1–9: send your number for the pipe ahead, or type it into a lock.
     #[serde(default)]
     pub glyph: Option<u8>,
 }
@@ -1131,27 +1142,11 @@ impl Run {
         if self.boats[i].parked {
             return;
         }
-        if let Some(g) = input.glyph.filter(|g| *g < GLYPHS) {
-            if let Some(plug) = &mut self.boats[i].plug {
-                plug.entered.push(g);
-                let (pipe, team, typed, done) = (plug.pipe, plug.team, plug.entered.len(), plug.entered.len() == plug.code.len());
-                // A fixer's own key, typed into its slot, also counts as their answer for other fixers.
-                if team && self.slot_of(seat) == Some(typed - 1) {
-                    self.answer(pipe, seat, g);
-                }
-                if done {
-                    let plug = self.boats[i].plug.take().expect("plugging");
-                    self.finish_plug(i, pipe, plug.entered == plug.code);
-                }
+        if let Some(d) = input.glyph.filter(|d| (1..=DIGITS).contains(d)) {
+            if self.boats[i].plug.is_some() {
+                self.type_digit(i, d);
             } else {
-                // Not fixing: the key answers any teammate's open lock (and shows over the boat).
-                let mut open: Vec<u32> = self.boats.iter().filter_map(|b| b.plug.as_ref().filter(|p| p.team).map(|p| p.pipe)).collect();
-                open.dedup();
-                for pipe in open {
-                    self.answer(pipe, seat, g);
-                    self.events.push(Event::Answered { seat, pipe });
-                }
-                self.events.push(Event::Ping { seat, glyph: g });
+                self.press_key(seat, d);
             }
         }
         // ▲ while fixing leaves the lock and sails on.
@@ -1241,36 +1236,35 @@ impl Run {
             .map(|o| o.id);
         if let Some(pipe) = pipe {
             let plug = if self.boats.len() > 1 {
-                // Crew lock: everyone's key, in seat order.
+                // Crew lock: the numbers come from the crew (see `type_digit`).
                 if !self.deals.iter().any(|d| d.pipe == pipe) {
                     self.new_deal(pipe);
                 }
-                let deal = self.deals.iter().find(|d| d.pipe == pipe).expect("deal");
-                let code = deal.keys.iter().map(|(_, k)| *k).collect();
-                Plug { pipe, code, entered: Vec::new(), left: LOCK_TIME, team: true }
+                Plug { pipe, code: Vec::new(), entered: Vec::new(), left: LOCK_TIME, team: true, tiles: Vec::new() }
             } else {
-                let code = (0..3).map(|_| self.rng.range(GLYPHS as u32) as u8).collect();
-                Plug { pipe, code, entered: Vec::new(), left: PLUG_TIME, team: false }
+                let tiles: Vec<u8> = self.shuffled_digits().into_iter().take(3).collect();
+                let mut code = tiles.clone();
+                code.sort();
+                Plug { pipe, code, entered: Vec::new(), left: PLUG_TIME, team: false, tiles }
             };
             self.boats[i].plug = Some(plug);
             self.events.push(Event::PlugStarted { seat, pipe });
         }
     }
 
-    /// A seat's slot in a crew lock (seat order).
-    pub fn slot_of(&self, seat: u8) -> Option<usize> {
-        let mut seats: Vec<u8> = self.boats.iter().map(|b| b.seat).collect();
-        seats.sort();
-        seats.iter().position(|s| *s == seat)
-    }
-
-    /// Deal every player a different key for `pipe` (replacing any earlier deal).
-    fn new_deal(&mut self, pipe: u32) {
-        let mut pool: Vec<u8> = (0..GLYPHS).collect();
+    /// 1..=9 in a random order.
+    fn shuffled_digits(&mut self) -> Vec<u8> {
+        let mut pool: Vec<u8> = (1..=DIGITS).collect();
         for k in (1..pool.len()).rev() {
             let j = self.rng.range(k as u32 + 1) as usize;
             pool.swap(k, j);
         }
+        pool
+    }
+
+    /// Deal every player a different number for `pipe` (replacing any earlier deal).
+    fn new_deal(&mut self, pipe: u32) {
+        let pool = self.shuffled_digits();
         let mut seats: Vec<u8> = self.boats.iter().map(|b| b.seat).collect();
         seats.sort();
         let keys: Vec<(u8, u8)> = seats.iter().zip(pool).map(|(s, k)| (*s, k)).collect();
@@ -1280,16 +1274,84 @@ impl Run {
         self.events.push(Event::KeysDealt { pipe });
     }
 
-    /// Record a teammate's key for a pipe's lock (a later press replaces an earlier one).
-    fn answer(&mut self, pipe: u32, seat: u8, glyph: u8) {
-        if let Some(d) = self.deals.iter_mut().find(|d| d.pipe == pipe) {
-            d.answers.retain(|(s, _)| *s != seat);
-            d.answers.push((seat, glyph));
+    /// A player not at a lock pressed a number: if it is theirs, it is sent to the crew.
+    fn press_key(&mut self, seat: u8, d: u8) {
+        let Some(deal) = self.deals.iter_mut().find(|dl| dl.keys.iter().any(|(s, _)| *s == seat)) else {
+            return;
+        };
+        let key = deal.keys.iter().find(|(s, _)| *s == seat).map(|(_, k)| *k);
+        if key != Some(d) {
+            self.events.push(Event::WrongKey { seat });
+            return;
+        }
+        if !deal.answers.iter().any(|(s, _)| *s == seat) {
+            deal.answers.push((seat, d));
+            let pipe = deal.pipe;
+            self.events.push(Event::Answered { seat, pipe });
+        }
+    }
+
+    /// The numbers a crew lock needs right now: the fixer's own plus every
+    /// crewmate number sent so far, in increasing order. None until at least one
+    /// crewmate has sent theirs.
+    pub fn lock_code(&self, pipe: u32, fixer: u8) -> Option<Vec<u8>> {
+        let crew = self.boats.iter().find(|b| b.seat == fixer)?.crew;
+        let deal = self.deals.iter().find(|d| d.pipe == pipe)?;
+        let own = deal.keys.iter().find(|(s, _)| *s == fixer)?.1;
+        let mates: Vec<u8> = deal
+            .answers
+            .iter()
+            .filter(|(s, _)| *s != fixer && self.boats.iter().any(|b| b.seat == *s && b.crew == crew))
+            .map(|(_, k)| *k)
+            .collect();
+        if mates.is_empty() {
+            return None;
+        }
+        let mut code = mates;
+        code.push(own);
+        code.sort();
+        code.dedup();
+        Some(code)
+    }
+
+    /// The next number a fixer should type (for bots and tests).
+    pub fn next_digit(&self, seat: u8) -> Option<u8> {
+        let p = self.boats.iter().find(|b| b.seat == seat)?.plug.as_ref()?;
+        if p.code.is_empty() {
+            return self.lock_code(p.pipe, seat)?.first().copied();
+        }
+        p.code.get(p.entered.len()).copied()
+    }
+
+    /// A fixer typed a number. A crew lock locks in its numbers on the first one;
+    /// a number out of order is ignored (no penalty, just try again).
+    fn type_digit(&mut self, i: usize, d: u8) {
+        let seat = self.boats[i].seat;
+        let (pipe, team, empty) = {
+            let p = self.boats[i].plug.as_ref().expect("plugging");
+            (p.pipe, p.team, p.code.is_empty())
+        };
+        if team && empty {
+            let Some(code) = self.lock_code(pipe, seat) else {
+                self.events.push(Event::WrongKey { seat });
+                return;
+            };
+            self.boats[i].plug.as_mut().expect("plugging").code = code;
+        }
+        let p = self.boats[i].plug.as_mut().expect("plugging");
+        if p.code.get(p.entered.len()) != Some(&d) {
+            self.events.push(Event::WrongKey { seat });
+            return;
+        }
+        p.entered.push(d);
+        if p.entered.len() == p.code.len() {
+            self.boats[i].plug = None;
+            self.finish_plug(i, pipe, true);
         }
     }
 
     /// Mark players as away (paused in a crew run, disconnected, or quit). Their boats
-    /// park (stop, can't be hit, don't hold the crew back) and their keys fill in by
+    /// park (stop, can't be hit, don't hold the crew back) and their numbers fill in by
     /// themselves. A boat coming back rejoins just behind the crew, briefly protected.
     pub fn set_away(&mut self, seats: Vec<u8>) {
         if self.boats.len() > 1 {
@@ -1765,24 +1827,35 @@ pub struct BoatView {
     pub parked: bool,
 }
 
+/// One number on a lock, as a viewer may see it.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct TileView {
+    /// Whose number it is (crew locks).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seat: Option<u8>,
+    /// The number: shown to the fixer only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub digit: Option<u8>,
+    /// The number has been sent (crew locks).
+    pub ready: bool,
+    /// Already typed into the lock.
+    #[serde(skip_serializing_if = "is_false")]
+    pub used: bool,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct PlugView {
     pub pipe: u32,
-    /// Solo: the symbols as this viewer may see them. Crew locks: empty (see `slots`).
-    pub code: Vec<u8>,
-    /// A crew key lock.
+    /// A crew number lock.
     pub team: bool,
-    /// Crew locks: one slot per player in seat order: (seat, answered, key). The key is
-    /// shown to the fixer for teammates' slots, and to each player for their own answer.
-    pub slots: Vec<(u8, bool, Option<u8>)>,
-    /// Crew locks: slots the fixer has typed so far.
-    pub typed: usize,
-    pub clear: bool,
-    /// No crewmate: a memory puzzle (shown clearly, then hidden).
-    pub memory: bool,
-    /// Memory puzzle, after the code has been hidden: `code` carries nothing.
-    pub hidden: bool,
+    /// The lock's numbers in seat order (solo: shown order). Before a crew lock
+    /// locks in, every crewmate has a tile; afterwards only the locked-in numbers.
+    pub tiles: Vec<TileView>,
+    /// Numbers typed so far.
     pub entered: usize,
+    /// A crew lock has locked in its numbers.
+    #[serde(skip_serializing_if = "is_false")]
+    pub locked: bool,
     #[serde(serialize_with = "round2")]
     pub left: f32,
 }
@@ -1819,8 +1892,18 @@ pub struct Snapshot {
     pub objs: Vec<Obj>,
     /// Gate codes this viewer is involved in (own plug, or a crewmate's).
     pub plugs: Vec<(u8, PlugView)>,
-    /// This viewer's own key for the pipe ahead, while it is being shown.
+    /// This viewer's own number for the pipe ahead: while it is shown, while a
+    /// crewmate's lock is waiting for it, or once sent (`key_sent`).
     pub my_key: Option<u8>,
+    /// Seconds until the number hides (it blinks near the end).
+    #[serde(skip_serializing_if = "is_zero", serialize_with = "round1")]
+    pub key_left: f32,
+    /// A crewmate is at the lock waiting for this number.
+    #[serde(skip_serializing_if = "is_false")]
+    pub key_call: bool,
+    /// The number has been sent: no more alerts.
+    #[serde(skip_serializing_if = "is_false")]
+    pub key_sent: bool,
     pub results: Option<Results>,
 }
 
@@ -1841,56 +1924,61 @@ impl Run {
                     return None;
                 }
                 let own = b.seat == viewer;
-                if p.team {
+                let tiles = if p.team {
                     let deal = self.deals.iter().find(|d| d.pipe == p.pipe);
-                    let slots = deal
-                        .map(|d| {
-                            d.keys
-                                .iter()
-                                .map(|(s, _)| {
-                                    let ans = d.answers.iter().find(|(a, _)| a == s).map(|(_, g)| *g);
-                                    let visible = own || *s == viewer;
-                                    (*s, ans.is_some(), if visible { ans } else { None })
-                                })
-                                .collect()
+                    let mut seats: Vec<u8> = self.boats.iter().filter(|x| x.crew == b.crew).map(|x| x.seat).collect();
+                    seats.sort();
+                    seats
+                        .into_iter()
+                        .filter_map(|s| {
+                            let key = deal.and_then(|d| d.keys.iter().find(|(k, _)| *k == s)).map(|(_, k)| *k);
+                            let sent = s == b.seat || deal.is_some_and(|d| d.answers.iter().any(|(a, _)| *a == s));
+                            let digit = if sent { key } else { None };
+                            if !p.code.is_empty() && !digit.is_some_and(|d| p.code.contains(&d)) {
+                                return None; // locked in without this number
+                            }
+                            Some(TileView {
+                                seat: Some(s),
+                                digit: if own { digit } else { None },
+                                ready: sent,
+                                used: digit.is_some_and(|d| p.entered.contains(&d)),
+                            })
                         })
-                        .unwrap_or_default();
-                    return Some((
-                        b.seat,
-                        PlugView {
-                            pipe: p.pipe,
-                            code: Vec::new(),
-                            team: true,
-                            slots,
-                            typed: p.entered.len(),
-                            clear: false,
-                            memory: false,
-                            hidden: false,
-                            entered: p.entered.len(),
-                            left: p.left,
-                        },
-                    ));
-                }
-                let memory = own;
-                let clear = !own || p.left > PLUG_TIME - MEMORY_TIME;
-                let hidden = memory && !clear;
+                        .collect()
+                } else {
+                    p.tiles
+                        .iter()
+                        .map(|d| TileView { seat: None, digit: Some(*d), ready: true, used: p.entered.contains(d) })
+                        .collect()
+                };
                 Some((
                     b.seat,
-                    PlugView {
-                        pipe: p.pipe,
-                        code: if hidden { vec![0; 3] } else { p.code.clone() },
-                        team: false,
-                        slots: Vec::new(),
-                        typed: 0,
-                        clear,
-                        memory,
-                        hidden,
-                        entered: p.entered.len(),
-                        left: p.left,
-                    },
+                    PlugView { pipe: p.pipe, team: p.team, tiles, entered: p.entered.len(), locked: p.team && !p.code.is_empty(), left: p.left },
                 ))
             })
             .collect();
+        // Your number: shown for a while after the deal, again whenever a crewmate's
+        // lock is waiting for it, and (quietly) once sent.
+        let fixing = me.is_some_and(|b| b.plug.is_some());
+        let deal = self.deals.iter().find(|d| d.keys.iter().any(|(s, _)| *s == viewer));
+        let (mut my_key, mut key_left, mut key_call, mut key_sent) = (None, 0.0, false, false);
+        if let (Some(d), false) = (deal, fixing) {
+            let key = d.keys.iter().find(|(s, _)| *s == viewer).map(|(_, k)| *k);
+            let sent = d.answers.iter().any(|(s, _)| *s == viewer);
+            let call = self
+                .boats
+                .iter()
+                .filter(|b| b.seat != viewer && me.is_some_and(|m| m.crew == b.crew))
+                .filter_map(|b| b.plug.as_ref())
+                .filter(|p| p.pipe == d.pipe && p.code.is_empty())
+                .map(|p| p.left)
+                .fold(0.0f32, f32::max);
+            if sent {
+                (my_key, key_sent) = (key, true);
+            } else if d.shown > 0.0 || call > 0.0 {
+                (my_key, key_left, key_call) = (key, d.shown.max(call), call > 0.0);
+            }
+        }
         Snapshot {
             tick: self.tick,
             t: self.t,
@@ -1934,11 +2022,10 @@ impl Run {
                 .cloned()
                 .collect(),
             plugs,
-            my_key: self
-                .deals
-                .iter()
-                .filter(|d| d.shown > 0.0)
-                .find_map(|d| d.keys.iter().find(|(s, _)| *s == viewer).map(|(_, k)| *k)),
+            my_key,
+            key_left,
+            key_call,
+            key_sent,
             // Endless has no time limit (0 here, since JSON can't carry infinity).
             duration: if self.endless { 0.0 } else { self.duration() },
             tutorial: self.tutorial,

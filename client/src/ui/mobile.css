@@ -24,19 +24,12 @@ button, .tc-btn { -webkit-user-select: none; user-select: none; }
 .tc-steer { width: 76px; height: 76px; }
 .tc-hop { width: 92px; height: 92px; background: rgba(255, 170, 30, 0.5); border-color: #ffd23f; }
 .tc-act { width: 70px; height: 70px; margin-bottom: 26px; background: rgba(80, 180, 110, 0.45); }
-.tc-glyphs { position: absolute; right: calc(10px + env(safe-area-inset-right, 0)); top: 50%; transform: translateY(-50%); display: grid; gap: 8px; }
-.tc-glyph { width: 46px; height: 46px; font-size: 1.4rem; border-width: 2px; border-radius: 14px; }
-.tc-glyph { position: relative; display: grid; place-items: center; align-content: center; gap: 0; height: 52px; padding: 0; }
-.tc-glyph b { font-size: 1.3rem; line-height: 1.1; font-weight: 400; }
-.tc-glyph small { font-size: 0.55rem; line-height: 1; opacity: 0.85; }
-.tc-glyph i { position: absolute; top: -5px; left: -5px; font-style: normal; font-size: 0.6rem; background: #4fb3ff; color: #00121c; border-radius: 6px; padding: 0 4px; }
 
 /* While playing on a touch device: the keyboard hint is noise, and the boost
    bar / code card must clear the thumb buttons. */
 .touch-run .rh-keys { display: none; }
 .touch-run .rh-bottom { bottom: calc(118px + env(safe-area-inset-bottom, 0)); }
 .touch-run .rh-code { bottom: calc(150px + env(safe-area-inset-bottom, 0)); }
-.touch-run .rh-glyph kbd, .touch-run .rh-card kbd { display: none; }
 /* Votes, the rule reveal and results take the screen: hide the thumb pad so it can't cover a card. */
 body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
 
@@ -82,7 +75,6 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .rh-voters { justify-content: flex-start; margin-top: 4px; }
   .rh-boost { width: min(240px, 60vw); }
   .rh-code-card { max-width: 92vw; padding: 10px 12px; }
-  .rh-glyph { font-size: 1.9rem; padding: 2px 8px; }
   .rh-banner { font-size: 1.1rem; top: 26%; white-space: normal; max-width: 90vw; text-align: center; }
   .rh-results { padding: 18px 16px; }
   .rh-results-title { font-size: 1.9rem; }
@@ -92,8 +84,6 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .tc-steer { width: 64px; height: 64px; }
   .tc-hop { width: 78px; height: 78px; }
   .tc-act { width: 60px; height: 60px; margin-bottom: 20px; }
-  .tc-glyphs { top: auto; bottom: calc(190px + env(safe-area-inset-bottom, 0)); transform: none; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .tc-glyph { width: 42px; height: 46px; font-size: 1.2rem; }
   .touch-run .rh-bottom { bottom: calc(100px + env(safe-area-inset-bottom, 0)); }
 }
 
@@ -113,8 +103,6 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .rh-big { font-size: 5rem; }
   .tc-steer { width: 66px; height: 66px; }
   .tc-hop { width: 80px; height: 80px; }
-  .tc-glyphs { grid-template-columns: repeat(3, 1fr); top: 84px; transform: none; gap: 6px; }
-  .tc-glyph { width: 42px; height: 46px; font-size: 1.2rem; }
   .touch-run .rh-bottom { bottom: 10px; }
   .touch-run .rh-code { bottom: 70px; }
   /* Tutorial: a slim coach strip at the top so the river and the spotlight stay clear. */
@@ -141,10 +129,9 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
 .tc-size-l .tc-left, .tc-size-l .tc-right { transform: scale(1.2); }
 .tc-left { transform-origin: bottom left; }
 .tc-right { transform-origin: bottom right; }
-/* Left-handed: mirror the thumb clusters (the signals move to the left edge). */
+/* Left-handed: mirror the thumb clusters. */
 .tc-swap .tc-left { left: auto; right: calc(14px + env(safe-area-inset-right, 0)); transform-origin: bottom right; }
 .tc-swap .tc-right { right: auto; left: calc(14px + env(safe-area-inset-left, 0)); flex-direction: row-reverse; transform-origin: bottom left; }
-.tc-swap .tc-glyphs { right: auto; left: calc(10px + env(safe-area-inset-left, 0)); }
 @media (max-height: 500px) and (orientation: landscape) {
   .rh-pipe { top: 64px; padding: 4px 10px; width: min(340px, 52vw); }
   .rh-pipe-head { font-size: 0.9rem; }
@@ -152,10 +139,6 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .rh-banner.big { font-size: 1.3rem; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  .rh-key { top: 24%; left: 12px; padding: 6px 12px; }
-  .rh-key-glyph { font-size: 2.2rem; }
-  .rh-slot { min-width: 58px; padding: 4px 6px; }
-  .rh-slot-key { font-size: 1.5rem; min-height: 1.7rem; }
 }
 /* Portrait phones: the River health bar takes its own row, so the pipe card sits below it. */
 @media (max-width: 760px) and (orientation: portrait) {
@@ -177,23 +160,15 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .rh-pause-label { display: none; }
   .rh-pause-icon { font-size: 1.3rem; }
 }
-/* Phone portrait: the six signals form one row just above the thumb buttons
-   (the HUD grid keeps --reserve-bottom free for both). */
-@media (max-width: 760px) and (orientation: portrait) {
-  .tc-glyphs, .tc-swap .tc-glyphs {
-    top: auto; right: auto; left: 50%; transform: translateX(-50%);
-    bottom: calc(102px + env(safe-area-inset-bottom, 0px));
-    grid-template-columns: repeat(6, 42px); gap: 6px;
-  }
-}
-/* Phones: a one-row key card, and lock slots that fit four across. */
+/* Phones: a compact (still big) number card, and lock tiles that fit four across. */
 @media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
-  .rhud .rh-key.on { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 14px; }
-  .rhud .rh-key-glyph { font-size: 1.8rem; margin: 0; grid-auto-flow: column; align-items: center; gap: 4px; }
-  .rhud .rh-key-hint { display: none; }
-  .rh-slots { gap: 6px; flex-wrap: nowrap; margin: 6px 0 4px; }
-  .rh-slot { min-width: 0; flex: 1 1 0; padding: 3px 4px; }
-  .rh-slot-key { font-size: 1.5rem; min-height: 1.7rem; }
+  .rhud .rh-key.on:not(.sent) { grid-template-columns: auto auto; grid-template-areas: "digit title" "digit hint"; column-gap: 12px; align-items: center; padding: 4px 16px; }
+  .rhud .rh-key-digit { grid-area: digit; font-size: 5.2rem; }
+  .rhud .rh-key-title { grid-area: title; align-self: end; }
+  .rhud .rh-key-hint { grid-area: hint; align-self: start; }
+  .rh-tiles { gap: 6px; flex-wrap: nowrap; margin: 6px 0 4px; }
+  .rh-tile { min-width: 0; flex: 0 1 72px; padding: 3px 4px; }
+  .rh-tile b { font-size: 2.1rem; }
   .rhud .rh-code-card { padding: 8px 10px; }
   .rh-code-title { font-size: 1rem; }
 }

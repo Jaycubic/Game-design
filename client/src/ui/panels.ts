@@ -2,7 +2,6 @@
 
 import { sound } from "../audio/sound";
 import { feel } from "./feel";
-import { GLYPHS, GLYPH_NAMES } from "../river/types";
 import { isTouch, touchPrefs, usesTouch, type TouchMode, type TouchSize } from "../input/touch";
 import { h } from "./dom";
 import type { Quality } from "../render/engine";
@@ -92,7 +91,7 @@ export function controlsSection(): HTMLElement {
                       ev.preventDefault();
                       ev.stopPropagation();
                       window.removeEventListener("keydown", grab, true);
-                      if (ev.key !== "Escape" && !/^[1-6]$/.test(ev.key) && !ev.key.startsWith("Arrow")) rebind(a, ev.key);
+                      if (ev.key !== "Escape" && !/^[1-9]$/.test(ev.key) && !ev.key.startsWith("Arrow")) rebind(a, ev.key);
                       draw();
                     };
                     window.addEventListener("keydown", grab, true);
@@ -104,7 +103,7 @@ export function controlsSection(): HTMLElement {
           ),
         ),
       ),
-      h("p", { class: "muted small" }, "Keys 1–6 send signals and type gate codes. While voting, 1–3 choose an option."),
+      h("p", { class: "muted small" }, "Keys 1–9 send your pipe number and type number locks. While voting, 1–3 choose an option."),
       h("button", { class: "btn ghost tiny", onclick: () => (resetBindings(), draw()) }, "Reset to W A S D"),
       h("h3", null, "Gamepad"),
       h("p", { class: "small" }, pad.connected() ? `✔ Connected: ${pad.connected()}` : "No gamepad detected — connect one and press any button."),
@@ -114,7 +113,7 @@ export function controlsSection(): HTMLElement {
         h("li", null, "D-pad ◀ ▶ or left stick — steer"),
         h("li", null, "A (or D-pad ▲) — hop"),
         h("li", null, "B / X (or D-pad ▼) — cut / plug"),
-        h("li", null, "Hold RT + A / B / X / Y / LB / RB — signals 1–6"),
+        h("li", null, "Hold RT + A / B / X / Y / LB / RB — the 1st–6th number on screen (your number, or a lock number)"),
         h("li", null, "While voting: A / B / X — options 1–3"),
       ),
     );
@@ -135,31 +134,20 @@ export function howToPlay(): HTMLElement {
       row("🦘", "▲", "Hop over logs and debris waves"),
       row("✂️", usesTouch() ? "✂" : "▼", "Cut weed mats · plug sewage pipes"),
       row("♻️", "", "Grab plastic — it fills your boost"),
-      row("🔧", usesTouch() ? "Tap" : "1–6", "Type gate codes · signal your crew"),
+      row("🔧", usesTouch() ? "Tap" : "1–9", "Send your pipe number · fix pipes with number locks"),
       row("🌊", "", "River Health is shared — if it chokes, everyone loses half"),
       row("⚡", "", "Twice per run, players change the rules"),
       row("💥", "", "Capsize and you stop for a moment and spill 3 plastic — net it back"),
       row("🗺️", "", "New rivers add ghost nets, currents and rocks — earn 3 stars on each"),
       row("∞", "", "Endless: solo, no clock, one capsize ends it — how far can you go?"),
     ),
-    h("h3", null, "Signals"),
+    h("h3", null, "Pipe numbers"),
     h(
       "p",
       { class: "small" },
-      "The six symbols are your keys. Before each pipe you're shown your own key: remember it. When a teammate opens a pipe's lock, press your key to send it; the lock needs everyone's key. Playing alone, you get a memory code instead.",
-    ),
-    h(
-      "div",
-      { class: "htp-signals" },
-      GLYPHS.map((g, i) => h("span", { class: "htp-signal" }, h("b", null, g), h("small", null, `${i + 1} ${signalName(i)}`))),
+      `With friends, before each pipe every player gets a big number (1–9). ${usesTouch() ? "Tap it" : "Press it"} to send it — that's you helping fix the pipe. Whoever stops at the pipe sees every number sent and enters them smallest first, with their own. Playing alone, the lock shows 3 numbers: enter them smallest first.`,
     ),
   );
-}
-
-/** "Leaf", "Drop", … */
-export function signalName(i: number): string {
-  const n = GLYPH_NAMES[i] ?? "";
-  return n.charAt(0).toUpperCase() + n.slice(1);
 }
 
 export function settings(current: Quality, backend: string, reason: string, onQuality: (q: Quality) => void, autoNote = ""): HTMLElement {

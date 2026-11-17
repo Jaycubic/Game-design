@@ -52,22 +52,28 @@ export type RunPhase =
   | { phase: "reveal"; change: ChangeKind; left: number; spin: boolean; tie_by?: number }
   | { phase: "finished" };
 
+/** One number on a lock, as this viewer may see it. */
+export interface TileView {
+  /** Whose number it is (crew locks). */
+  seat?: number;
+  /** The number (shown to the fixer only). */
+  digit?: number;
+  /** Sent by its player (crew locks). */
+  ready: boolean;
+  /** Already typed into the lock. */
+  used?: boolean;
+}
+
 export interface PlugView {
   pipe: number;
-  /** Solo memory code (empty for crew locks). */
-  code: number[];
-  /** A crew key lock: one slot per player. */
-  team?: boolean;
-  /** Crew locks: [seat, answered, key (shown to the fixer, and to each player for their own)]. */
-  slots?: [number, boolean, number | null][];
-  /** Crew locks: slots the fixer has typed. */
-  typed?: number;
-  clear: boolean;
-  /** No crewmate: a memory puzzle (shown clearly at first, then hidden). */
-  memory?: boolean;
-  /** Memory puzzle after the code is hidden: `code` carries nothing. */
-  hidden?: boolean;
+  /** A crew number lock (otherwise the solo lock). */
+  team: boolean;
+  /** The lock's numbers: crew locks in seat order, solo in shown order. */
+  tiles: TileView[];
+  /** Numbers typed so far. */
   entered: number;
+  /** A crew lock has locked in its numbers (on the fixer's first number). */
+  locked?: boolean;
   left: number;
 }
 
@@ -108,8 +114,14 @@ export interface Snapshot {
   crews: [number, number, number, number, number, number][];
   objs: RunObj[];
   plugs: [number, PlugView][];
-  /** Your own key for the pipe ahead, while it is being shown. */
+  /** Your number (1–9) for the pipe ahead: while shown, while a crewmate's lock waits for it, or once sent. */
   my_key?: number | null;
+  /** Seconds until your number hides (it blinks near the end). */
+  key_left?: number;
+  /** A crewmate is at the lock waiting for your number. */
+  key_call?: boolean;
+  /** Your number has been sent. */
+  key_sent?: boolean;
   results: RunResults | null;
 }
 
@@ -125,7 +137,7 @@ export type RunEvent =
   | { type: "plugged"; seat: number; pipe: number }
   | { type: "plug_failed"; seat: number; pipe: number }
   | { type: "pipe_missed"; pipe: number }
-  | { type: "ping"; seat: number; glyph: number }
+  | { type: "wrong_key"; seat: number }
   | { type: "wave_incoming"; id: number }
   | { type: "rule_changed"; change: ChangeKind; choice: string }
   | { type: "choked" }
@@ -139,8 +151,8 @@ export type RunEvent =
 export const RUN_SECONDS = 180;
 export const LANE_W = 2.4;
 
-export const GLYPHS = ["🍃", "💧", "🐟", "🌉", "➜", "⭐"];
-export const GLYPH_NAMES = ["leaf", "drop", "fish", "bridge", "arrow", "star"];
+/** Lock numbers run 1..DIGITS. */
+export const DIGITS = 9;
 
 export const TWIST_INFO: Record<Twist, { icon: string; name: string; line: string }> = {
   monsoon_surge: { icon: "🌧️", name: "Monsoon Surge", line: "Debris waves every 15 s — but twice the plastic to collect." },

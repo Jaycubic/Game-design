@@ -18,7 +18,7 @@ experience is needed.
 5. [River Health: the most important idea](#5-river-health-the-most-important-idea)
 6. [Everything on the river, and why it is there](#6-everything-on-the-river-and-why-it-is-there)
 7. [The sewage pipe, explained properly](#7-the-sewage-pipe-explained-properly)
-8. [Signals: your six keys](#8-signals-your-six-keys)
+8. [Pipe numbers](#8-pipe-numbers)
 9. [One crew against the pollution](#9-one-crew-against-the-pollution)
 10. [The two rule changes](#10-the-two-rule-changes)
 11. [Score: how points work](#11-score-how-points-work)
@@ -76,9 +76,9 @@ The brief asked for a game about **environmental awareness**, addressed **indire
 | Environmental awareness, indirectly | You never read a lecture. You *feel* the problem: missed plastic and open pipes make the shared river sicker, and a dead river cuts everyone's score in half. |
 | Players change the rules exactly twice | Every run has a **Twist** and a **Finale**, both voted by the crew. The game enforces exactly two. |
 | Cooperation | Everyone is **one crew** with one score and one River Health bar, playing together against the pollution, the pollution. |
-| Communication | Each player holds one secret key for each pipe. The pipe's lock needs **everyone's** key, so the crew must answer when a teammate calls. |
+| Communication | Each player gets a number for each pipe and chooses to send it. The fixer calls out "press your number!" and needs at least one crewmate's number. |
 | Negotiation | Both rule changes are crew votes, argued out loud ("points now, or protect the river?"). Crews also plan who fixes which pipe. |
-| Puzzles | The key lock: remember your key, notice the call, answer in time; alone, a memory puzzle. |
+| Puzzles | The number lock: put the crew's numbers in increasing order, fast, while still steering; alone, three numbers smallest first. |
 | Competition (without fighting friends) | The crew competes against the pollution, against its own best scores and stars, and for Endless records. |
 | Simple rules | Three buttons: steer, hop, action. A 60-second tutorial teaches everything. |
 | Limited players | 1–4 players per room. |
@@ -112,7 +112,7 @@ The brief asked for a game about **environmental awareness**, addressed **indire
 │                                                              │
 │                        [ your boat ]                         │
 │                                                              │
-│ ◀ ▶ steer · ▲ hop      [ Boost ███░░ ]      1 2 3 4 5 6 signals│
+│ ◀ ▶ steer · ▲ hop      [ Boost ███░░ ]                        │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -121,7 +121,7 @@ The brief asked for a game about **environmental awareness**, addressed **indire
 - **Top right:** **River Health**, shared by everyone on the river.
 - **Middle:** helpful prompts ("pipe ahead", "debris wave ahead").
 - **Bottom middle:** your **boost meter**.
-- **Bottom right:** the six **signal** buttons. On a phone, thumb buttons also appear.
+- **Just above the boost meter:** your big **pipe number** when one is dealt. On a phone, thumb buttons also appear.
 
 ---
 
@@ -212,44 +212,46 @@ source makes every clean-up effort more effective.
 4. **Fill the lock** (below), then the boat stays put **one more second** while your crew member hammers the pipe
    shut (sparks and clanks). the smog cloud leaves, River Health +10, and a banner shows your new multiplier ("every plastic
    now ×1.5"). The ×1.5 badge stays next to your score.
-5. **Failed:** the river takes a hit (River Health −5) and the pipe keeps pouring. You can try again with new keys.
+5. **Failed:** the river takes a hit (River Health −5) and the pipe keeps pouring. You can try again with new numbers.
 6. **Changed your mind?** Press **▲ (hop)** to leave the lock and sail on, with no penalty.
 
-### The key lock: everyone holds a piece
+### The number lock: see it, press it, the fixer sorts it
 
-As the crew nears a pipe (about 70 m), **every player is shown their own key** for 3 seconds, near the bottom of the
-screen: one of the six symbols, different for each player. Nobody else sees yours.
+As the crew nears a pipe (about 90 m), **every player gets a big number from 1 to 9** on their own screen, different
+for each player. It stays for 8 seconds and **blinks** as it is about to go. Nothing to remember: **press it** (or tap
+it) and it is sent. That press is your choice to help fix the pipe; the card turns into "✔ Your 7 is in".
 
-When someone presses Action at the pipe, they become the **fixer** and a lock opens with **one slot per player**, in
-seat order and in each player's colour. Everyone else gets a call: "Ben is fixing a pipe — send your key!" They
-press the number of their key, and it lands in their slot. The fixer types the slots **left to right**, their own
-key from memory, within **12 seconds**.
+When someone presses Action at the pipe, they become the **fixer**. Their lock shows their own number and **every
+number the crew has sent**, under each player's name. Anyone who hasn't pressed yet sees their number come back,
+blinking: "Your crew needs it!". The fixer types the numbers **smallest first** within **12 seconds**. It needs at
+least **one crewmate's number** on top of their own.
 
-**Nobody can fix a pipe alone**: the lock needs a key that only each teammate has. That's the teamwork.
+**Nobody can fix a pipe alone**: the fixer needs a crewmate who chose to press. That's the teamwork, and the talking:
+"Press your number!"
 
 #### Worked example: Ben, You and Asha
 
 | Step | You (the fixer) | Ben and Asha |
 |---|---|---|
-| 1 | See your key: ⭐ Star (6). | Ben sees 🍃 Leaf (1). Asha sees 🐟 Fish (3). |
-| 2 | Press **Action** beside the pipe. The lock shows: Ben · You · Asha. | Get the call: "You is fixing a pipe — send your key!" |
-| 3 | Watch the slots fill: Ben 🍃 1 … Asha 🐟 3. | Ben presses **1**, Asha presses **3**. |
-| 4 | Type left to right: **1**, **6** (yours, from memory), **3**. | Keep sailing. |
+| 1 | Your number: **6**. | Ben gets **1**. Asha gets **3**. |
+| 2 | Press **6** (or don't: it's on your lock anyway). | Ben presses **1**. Asha is dodging a log. |
+| 3 | Press **Action** beside the pipe. The lock shows Ben **1** · You **6** · Asha … | Asha's **3** comes back, blinking. She presses it. |
+| 4 | Type smallest first: **1, 3, 6**. | Keep sailing. |
 | 5 | Fixed! River +10, every plastic now ×1.5. | Same score boost for everyone. |
 
-**Several fixers.** Two or more players can open a lock at the same pipe; every answer goes into all of them, and
-the **first** to enter the full set correctly fixes it. Crews choose their plan: everyone stops for a lightning fix,
-or one fixer stays behind (the others press ▲ and sail on) while the rest keep collecting. A boat that falls more
-than 25 m behind gets a **catch-up current** (+15 % speed), so nobody is stranded.
+**Several fixers.** Two or more players can open a lock at the same pipe; sent numbers show on all of them, and the
+**first** to finish fixes it. Crews choose their plan: everyone stops for a lightning fix, or one fixer stays behind
+(the others press ▲ and sail on) while the rest keep collecting. A boat that falls more than 25 m behind gets a
+**catch-up current** (+15 % speed), so nobody is stranded.
 
-**Playing alone.** There's no one to share keys with, so it becomes a memory puzzle: a 3-symbol code shows **in the
-real order for 2 seconds**, then turns into **? ? ?**, and you enter it from memory (8 seconds).
+**Playing alone.** The lock shows three numbers (say 7 · 2 · 5); type them smallest first (2, 5, 7) within
+8 seconds. They stay on screen.
 
 ### Why the code works this way
 
 This is the game's **puzzle** and its **communication** requirement in one. It also mirrors real life: fixing
 pollution at the source is never a one-person job. It needs people **coordinating**: inspectors, councils,
-engineers, communities, each holding a piece. If anyone ignores the call, the fix fails and the river suffers.
+engineers, communities, each holding a piece. If nobody answers the call, the fix fails and the river suffers.
 
 ### The trade-off it creates
 
@@ -263,14 +265,12 @@ That choice, "short-term gain or long-term fix", is exactly the choice people fa
 
 ---
 
-## 8. Signals: your six keys
+## 8. Pipe numbers
 
-There are six symbols: **1 Leaf 🍃, 2 Drop 💧, 3 Fish 🐟, 4 Bridge 🌉, 5 Arrow ➜, 6 Star ⭐.**
-
-- They are the **keys** for pipe locks: each player is shown one before each pipe.
-- Press a number key (or tap a symbol button) and that symbol pops up **over your boat**. When a teammate's lock
-  is open, the press also sends your key to it.
-- The symbols don't need a meaning: a key is just "the symbol you were shown", so anyone can play, at any age.
+- Plain digits **1–9**: no symbols to learn, so anyone can play, at any age.
+- Your number is **yours alone**; only the fixer sees the numbers that were sent.
+- Keyboard: keys 1–9. Phone: tap the big number (and the numbers on a lock). Gamepad: hold RT and press A/B/X/Y/LB/RB
+  for the 1st–6th number on screen.
 
 ---
 
@@ -421,7 +421,7 @@ A survival mode with no clock, alone or as a crew:
   **3 lives** (❤️❤️❤️); every capsize uses one.
 - The boats speed up 2% every 15 seconds, so it gets harder and harder.
 - The rules still change **exactly twice**, and you choose (Twist at 1:00, Finale at 2:30).
-- Pipes use the key lock (or the memory code alone).
+- Pipes use the number lock (crew or alone).
 - **Score = metres travelled + 5 per plastic.** Each river keeps your best.
 - Pays like practice; counts for missions; earns no stars.
 
@@ -433,7 +433,7 @@ A survival mode with no clock, alone or as a crew:
 
 ### Tutorial (60 seconds, skippable)
 A scripted short river that teaches one thing at a time: steer, the boost meter, River Health, hop, cut weed, plug
-a pipe, and send a signal. Each step **spotlights** the button or meter it's about, with a dimmed screen, a pulsing
+a pipe, and the number lock. Each step **spotlights** the button or meter it's about, with a dimmed screen, a pulsing
 ring, a tapping hand and a speech bubble, like the guided tours in big mobile games. You learn by doing, not
 reading.
 
@@ -444,7 +444,7 @@ reading.
 | Steer | ◀ ▶ or A / D | ◀ ▶ buttons or swipe left/right |
 | Hop | ▲, W or Space | ▲ button or swipe up |
 | Action (cut, plug) | ▼, S or E | ✂ button or swipe down |
-| Signals | keys 1–6 | the six symbol buttons |
+| Pipe numbers | keys 1–9 | tap your big number, or the lock's numbers |
 | Vote | keys 1–3 | tap a card |
 
 A gamepad works too.
@@ -485,7 +485,7 @@ flowchart TD
     P[Real problem: plastic + sewage in a shared river] --> L[Game lesson: stop pollution at the source, and look after what everyone shares]
     L --> RH[River Health bar shared by all]
     L --> PI[Sewage pipes drain health until plugged]
-    PI --> GC[Key lock: every player holds one key]
+    PI --> GC[Number lock: each player sends their number, the fixer sorts them]
     GC --> SG[Answer the call: communication and teamwork]
     PI --> MU[Multiplier: fixing the source makes all work count more]
     RH --> CH[Choked: the river chokes / Revived: you saved the river]
@@ -496,7 +496,7 @@ flowchart TD
 
 In one sentence: **Clearwater Run is a fast boat race where your whole crew teams up against the pollution; the
 only way to win is to protect the river, and the biggest thing you can do for it is stop the pollution at its
-source, which you can only do when every crewmate hands over their key.**
+source, which you can only do when your crewmates send their numbers.**
 
 ---
 
@@ -511,10 +511,9 @@ source, which you can only do when every crewmate hands over their key.**
 | **Choked** | River Health hit 0: the river chokes and the score is halved. |
 | **Revived** | River Health ended at 60+: you saved the river, +20 for the crew. |
 | **Outfall / sewage pipe** | A pipe in the bank pouring waste water into the river. |
-| **Key** | The symbol you're shown before a pipe. The lock needs every player's key. |
+| **Pipe number** | The number 1–9 you're shown before a pipe. Press it to send it to the fixer. |
 | **Lock / fixer** | What opens when someone presses Action at a pipe; that player is the fixer. |
-| **Memory code** | Playing alone: a 3-symbol code shown for 2 seconds, then entered from memory. |
-| **Signal** | One of the six symbols (also your keys) you can show over your boat. |
+| **Solo lock** | Playing alone: three numbers, typed smallest first. |
 | **Multiplier** | How much each plastic is worth; raised by plugging pipes. |
 | **Banks greened** | Weed mats cut: +5 each. |
 | **Capsize** | Your boat flips after hitting a log or wave. |
@@ -536,15 +535,15 @@ It doesn't drop during the run, but River Health might be falling because of ope
 final score is halved and the river chokes. Plug pipes!
 
 **Why does the lock show "…" in my friend's slot?**
-They haven't sent their key yet. Each player is shown their own key before the pipe; when you call, they press it
-and it lands in their slot. That's the teamwork puzzle.
+They haven't pressed their number yet. Call out "press your number!": their number is blinking on their screen,
+and once they press it, it shows on your lock. Then type everything smallest first.
 
 **Should I always plug pipes?**
 Usually yes: each one heals the river by 10, stops the drain for good, and makes every future plastic worth more.
 But your boat stops while you plug, so timing matters.
 
 **What if I'm playing alone?**
-Use Practice solo or Endless. When you plug a pipe alone, the code shows in the real order for 2 seconds, then hides as ? ? ?; enter it from memory.
+Use Practice solo or Endless. When you plug a pipe alone, the lock shows three numbers; type them smallest first.
 
 **What if my friend is far ahead or behind?**
 Distance doesn't matter: keys reach the lock from anywhere. A boat left far behind gets a catch-up current.

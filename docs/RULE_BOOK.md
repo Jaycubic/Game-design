@@ -34,7 +34,7 @@ together against the pollution. A grumpy brown smog cloud sulks over every open 
 | Steer left / right | ◀ ▶ or A / D | D-pad or left stick | ◀ ▶ buttons, or swipe left / right |
 | Hop | ▲, W or Space | A | ▲ button, or swipe up |
 | Action (cut weed or nets, start plugging) | ▼, S or E | B or X | ✂ button, or swipe down |
-| Send a signal 1–6 | keys 1–6, or the signal bar | hold RT + A/B/X/Y/LB/RB | the six signal buttons |
+| Send your pipe number / type a number lock | keys 1–9 | hold RT + A/B/X/Y/LB/RB (the 1st–6th number on screen) | tap your big number, or the lock's numbers |
 | Vote during a rule change | keys 1–3 | A / B / X | tap a card |
 
 Your boat moves forward on its own. The letter keys can be rebound in **Settings**; the arrow keys always work.
@@ -42,10 +42,11 @@ Your boat moves forward on its own. The letter keys can be rebound in **Settings
 **Pause and quit:** tap the **⏸ Pause** button in the top-left corner (or press **Esc** or **P** on a computer).
 The menu has **Resume** and **Quit run** (Quit asks once more). Playing alone, the river really stops until you resume
 (it resumes by itself after 10 minutes, and the game pauses when you switch away from the tab). In a crew run
-**only your boat waits**: it stops, nothing can hit it, and the others keep racing; your keys fill in by themselves so
+**only your boat waits**: it stops, nothing can hit it, and the others keep racing; your number fills in by itself so
 their pipe locks still work. Press Resume and your boat rejoins just behind the crew, protected for a moment. Quitting
 takes you back to the hub; the others finish the run without you (even one player alone can still fix every pipe), and
-votes no longer wait for you. The tutorial has its own **Skip tutorial** button instead.
+votes no longer wait for you. **Refreshing the page (or closing the tab) counts as quitting**: you land back on the
+hub, not in the old run. The tutorial has its own **Skip tutorial** button instead.
 
 **On-screen controls** (Settings → Controls), as in most mobile games:
 
@@ -57,8 +58,8 @@ votes no longer wait for you. The tutorial has its own **Skip tutorial** button 
 | **Off** | Keyboard or gamepad only. The default on PCs; a touch-screen laptop can switch the others on. |
 
 With buttons you can also pick the **button size** (small, medium, large) and a **left-handed** layout (steering on
-the right, hop and cut on the left). The six signal buttons stay on screen whenever on-screen controls are on,
-because gate codes need them. Keyboard and gamepad keep working whatever you choose.
+the right, hop and cut on the left). There are no number buttons: you tap the big number itself, or the numbers
+on a lock. Keyboard and gamepad keep working whatever you choose.
 
 ## 4. The river
 
@@ -97,62 +98,63 @@ new thing on top of everything above.
 | **Mangrove Maze** | **Ghost nets**: old fishing nets across two lanes. They slow you like weed. Cut one with **Action** twice (or a crewmate cuts once too) to free the 4 plastic trapped inside. | 3 runs or 3 ★ |
 | **Rapids Gorge** | **Currents** (white arrows) push you one lane sideways unless you hop over them. **Rocks** capsize you even if you hop: steer round them. | 8 runs or 7 ★ |
 
-## 5. Plugging a pipe: the crew key lock
+## 5. Plugging a pipe: the number lock
 
 **Finding a pipe.** Open pipes stand out on the bank: a big pipe, a brown plume in the water, a grumpy smog cloud above it,
 and a floating 🔧 marker with the distance. A card at the top of the screen tells you which bank it's on, how far
 away it is, and what to do next. With friends, the marker also suggests whose turn it is to fix one ("Asha's turn?",
 whoever has fixed the fewest so far). It's only a hint: anyone can fix any pipe.
 
-### With a crew (2–4 players): everyone holds a key
+### With a crew (2–4 players): see your number, press it
 
-1. **Keys.** As the crew nears a pipe (about 70 m), **each player sees their own key** for 3 seconds, just above
-   the lock card near the bottom of the screen: for example "Your key: ⭐ 6 · Star". Every player gets a different symbol, and nobody else sees
-   yours. **Remember it.**
-2. **Call for help.** A player beside the pipe presses **Action**. Their boat stops and a **lock** opens with one
-   slot per player, in seat order (player 1, 2, 3, 4), each in that player's colour.
-3. **Answer.** Everyone else gets a call: "Ben is fixing a pipe — send your key!" Press the number of **your** key.
-   It appears in your slot on the lock, wherever you are on the river.
-4. **Unlock.** The fixer types the slots **left to right**: their own key from memory, the others as they arrive.
-   The whole crew has **12 seconds**.
+1. **Your number.** As the crew nears a pipe (about 90 m), **each player gets a big number from 1 to 9** on their
+   own screen ("YOUR NUMBER 7"). Every player gets a different number. It stays up for **8 seconds** and **blinks**
+   as it is about to disappear. Nothing to remember.
+2. **Press it.** Press that number (or tap the big number on a phone). That's you **helping fix the pipe**: the
+   game keeps it for whoever fixes the pipe, and your card turns into a calm "✔ Your 7 is in". A wrong number does
+   nothing; try again. Don't press, and you simply don't take part in this pipe.
+3. **Fix.** A player beside the pipe presses **Action**. Their boat stops and the **lock** opens. It shows the
+   fixer's own number and **every number already sent**, under each player's name. Anyone who hasn't pressed yet gets
+   their number back on screen, blinking, with "Your crew needs it!" — until they press or the lock closes.
+4. **Smallest first.** The fixer types the numbers **in increasing order** (keys 1–9, or tap them): for 6, 2, 9 that
+   is 2, 6, 9. The lock needs **at least one crewmate's number** besides the fixer's own; the numbers lock in when
+   the fixer types the first one (numbers sent later don't count this time). A number out of order is ignored: no
+   penalty, just type the right one. The fixer has **12 seconds**.
 5. **Fixed!** The boat stays put 1 more second while the crew member hammers the pipe shut. The smog cloud over that pipe
    is gone, the river heals by 10, and your crew's **multiplier** goes up for the rest of the run (×1.5, ×2… next to
    your score).
-6. **Failed** (a wrong key, or someone didn't answer in time): **the river takes a hit**, River Health −5, the pipe keeps
-   pouring, and everyone is shown **new keys** for the next try.
+6. **Out of time:** **the river takes a hit**, River Health −5, the pipe keeps pouring, and everyone gets **new
+   numbers** for the next try.
 
 **Skip.** A fixer can leave the lock at any time by pressing **▲ (hop)**, with no penalty. This is how a crew that
 all stopped can sail on and leave one fixer behind.
 
-**More than one fixer.** Several players can open a lock at the same pipe. Every answer goes into all of them, and
-the **first** fixer to enter the full set correctly fixes the pipe. Stop together for a lightning fix, or leave one
-fixer behind while the rest keep collecting: your crew's choice.
+**More than one fixer.** Several players can open a lock at the same pipe. Every sent number shows on all of them,
+and the **first** fixer to finish fixes the pipe.
 
 **Catching up.** A boat more than about 25 m behind the front boat sails 15 % faster until it rejoins, so stopping
 to fix a pipe never strands anyone.
 
-**One pipe at a time.** Keys belong to the pipe you're approaching. The next pipe's keys come once that pipe is
+**One pipe at a time.** Numbers belong to the pipe you're approaching. The next pipe's numbers come once that pipe is
 fixed or everyone has passed it.
 
 **Worked example (Ben, You and Asha).**
 
 | Step | You (the fixer) | Ben and Asha |
 |---|---|---|
-| 1 | See your key: ⭐ Star (6). | Ben sees 🍃 Leaf (1). Asha sees 🐟 Fish (3). |
-| 2 | Press **Action** beside the pipe. The lock shows: Ben · You · Asha. | Get the call: "You is fixing a pipe — send your key!" |
-| 3 | Watch the slots fill: Ben 🍃 1 … Asha 🐟 3. | Ben presses **1**, Asha presses **3**. |
-| 4 | Type left to right: **1** (Ben), **6** (yours, from memory), **3** (Asha). | Keep sailing. |
+| 1 | Your number: **6**. | Ben gets **1**. Asha gets **3**. |
+| 2 | Press **6** straight away (or wait: the lock shows it anyway). | Ben presses **1**. Asha is busy dodging a log and doesn't press yet. |
+| 3 | Press **Action** beside the pipe. The lock shows: Ben **1** · You **6** · Asha … | Asha's **3** comes back, blinking: "Your crew needs it!" She presses **3**. |
+| 4 | The lock now shows 1 · 6 · 3. Type smallest first: **1, 3, 6**. | Keep sailing. |
 | 5 | Fixed: River +10, every plastic now ×1.5. | Same score boost for everyone. |
 
-**Disconnected players.** Their slot fills in by itself, so a lock is never impossible.
+**Away players** (paused, disconnected or quit): their number sends itself, so a lock is never impossible.
 
-### Playing alone: a memory puzzle
+### Playing alone: three numbers, smallest first
 
-With no crewmates, the lock is a **3-symbol code** shown **in the real order for 2 seconds**, then hidden as
-**? ? ?**. Enter it from memory within 8 seconds. ▲ skips here too. A wrong code makes the river take a hit (River Health −5).
-
-**Signals.** The six symbols are 1 Leaf, 2 Drop, 3 Fish, 4 Bridge, 5 Arrow and 6 Star. They are your keys, and
-outside a lock you can still send them as signals that pop up over your boat.
+With no crewmates, the lock shows **three numbers** (for example 7 · 2 · 5). Type them **smallest first** (2, 5, 7)
+within 8 seconds; they stay on screen the whole time. ▲ skips here too. Running out of time makes the river take a
+hit (River Health −5).
 
 ## 6. Score and River Health
 
@@ -295,7 +297,7 @@ solo), or with your crew from the room (the host presses ∞ Endless):
   uses one, and the run ends when they're gone or the river chokes.
 - The boats speed up by 2 % every 15 seconds.
 - The rules still change exactly twice, and you choose: a Twist at 1:00 and a Finale at 2:30.
-- Pipes use the crew key lock (or the memory code alone).
+- Pipes use the number lock (crew or alone).
 - **Score = metres travelled + 5 per plastic collected.** Each river keeps your best Endless score.
 - It pays Seeds like a practice run and counts towards daily missions. It earns no stars.
 
@@ -309,7 +311,7 @@ moving forward on its own until you return.
 | Possible loophole | How the rules stop it |
 |---|---|
 | The crew ignores the river and only farms plastic | A choked river halves the score. |
-| Racing ahead and ignoring a teammate's call for keys | The lock fails and the river takes a hit: the whole crew loses River Health. |
+| Nobody pressing their number | The lock can't open without a crewmate's number; if it runs out of time the river takes a hit for the whole crew. Your number blinks until you press it. |
 | One player fixes every pipe | The marker suggests whoever has fixed the fewest, and the results show each player's pipes. |
 | Stopping to fix leaves you stranded | The catch-up current brings you back to the crew. |
 | A rule change is random or forced on players | Both changes are chosen by players. Only a tie, or no choice, spins. |

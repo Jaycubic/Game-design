@@ -22,7 +22,7 @@ export interface EngineInfo {
 export async function createEngine(canvas: HTMLCanvasElement, preferWebGPU = true, antialias = true): Promise<EngineInfo> {
   const nav = navigator as Navigator & { gpu?: unknown };
   let reason = "";
-  if (!preferWebGPU) reason = "WebGPU disabled in settings";
+  if (!preferWebGPU) reason = "add ?webgpu to try WebGPU";
   else if (!window.isSecureContext) reason = "WebGPU needs HTTPS (open the game via https://)";
   else if (!nav.gpu) reason = "this browser does not expose WebGPU";
   else {

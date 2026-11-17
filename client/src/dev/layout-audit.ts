@@ -1,11 +1,11 @@
 // Dev builds only: layout checks for play-tests. `__audit()` lists HUD pieces that
 // overlap each other or leave the screen; `__stress()` shows every HUD piece at once
-// (pipe card, two banners, your key, a 4-player lock card) so the worst case can be checked.
+// (pipe card, two banners, your number, a 4-player lock card) so the worst case can be checked.
 
 const PIECES = [
   ".rh-pause", ".rh-crew", ".rh-time", ".rh-badges", ".rh-health", ".rh-pipe", ".rh-banner", ".coach",
-  ".rh-key", ".rh-code > *", ".rh-boost", ".rh-keys", ".rh-signals",
-  ".tc-left", ".tc-right", ".tc-glyphs", ".tc-swipe-hint", ".rotate-hint",
+  ".rh-key", ".rh-code > *", ".rh-boost", ".rh-keys",
+  ".tc-left", ".tc-right", ".tc-swipe-hint",
 ];
 
 function shown(el: Element): boolean {
@@ -63,9 +63,9 @@ export function stress(hud: { banner(t: string, k?: string): void }) {
       '<div class="rh-pipe-head"><span class="rh-pipe-ico">🔧</span><b>Sewage pipe</b><span class="rh-pipe-side">RIGHT bank ▶</span><span class="rh-pipe-dist">54 m</span></div><div class="rh-pipe-step">Move right ▶ to the edge lane</div>';
   pipe.classList.add("on");
   const key = document.querySelector(".rh-key")!;
-  key.innerHTML = '<div class="rh-key-title">Your key for the next pipe</div><div class="rh-key-glyph">🐟<small>Fish</small></div><div class="rh-key-hint">Remember it!</div>';
-  key.classList.add("on");
-  const slot = (c: string, n: string, k: string) => `<div class="rh-slot" style="--c:${c}"><span class="rh-slot-name">${n}</span><span class="rh-slot-key">${k}</span></div>`;
+  key.innerHTML = '<span class="rh-key-title">Your crew needs it!</span><span class="rh-key-digit">7</span><span class="rh-key-hint">Tap to send</span>';
+  key.className = "rh-key on blink call";
+  const tile = (c: string, n: string, k: string) => `<div class="rh-tile" style="--c:${c}"><b>${k}</b><small class="rh-tile-name">${n}</small></div>`;
   document.querySelector(".rh-code")!.innerHTML =
-    `<div class="rh-code-card lock call"><div class="rh-code-title">🔧 Asha is fixing a pipe — send your key! Fix the pipe — enter every key</div><div class="rh-slots">${slot("#f2c14e", "You", "🍃")}${slot("#4fb3ff", "Asha", "?")}${slot("#ff7a59", "Ravi", "?")}${slot("#9b6bff", "Mei", "?")}</div><div class="rh-code-hint">Time left 9 s</div></div>`;
+    `<div class="rh-code-card lock sent"><div class="rh-code-title">✔ Your number is in — Asha is entering the lock, smallest first</div><div class="rh-tiles">${tile("#f2c14e", "You", "3")}${tile("#4fb3ff", "Asha", "8")}${tile("#ff7a59", "Ravi", "…")}${tile("#9b6bff", "Mei", "5")}</div><div class="rh-code-hint">Keep sailing!</div><div class="rh-code-time">9 s</div></div>`;
 }

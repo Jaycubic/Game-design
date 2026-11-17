@@ -1,12 +1,13 @@
 // Dev builds only: a simple autopilot for multiplayer play-tests. It steers to the
-// next open pipe, opens the lock, types the keys (its own from memory), answers
-// teammates' calls with its key, votes a set option, and samples the layout audit
+// next open pipe, opens the lock, types the sent numbers smallest first, sends its own
+// number when dealt one, votes a set option, and samples the layout audit
 // every second. Start it with `__autopilot(vote)`; read `__report()`.
 import { audit } from "./layout-audit";
 
 interface Boat { seat: number; lane: number; z: number; plugging?: boolean }
 interface Obj { kind: string; lane: number; z: number; plugged: boolean; alive: boolean }
-interface Plug { pipe: number; team?: boolean; slots?: [number, boolean, number | null][]; typed?: number }
+interface Tile { seat?: number; digit?: number; ready: boolean; used?: boolean }
+interface Plug { pipe: number; team: boolean; tiles: Tile[]; locked?: boolean }
 interface Snap {
   t: number;
   phase: { phase: string; change?: string };
@@ -15,6 +16,7 @@ interface Snap {
   lanes: number[];
   plugs: [number, Plug][];
   my_key?: number | null;
+  key_sent?: boolean;
   votes: [number, number][];
   twist: string | null;
   finale: string | null;
@@ -44,7 +46,7 @@ export function autopilot(getRun: () => unknown, vote: number) {
       const a = audit();
       for (const o of [...a.overlaps, ...a.offscreen]) if (!overlaps.has(o)) { overlaps.add(o); say(`LAYOUT ${a.size}: ${o}`); }
     }
-    if (s.my_key !== null && s.my_key !== undefined && s.my_key !== key) { key = s.my_key; say(`my key ${key}`); }
+    key = s.my_key ?? null;
     const me = s.boats.find((b) => b.seat === run.mySeat);
     if (!me) return;
     // Votes.
@@ -55,20 +57,16 @@ export function autopilot(getRun: () => unknown, vote: number) {
     }
     if (s.phase.phase !== "running") return;
     if (now - lastSent < 150) return;
-    // Answer a teammate's lock.
-    for (const [fixer, pv] of s.plugs) {
-      if (fixer === run.mySeat || !pv.team) continue;
-      const mine = pv.slots?.find(([x]) => x === run.mySeat);
-      if (mine && !mine[1] && key !== null) { run.send.input({ glyph: key }); lastSent = now; say(`sent key ${key} to seat ${fixer}`); return; }
+    // Send my number (once) while it is shown.
+    if (key !== null && !s.key_sent && !s.plugs.some(([x]) => x === run.mySeat)) {
+      run.send.input({ glyph: key }); lastSent = now; say(`sent number ${key}`); return;
     }
-    // My own lock: type the slots left to right.
+    // My own lock: tap the ready numbers smallest first.
     const own = s.plugs.find(([x]) => x === run.mySeat)?.[1];
-    if (own?.team && own.slots) {
-      const i = own.typed ?? 0;
-      const slot = own.slots[i];
-      if (!slot) return;
-      const k = slot[0] === run.mySeat ? key : slot[2];
-      if (k !== null && k !== undefined) { run.send.input({ glyph: k }); lastSent = now; say(`typed slot ${i}: ${k}`); }
+    if (own) {
+      const ready = own.tiles.filter((t) => t.digit !== undefined && !t.used).map((t) => t.digit!).sort((a, b) => a - b);
+      const others = own.tiles.filter((t) => t.ready && t.seat !== run.mySeat).length;
+      if (ready.length && (!own.team || own.locked || others > 0)) { run.send.input({ glyph: ready[0] }); lastSent = now; say(`typed ${ready[0]}`); }
       return;
     }
     // Steer to the next open pipe and plug it.

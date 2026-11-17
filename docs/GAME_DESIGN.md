@@ -23,9 +23,9 @@ places; the real-world case is shown in the presentation.
 | Environmental awareness, addressed indirectly | River Health is the crew's shared resource, with a grumpy smog cloud over every open pipe. Missed plastic and open pipes damage it; a choked river halves the score; a revived river is a win. Players learn the lesson by losing points, not by reading. |
 | Players change the rules dynamically, exactly twice | Every run has a **Twist** vote by all players at about 35 % of the run, and a **Finale** vote by all players at about 78 %. Both are player-chosen; a spin settles only ties and missing choices. The engine enforces exactly two changes in every mode (Endless too, at 60 s and 150 s), and tests prove it. |
 | Cooperation | Every player in the room is one crew against the pollution, the pollution: one score, one River Health bar, one result. |
-| Communication | Crew key locks: each player is shown their own secret key before each pipe, and the lock needs everyone's key, so teammates must answer a fixer's call wherever they are. |
+| Communication | Crew number locks: each player gets their own number 1–9 before each pipe and chooses to send it; the fixer sees the sent numbers and calls for more, so the crew talks ("press your number!"). |
 | Negotiation | Both rule changes are crew votes argued out loud (Second Wind for points or Clean Sweep for the river?). Crews also plan who stays behind to fix which pipe. Bluffing was optional in the brief and is not used. |
-| Puzzles | The key lock: remember your key, notice the call, answer in time, and the fixer fills the slots in order. Solo players get a memory version: the code shows in order for 2 s, then hides as ? ? ?. |
+| Puzzles | The number lock: the fixer puts the crew's numbers in increasing order under time pressure while the boat waits. Solo: three numbers, smallest first. |
 | Simple rules | Three controls, one score formula, one shared bar. A 60-second scripted tutorial spotlights each control in place and teaches it by doing. |
 | Limited number of players | 1–4 per room, enforced by the server and the database. |
 | Reasons to come back (beyond the brief) | Three rivers with new mechanics, three stars each, best scores, daily missions, ranks, Endless for 1–4 players, and difficulty that adapts to each room (§5). |
@@ -139,6 +139,19 @@ fixer's lock has one slot per player, teammates answer from anywhere, several fi
 correct wins), ▲ leaves a lock, a failed lock makes the river take a hit, a catch-up current returns stranded boats, and the
 pipe marker suggests whoever has fixed the fewest pipes. Details: `docs/superpowers/specs/2026-11-16-one-crew-design.md`.
 
+### 5.0.4 Number locks (round 4, after the demo playtest)
+
+First-time players struggled with the symbol keys: remembering a symbol while racing, and typing slots in seat order,
+was too much at once, and the symbol bar cluttered the bottom of the screen. Round 4 keeps the cooperation and drops
+the memory load:
+- Keys are plain **numbers 1–9**, shown **big** for 8 s and **blinking** as they are about to hide. No symbol bar.
+- Pressing your number **sends it** straight away (a wrong press is ignored); the server keeps it for the pipe. Not
+  pressing means not taking part. Your number comes back, blinking, whenever a crewmate's lock is waiting for it.
+- The fixer's lock shows the numbers already sent; they type them, with their own, **in increasing order**. At least one
+  crewmate's number is needed; the set locks in on the first number typed. Out-of-order numbers are ignored; only
+  running out of time costs River Health.
+- Solo: three numbers on screen, smallest first (no memory phase).
+
 ### 5.1 River Director (adaptive difficulty, internal)
 
 The River Director keeps each room in "flow": never trivially easy, never hopeless. It is a design-side system and
@@ -201,7 +214,7 @@ competitive play. It is disclosed here, in the design documentation.
 - **Sound:** CC0 effects for every action, a river ambience and separate hub and race music, each with its own
   volume (see `THIRD_PARTY_NOTICES.md`).
 - **Phones:** on-screen thumb buttons, swipes and a landscape-first layout.
-- **Tutorial:** one step at a time (steer, boost meter, River Health, hop, cut weed, plug the pipe, signals). Each
+- **Tutorial:** one step at a time (steer, boost meter, River Health, hop, cut weed, plug the pipe). Each
   step spotlights its control or meter: the screen dims briefly, a ring and a tapping hand point at it, and a bubble
   explains it. It can be skipped at any point.
 

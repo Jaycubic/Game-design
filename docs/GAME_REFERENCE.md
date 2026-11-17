@@ -29,7 +29,7 @@ All numbers below come from the code (`crates/river-core/src/lib.rs`, `crates/ga
 7. [The river](#7-the-river)
 8. [Boats: movement, boost, capsizing](#8-boats-movement-boost-capsizing)
 9. [Everything on the river](#9-everything-on-the-river)
-10. [Sewage pipes and the key lock](#10-sewage-pipes-and-the-key-lock)
+10. [Sewage pipes and the number lock](#10-sewage-pipes-and-the-number-lock)
 11. [River Health](#11-river-health)
 12. [Score](#12-score)
 13. [The two rule changes](#13-the-two-rule-changes)
@@ -63,7 +63,7 @@ All numbers below come from the code (`crates/river-core/src/lib.rs`, `crates/ga
 - Everyone in a room is **one crew**. Together you race small cleanup boats down a polluted river for **3 minutes**.
 - Boats move forward on their own. You only **steer**, **hop** and press one **action** button.
 - You **collect plastic**, **cut weed**, **hop logs** and, most importantly, **plug sewage pipes**, which only works
-  if the whole crew hands over their secret keys.
+  with your crew's help: each player presses their own number, and the fixer enters them smallest first.
 - One shared **River Health** bar decides how the run ends: keep it at 60 or more and the river is revived;
   let it reach 0 and the river chokes.
 - **Exactly twice** per run, the players **vote to change the rules**.
@@ -85,7 +85,7 @@ commons* behind it: each person or group gains a little by ignoring a shared riv
 2. **Stop pollution at its source.** Collecting plastic helps a little, but open sewage pipes keep draining the river
    every second. Plugging a pipe is the single biggest thing you can do, and it makes all other cleaning count for
    more (the score multiplier).
-3. **Fixing the source is never a one-person job.** A pipe's lock needs a key from every crewmate.
+3. **Fixing the source is never a one-person job.** A pipe's lock needs at least one crewmate's number on top of the fixer's own.
 
 **How it is told:** indirectly, through rules and consequences rather than text. The water turns from blue-green to
 murky brown as River Health falls; missed plastic hurts the river; open pipes drain it; a grumpy brown smog cloud
@@ -105,9 +105,9 @@ debris waves, monsoon and dry-season effects on pollution, abandoned "ghost" fis
 | Environmental awareness, addressed indirectly | The whole score and outcome depend on a shared River Health bar; pollution is felt through lost points, murky water and choked rivers, not lectures. |
 | Players change the rules dynamically, **exactly twice** | Every run has a **Twist** vote (~1:03) and a **Finale** vote (~2:20), both chosen by the players. The engine enforces exactly two changes in every mode (Endless too, at 1:00 and 2:30), and automated tests prove it. |
 | Cooperation | One crew, one score, one River Health bar. |
-| Communication | Pipe key locks: each player holds one secret key per pipe; the fixer needs everyone's key. |
+| Communication | Pipe number locks: each player gets one number per pipe and chooses to send it; the fixer calls for numbers ("press your number!") and needs at least one. |
 | Negotiation | Both rule changes are crew votes argued out loud; crews also plan who fixes which pipe. (Bluffing was optional in the brief and is not used.) |
-| Puzzles | Key lock: remember your key, notice a teammate's call, answer in time, fill the slots in order. Alone: a memory code. |
+| Puzzles | Number lock: put the crew's numbers in increasing order under time pressure, while still steering. Alone: three numbers, smallest first. |
 | Simple rules | Three controls, one score formula, one shared bar, a 60-second tutorial. |
 | Limited number of players | 1–4 per room, enforced by the server and the database. |
 | No violence | Nobody attacks anybody. Running into a boat ahead only slows you for a moment. |
@@ -150,7 +150,7 @@ The crew shares one score, one River Health bar and one result. There are no riv
 | Time | What happens |
 |---|---|
 | 0:00 | **3-second countdown**, then the boats start moving on their own. |
-| 0:00–1:03 | Race: collect plastic, cut weed, hop logs, fix pipes with key locks. A **debris wave** about every 30 s. |
+| 0:00–1:03 | Race: collect plastic, cut weed, hop logs, fix pipes with number locks. A **debris wave** about every 30 s. |
 | ~0:58 | **5-second warning**: "The river is about to change". Racing continues. |
 | ~1:03 | **Rule change 1, Twist.** The run pauses; everyone votes (15 s). A card reveals the result (3 s). |
 | ~2:15 | 5-second warning: "Final twist incoming". |
@@ -168,13 +168,13 @@ The run clock only advances while the river is moving (pauses for votes and reve
 | Steer one lane left / right | ◀ ▶ or A / D | D-pad or left stick | ◀ ▶ buttons, or swipe left / right |
 | Hop | ▲, W or Space | A | ▲ button, or swipe up |
 | Action: cut weed or a net, open a pipe lock | ▼, S or E | B or X | ✂ button, or swipe down |
-| Send a symbol / your key (1–6) | keys 1–6, or the signal bar | hold RT + A/B/X/Y/LB/RB | the six symbol buttons |
+| Send your pipe number / type a lock (1–9) | keys 1–9 | hold RT + A/B/X/Y/LB/RB (the 1st–6th number on screen) | tap your big number, or the lock's numbers |
 | Vote in a rule change | keys 1–3 | A / B / X | tap a card |
 | Leave a pipe lock | ▲ (hop) | A | ▲ |
 | Pause / quit | **Esc** or **P** (opens the menu) | — | **⏸** top-left corner |
 
 - Arrow keys always work; the letter keys can be rebound in Settings.
-- The six symbols: **1 Leaf 🍃, 2 Drop 💧, 3 Fish 🐟, 4 Bridge 🌉, 5 Arrow ➜, 6 Star ⭐**.
+- Pipe numbers are plain digits **1–9**: no symbols to learn.
 
 ---
 
@@ -229,14 +229,14 @@ rock in your lane for the last 1.5 s before you reach it.
 | **Weed mat** | Slows you (×0.55 for 1 s). | Action within ~5 m ahead cuts it: **+5 crew score** ("bank greened"), River Health +1.5. |
 | **Log** | Capsizes you. | Hop. |
 | **Debris wave** (~every 30 s) | Capsizes you, except in the gap lane(s). | Steer to a gap, or hop. |
-| **Sewage pipe** (on a bank) | Drains River Health **0.12 per second** from when the front boat is within 30 m, until plugged. A smog cloud sulks above it. | Key lock (section 10). |
+| **Sewage pipe** (on a bank) | Drains River Health **0.12 per second** from when the front boat is within 30 m, until plugged. A smog cloud sulks above it. | Number lock (section 10). |
 | **Ghost net** (Mangrove) | Spans two lanes; slows like weed. | Two Action presses (by anyone) free it: **4 plastic** released, River Health +3. |
 | **Current** (Gorge) | Pushes you one lane sideways (once per current). | Hop to ride over it. |
 | **Rock** (Gorge) | Capsizes you even when hopping. | Steer round it. |
 
 ---
 
-## 10. Sewage pipes and the key lock
+## 10. Sewage pipes and the number lock
 
 ### Finding a pipe
 
@@ -247,29 +247,35 @@ rock in your lane for the last 1.5 s before you reach it.
   "Move ◀ left to the edge lane" → "Stay in this lane — press ▼ when you reach it" → "Press ▼ NOW to plug it!".
 - You plug from the **outermost open lane** on the pipe's side, within about 7 m before to 3 m after it.
 
-### Crew key lock (2–4 players)
+### Crew number lock (2–4 players)
 
-1. **Keys are dealt** when the front boat is **70 m** from the next open pipe. Each player gets a **different**
-   symbol and sees **only their own** for **3 s** ("Your key for the next pipe"). Only one pipe's keys are live at a
-   time; the next pipe's keys come once the current pipe is fixed or everyone has passed it.
-2. **A fixer presses Action** beside the pipe. Their boat stops; a **lock** opens with **one slot per player in seat
-   order**, each in that player's colour.
-3. **Teammates answer**: they get "… is fixing a pipe — send your key!" (and a buzz on phones) and press their key.
-   It lands in their slot from anywhere on the river. A later press replaces an earlier one.
-4. **The fixer types the slots left to right** (their own key from memory) within **12 s**.
+1. **Numbers are dealt** when the front boat is **90 m** from the next open pipe. Each player gets a **different**
+   number **1–9** and sees **only their own**, big ("YOUR NUMBER 7"), for **8 s**; it **blinks** in its last 3 s.
+   Only one pipe's numbers are live at a time; the next pipe's come once the current pipe is fixed or everyone has
+   passed it.
+2. **Players press their number** (keys 1–9, tap the big number, or RT + a face button). The server keeps it for the
+   pipe; the card becomes a calm "✔ Your 7 is in" and a ✔ pops over that boat. A wrong number is ignored (the card
+   shakes). Not pressing = not taking part in this pipe.
+3. **A fixer presses Action** beside the pipe. Their boat stops; the **lock** shows a tile per crewmate in seat order:
+   the fixer's own number, every number sent so far, and "…" for players who haven't pressed. Those players get their
+   number back on screen, blinking, with "Your crew needs it!" (and a buzz on phones) while the lock is open.
+4. **The fixer types the numbers smallest first** (increasing order) within **12 s**. It needs **at least one
+   crewmate's number** besides their own. The first number typed **locks in** the set (later presses don't join this
+   attempt). A number out of order is ignored, with no penalty.
 5. **Success:** the boat stays put **1 s** while the crew member hammers (sparks, clanks); the pipe is plugged,
    **River Health +10**, crew pipes +1 (multiplier up), the smog cloud disappears.
-6. **Failure** (a wrong key or time out): **River Health −5**, the pipe keeps pouring, every open lock on that pipe
-   closes, and **new keys** are dealt.
+6. **Time out:** **River Health −5**, the pipe keeps pouring, every open lock on that pipe closes, and **new numbers**
+   are dealt.
 7. **▲ (hop) leaves a lock** at any time, with no penalty.
-8. **Several fixers** may open locks at the same pipe. Answers go into all of them (a fixer's own key, typed into
-   its slot, also counts as their answer for the others). The **first** correct entry wins; the other locks close.
-9. **Disconnected players'** slots fill in automatically.
+8. **Several fixers** may open locks at the same pipe. Sent numbers show on all of them; the **first** to finish wins
+   and the other locks close.
+9. **Away players'** (paused, disconnected, quit) numbers send themselves.
 
-### Solo memory code (1 player, and the tutorial)
+### Solo number lock (1 player, and the tutorial)
 
-A random 3-symbol code shows **in the real order for 2 s**, then hides as **? ? ?**; enter it within **8 s**. ▲
-leaves. A wrong code costs River Health −5.
+Three different numbers 1–9 show in a random order (e.g. 7 · 2 · 5) and **stay on screen**; type them **smallest
+first** (2, 5, 7) within **8 s**. ▲ leaves. A number out of order is ignored; running out of time costs River
+Health −5.
 
 ### Why it matters
 
@@ -362,7 +368,7 @@ The **results card** shows:
 - the player's **rank** and progress to the next;
 - Seeds earned (as a banner below the card).
 
-During the results, all racing UI (boost bar, quit button, signals, pipe card…) is hidden.
+During the results, all racing UI (boost bar, quit button, your number, pipe card…) is hidden.
 
 ### Stars (per player, per river, kept forever)
 
@@ -382,7 +388,7 @@ Stars help unlock rivers. Endless and the tutorial earn no stars.
   capsize uses one; the run ends at 0 lives or if the river chokes.
 - Boats speed up **2 % every 15 s** (×1.02 per step).
 - Still **exactly two** player-chosen rule changes: Twist at **1:00**, Finale at **2:30**.
-- Pipes use the key lock (crew) or the memory code (alone).
+- Pipes use the number lock (crew or alone).
 - **Score = metres travelled + 5 × plastic collected.** The best Endless score is kept per player per river.
 - Pays half Seeds; counts for missions; no stars; does not change the skill rating.
 
@@ -399,8 +405,7 @@ point at it, a bubble explains it):
 3. **River Health** (the bar): 4.5 s.
 4. **Hop** (▲): past the first log row.
 5. **Cut weed** (✂): a mat cut (or both passed).
-6. **Plug the pipe** (✂, then the memory code): plugged or failed (or both pipes passed).
-7. **Signals** (the six symbols): one sent (or 12 s).
+6. **Plug the pipe** (✂, then three numbers smallest first): plugged or failed (or both pipes passed).
 
 ---
 
@@ -512,14 +517,14 @@ slot, and a slot stacks its pieces, so two pieces never land on top of each othe
 |---|---|
 | Top | ⏸ Pause · crew score · timer (or metres in Endless), rule badges, lives · **River health** |
 | Notices (under the top bar) | Tutorial coach card · pipe card (bank, distance, next step) · banners (at most 2; 1 at a lock or on short screens) |
-| Lower | "Your key for the next pipe" card, while shown · the lock card (fixer) or "send your key!" call (teammates) |
-| Bottom | Boost meter, with key hints (PC, left) and the signal bar (PC, right) beside it |
-| Over the world | Name tags, pipe marker, signal bubbles, "+1 ♻" pop-ups (lowest layer) |
+| Lower | Your big number (blinking near the end, or while a crewmate's lock waits for it; a small "✔ Your 7 is in" once sent) · the lock card |
+| Bottom | Boost meter, with key hints (PC, left) |
+| Over the world | Name tags, pipe marker, ✔ bubbles (a number sent), "+1 ♻" pop-ups (lowest layer) |
 | Full screen | Countdown, votes, reveals, results (above the HUD; the HUD steps back while they show) |
 
-When pieces compete for room: at a lock the lock card wins and the pipe card hides (you're there); a fixer's key card
-hides too (their slot is typed from memory). Thumb buttons own the bottom corners on touch screens; on phones in
-portrait the six signals form one row above them, and the HUD reserves that space. Layers, low to high: world markers
+When pieces compete for room: at a lock the lock card wins and the pipe card hides (you're there); a fixer's number card
+hides too (their number is on the lock), and while your big number is calling, a crewmate's lock card steps aside.
+Thumb buttons own the bottom corners on touch screens, and the HUD reserves that space. Layers, low to high: world markers
 < HUD < thumb buttons < full-screen moments < pause menu < tutorial spotlight. Dev builds have `__audit()` and
 `__stress()` in the browser console to list any overlap.
 
@@ -532,7 +537,7 @@ portrait the six signals form one row above them, and the HUD reserves that spac
 - **3D:** Babylon.js 9 with **WebGPU** (WebGL2 fallback). Boats and crew are Kenney CC0 models; the river, banks,
   houses, plants, plastic, weed, logs, nets, currents, pipes, plumes and the smog cloud are built in code.
 - **Per-river looks** (section 14); water colour follows River Health.
-- **Sound:** CC0 effects for every action (pickup, hop, cut, capsize, bump, boost, plug, wrong code, signals,
+- **Sound:** CC0 effects for every action (pickup, hop, cut, capsize, bump, boost, plug, wrong number, number sent,
   countdown, go, rule change, win, lose), a looping river ambience, and separate hub and race music.
 - **Game feel:** capsize freeze-frame, trauma-based shake, red edge flash, boat flip, warning shadows, glowing wave
   gaps, sparks and clanks while fixing, pop-ups, banners, spotlight tutorial.
@@ -558,9 +563,9 @@ Settings are saved per browser.
 
 - Full-screen layout using `100dvh` and safe-area insets; separate layouts for landscape phones and portrait
   (portrait suggests turning the phone sideways).
-- Thumb buttons (◀ ▶ bottom left, ✂ ▲ bottom right), six symbol buttons with numbers and names, swipe gestures on
+- Thumb buttons (◀ ▶ bottom left, ✂ ▲ bottom right), the big number and lock numbers are tappable, swipe gestures on
   the river (36 px threshold), haptic buzzes.
-- The ⏸ Pause button sits in the top-left corner on every device (labelled "Pause" on wide screens); the top bar moves right to make room. Solo runs really pause on the server (`run.pause`, auto-resume after 10 minutes). In crew runs the paused player's boat parks (stops, can't be hit, doesn't hold the crew back, keys fill in by themselves) while the others keep racing; on Resume it rejoins just behind the crew. Players who quit or disconnect are parked the same way, and votes don't wait for them.
+- The ⏸ Pause button sits in the top-left corner on every device (labelled "Pause" on wide screens); the top bar moves right to make room. Solo runs really pause on the server (`run.pause`, auto-resume after 10 minutes). In crew runs the paused player's boat parks (stops, can't be hit, doesn't hold the crew back, number sends itself) while the others keep racing; on Resume it rejoins just behind the crew. Players who quit or disconnect are parked the same way, and votes don't wait for them. Reloading the page or closing the tab leaves the room (like Quit): a refresh lands on the hub, never back in the old run.
 - Touch wording everywhere ("tap ✂", "swipe down") follows the chosen control scheme.
 
 ---
@@ -570,7 +575,7 @@ Settings are saved per browser.
 | Possible loophole | How the rules stop it |
 |---|---|
 | Ignoring the river and only farming plastic | A choked river halves the score. |
-| Racing ahead and ignoring a teammate's key call | The lock fails: River Health −5 for the whole crew. |
+| Nobody pressing their number | The lock can't open without a crewmate's number; a timed-out lock costs River Health −5 for the whole crew. Your number blinks until you press it. |
 | One player fixing every pipe | The marker suggests whoever has fixed the fewest; results show each player's pipes. |
 | Being stranded after fixing | The catch-up current. |
 | Random or forced rule changes | Both are crew votes; ties go to the first vote, and only no votes spin, visibly. |
@@ -580,7 +585,7 @@ Settings are saved per browser.
 | Missing a day | The daily track pauses, never resets. |
 | Grinding missions | Each pays once; three a day. |
 | A bad day ruining a rank | Ranks fall at most one step a day. |
-| Reading another player's key | Keys are sent privately per player; nobody else's key is in your data. |
+| Reading another player's number | Numbers are sent privately per player; only the fixer sees sent numbers. |
 
 ---
 
@@ -595,15 +600,15 @@ Browser (Babylon.js 9, WebGPU → WebGL2)  ── HTTPS + WebSocket ──  Rust
 
 | Part | Technology | Role |
 |---|---|---|
-| `crates/river-core` | Rust, no I/O | The whole run: lanes, objects, rivers, capsizes, key locks, River Health, scoring, stars, rule changes, Endless, tutorial course, in-run difficulty. Fixed **30 Hz** step; seeded and deterministic. |
+| `crates/river-core` | Rust, no I/O | The whole run: lanes, objects, rivers, capsizes, number locks, River Health, scoring, stars, rule changes, Endless, tutorial course, in-run difficulty. Fixed **30 Hz** step; seeded and deterministic. |
 | `crates/game-server` | Rust, Actix-web, SQLx, rustls | HTTP API and WebSocket on one port; Argon2id accounts, revocable JWT sessions, rate limiting; rooms; the run loop (`river.rs`), economy (`meta.rs`), rivers and stars (`rivers.rs`), missions and ranks (`missions.rs`), ratings (`director.rs`); serves the built client; optional TLS. |
 | `client/` | TypeScript, Vite, Babylon.js | Title, hub, lobby, run scene, HUD, tutorial coach, input (keyboard, gamepad, touch), audio, settings. |
 | `database/migrations/` | PostgreSQL | Versioned schema, applied at server start. |
 | `crates/game-core` | Rust | The earlier board-game prototype; still compiled and tested, not used by the client. |
 
-**Server-authoritative:** clients only send inputs (steer, hop, action, symbol, vote, start, quit). The server steps
+**Server-authoritative:** clients only send inputs (steer, hop, action, number, vote, start, pause, quit). The server steps
 each run at 30 Hz and sends every player a snapshot **15 times a second**, filtered per viewer (each player's own
-key, and only the lock information they're allowed to see), plus events every tick.
+number, and only the lock information they're allowed to see), plus events every tick.
 
 Size: about 15,700 lines of Rust and TypeScript (excluding styles and tests data).
 
@@ -642,7 +647,7 @@ A run itself lives in server memory for its 3 minutes; only results, rewards and
 
 | Suite | Count | Covers |
 |---|---|---|
-| `river-core` unit tests | 45 | Determinism; one crew; lane counts and spawns; every obstacle and river mechanic; capsizes and spill; crew key locks (dealing, privacy, answers, failure, skip, several fixers, away players, one pipe at a time); memory code; fixing stop; catch-up current; River Health; stars; exactly two rule changes (including Endless); vote ties; tutorial; boat stats; difficulty; a full bot-played run |
+| `river-core` unit tests | 52 | Determinism; one crew; lane counts and spawns; every obstacle and river mechanic; capsizes and spill; crew number locks (dealing, privacy, sending, increasing order, waiting for a crewmate, time-out, skip, several fixers, away players, one pipe at a time); solo number lock; fixing stop; catch-up current; River Health; stars; exactly two rule changes (including Endless); vote ties; tutorial; boat stats; difficulty; a full bot-played run |
 | `game-server` tests | 19 | Seeds rules, rating maths, river unlocks and star masks, mission draws and amounts, rank rules, room rules |
 | Client tests | 2 | Input mapping |
 | Live checks | — | Two-client room test; two-bot crew-lock run; browser playthroughs on desktop and phone sizes |

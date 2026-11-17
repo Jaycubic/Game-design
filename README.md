@@ -38,9 +38,9 @@ The game uses no real place names; the real-world link belongs in the presentati
 The two rule changes are **always chosen by players and happen exactly twice per run**. The controls, the scoring
 formula and the win condition never change.
 
-**Teamwork puzzle:** before each pipe, every player is shown their own secret key (one of six symbols). To plug the
-pipe, a fixer opens a lock with one slot per player; teammates answer with their key from wherever they are, and
-the fixer enters them all. Playing alone, it's a memory code instead.
+**Teamwork puzzle:** before each pipe, every player gets a big number (1–9) and presses it to send it. Whoever stops
+at the pipe sees the numbers that were sent and enters them, with their own, smallest first. Playing alone, the lock
+shows three numbers to enter smallest first.
 
 ## 3. Around the run
 
@@ -77,7 +77,7 @@ Browser (Babylon.js 9, WebGPU → WebGL2)  ──HTTP + WebSocket──  Rust se
 ```
 
 The server is authoritative. It steps each run at **30 Hz** and sends every player a snapshot 15 times a second.
-Clients only send inputs (steer, hop, action, signal, vote).
+Clients only send inputs (steer, hop, action, number, vote, pause).
 
 | Folder | Contents |
 |---|---|

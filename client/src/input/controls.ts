@@ -8,7 +8,10 @@ export type Intent =
   | { type: "steer"; dir: -1 | 1 }
   | { type: "hop" }
   | { type: "action" }
+  /** A lock number 1–9 (send yours, or type it into a lock). */
   | { type: "glyph"; g: number }
+  /** Gamepad: the n-th number on screen (your number, or a lock tile). */
+  | { type: "tile"; i: number }
   | { type: "choose"; option: number };
 
 export const BIND_LABELS: Record<Bindable, string> = { left: "Steer left", right: "Steer right", hop: "Hop", action: "Cut / plug" };
@@ -78,13 +81,14 @@ export function intentForKey(key: string, choosing: boolean): Intent | null {
   if (is("right")) return { type: "steer", dir: 1 };
   if (is("hop") || k === " ") return { type: "hop" };
   if (is("action") || k === "e") return { type: "action" };
-  if (k >= "1" && k <= "6") return { type: "glyph", g: Number(k) - 1 };
+  if (k >= "1" && k <= "9") return { type: "glyph", g: Number(k) };
   return null;
 }
 
 /**
  * Standard-mapping gamepad: D-pad or left stick steers, A hops, B/X cut or plug.
- * Hold RT and press A/B/X/Y/LB/RB to send signals 1–6. While voting, A/B/X pick options 1–3.
+ * Hold RT and press A/B/X/Y/LB/RB to pick the 1st–6th number on screen (your number, or a
+ * lock tile). While voting, A/B/X pick options 1–3.
  */
 export class GamepadInput {
   private prev = new Map<number, boolean[]>();
@@ -108,7 +112,7 @@ export class GamepadInput {
       if (choosing) {
         [0, 1, 2].forEach((b, i) => pressed(b) && out.push({ type: "choose", option: i }));
       } else if (held(7)) {
-        [0, 1, 2, 3, 4, 5].forEach((b, i) => pressed(b) && out.push({ type: "glyph", g: i }));
+        [0, 1, 2, 3, 4, 5].forEach((b, i) => pressed(b) && out.push({ type: "tile", i }));
       } else {
         if (pressed(14)) out.push({ type: "steer", dir: -1 });
         if (pressed(15)) out.push({ type: "steer", dir: 1 });

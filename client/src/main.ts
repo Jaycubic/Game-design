@@ -414,14 +414,68 @@ function watchFrameRate() {
   });
 }
 
+// ── refresh ends the session ────────────────────────────────────────────
+// Reloading the page (or closing the tab) leaves the room: a refresh lands on the hub
+// instead of dropping back into the run. The crew carries on without you.
+const LEFT_KEY = "nt.leftRoom";
+window.addEventListener("pagehide", () => {
+  const room = store.state.room?.id;
+  if (!room || !socket) return;
+  socket.send("room.leave");
+  try {
+    sessionStorage.setItem(LEFT_KEY, room);
+  } catch {
+    /* private mode */
+  }
+});
+
+/** After a reload: forget the room in the address bar, and make sure the server knows we left. */
+function endReloadedSession() {
+  const nav = performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined;
+  const params = new URLSearchParams(location.search);
+  const room = params.get("room");
+  if (nav?.type !== "reload" || !room) return;
+  try {
+    history.replaceState(null, "", "/");
+  } catch {
+    /* ignore */
+  }
+  let sent = false;
+  try {
+    sent = sessionStorage.getItem(LEFT_KEY) === room;
+    sessionStorage.removeItem(LEFT_KEY);
+  } catch {
+    /* private mode */
+  }
+  if (sent || !auth.token) return;
+  // The leave may not have gone out as the page unloaded: send it now, quietly.
+  const ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?room=${encodeURIComponent(room)}`);
+  const done = () => ws.close();
+  ws.onopen = () => ws.send(JSON.stringify({ v: 1, type: "auth", payload: { token: auth.token } }));
+  ws.onmessage = (ev) => {
+    try {
+      if (JSON.parse(ev.data).type === "room.joined") {
+        ws.send(JSON.stringify({ v: 1, id: `leave-${Date.now()}`, type: "room.leave", payload: {} }));
+        setTimeout(done, 300);
+      }
+    } catch {
+      done();
+    }
+  };
+  setTimeout(done, 5000);
+}
+
 // ── boot ─────────────────────────────────────────────────────────────────
 
 async function boot() {
+  endReloadedSession();
   // Graphics level: the player's choice, or "auto" from the hardware.
   guess = await detectQuality();
   const level: Level = quality === "auto" ? guess.level : quality;
   perf.low = level === "low";
-  engineInfo = await createEngine(canvas, true, !perf.low);
+  // WebGL2 everywhere by default: it behaves the same in every browser. WebGPU is still
+  // there for testing with ?webgpu (some browsers' WebGPU drops the device mid-game).
+  engineInfo = await createEngine(canvas, new URLSearchParams(location.search).has("webgpu"), !perf.low);
   engineInfo.engine.setHardwareScalingLevel(qualitySettings(level).scaling);
   if (quality === "auto") watchFrameRate();
   window.addEventListener("resize", () => engineInfo.engine.resize());

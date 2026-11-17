@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FINALE_INFO, FINALE_ORDER, GLYPHS, TWIST_INFO, TWIST_ORDER } from "../src/river/types";
+import { DIGITS, FINALE_INFO, FINALE_ORDER, TWIST_INFO, TWIST_ORDER } from "../src/river/types";
 
 // The client's option order must match crates/river-core (TWISTS / FINALES),
 // because votes are sent as option indices.
@@ -11,7 +11,7 @@ describe("river rule-change options", () => {
     for (const f of FINALE_ORDER) expect(FINALE_INFO[f].name).toBeTruthy();
   });
 
-  it("has six signal glyphs (keys 1–6)", () => {
-    expect(GLYPHS).toHaveLength(6);
+  it("uses lock numbers 1–9", () => {
+    expect(DIGITS).toBe(9);
   });
 });

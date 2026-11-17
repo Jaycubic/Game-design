@@ -176,30 +176,61 @@ fn weed_slows_unless_cut_and_cutting_greens_a_bank() {
 }
 
 #[test]
-fn a_crew_lock_needs_every_players_key_and_plugging_heals() {
+fn a_crew_lock_takes_the_sent_numbers_in_increasing_order() {
     let mut r = crew_at_pipe(13, 4);
     let pipe = open_lock(&mut r, 0);
     let keys = keys_for(&r, pipe);
-    // Keys are all different, and each player saw only their own.
+    // Numbers are all different, 1–9, and each player sees only their own.
     let mut uniq = keys.clone();
     uniq.sort();
     uniq.dedup();
     assert_eq!(uniq.len(), 4);
-    assert_eq!(r.snapshot_for(2).my_key, Some(keys[2]));
+    assert!(keys.iter().all(|k| (1..=DIGITS).contains(k)));
+    let s2 = r.snapshot_for(2);
+    assert_eq!(s2.my_key, Some(keys[2]));
+    assert!(s2.key_call, "a crewmate at the lock calls for the number");
+    assert_eq!(r.snapshot_for(0).my_key, None, "the fixer sees theirs on the lock");
     assert_eq!(r.boats[0].speed(), 0.0, "the boat stops while fixing");
-    // The fixer's lock shows nothing until teammates answer.
+    // Before anyone sends, the fixer sees only their own number and can't start.
     let v = r.snapshot_for(0).plugs[0].1.clone();
-    assert!(v.team && v.slots.iter().all(|(_, answered, _)| !answered));
-    for seat in 1..4u8 {
+    assert!(v.team && !v.locked);
+    assert_eq!(v.tiles[0].digit, Some(keys[0]));
+    assert!(v.tiles[1..].iter().all(|t| !t.ready && t.digit.is_none()));
+    let mut i = idle(&r);
+    i[0].1.glyph = Some(keys[0]);
+    r.step(&i);
+    assert!(r.drain_events().contains(&Event::WrongKey { seat: 0 }), "waits for a crewmate");
+    // A wrong press is ignored; the right one is sent once.
+    let mut i = idle(&r);
+    i[1].1.glyph = (1..=DIGITS).find(|d| !keys.contains(d));
+    r.step(&i);
+    assert!(r.drain_events().contains(&Event::WrongKey { seat: 1 }));
+    for seat in 1..3u8 {
         let mut i = idle(&r);
         i[seat as usize].1.glyph = Some(keys[seat as usize]);
         r.step(&i);
     }
+    let s1 = r.snapshot_for(1);
+    assert!(s1.key_sent && s1.my_key == Some(keys[1]) && !s1.key_call, "sent: no more alerts");
     let v = r.snapshot_for(0).plugs[0].1.clone();
-    assert_eq!(v.slots[1], (1, true, Some(keys[1])), "the fixer sees teammates' keys");
-    assert_eq!(r.snapshot_for(2).plugs[0].1.slots[1], (1, true, None), "others only see that seat 1 answered");
+    assert_eq!(v.tiles[1].digit, Some(keys[1]), "the fixer sees sent numbers");
+    assert!(!v.tiles[3].ready, "seat 3 didn't press");
+    assert_eq!(r.snapshot_for(2).plugs[0].1.tiles[1].digit, None, "others only see that seat 1 sent");
+    // The fixer types own + sent numbers, smallest first. Seat 3 is left out.
+    let mut want = vec![keys[0], keys[1], keys[2]];
+    want.sort();
     let before = r.health;
-    type_keys(&mut r, 0, &keys);
+    // Out of order is ignored.
+    let mut i = idle(&r);
+    i[0].1.glyph = Some(want[2]);
+    r.step(&i);
+    assert!(r.boats[0].plug.as_ref().unwrap().entered.is_empty());
+    assert_eq!(r.snapshot_for(0).plugs[0].1.tiles.len(), 3, "locked in without seat 3");
+    for d in &want {
+        let mut i = idle(&r);
+        i[0].1.glyph = Some(*d);
+        r.step(&i);
+    }
     assert!(r.objs.iter().any(|o| o.id == pipe && o.plugged));
     assert_eq!(r.crews[0].pipes, 1);
     assert!(r.health > before + 5.0);
@@ -234,39 +265,43 @@ fn keys_for(r: &Run, pipe: u32) -> Vec<u8> {
     r.deals.iter().find(|d| d.pipe == pipe).expect("deal").keys.iter().map(|(_, k)| *k).collect()
 }
 
-fn type_keys(r: &mut Run, seat: u8, keys: &[u8]) {
-    for g in keys {
+/// Every other player in the crew sends their number.
+fn send_all(r: &mut Run, except: u8, keys: &[u8]) {
+    for (seat, k) in keys.iter().enumerate() {
+        if seat as u8 != except {
+            let mut i = idle(r);
+            i[seat].1.glyph = Some(*k);
+            r.step(&i);
+        }
+    }
+}
+
+/// The fixer types the lock's numbers, smallest first.
+fn type_lock(r: &mut Run, seat: u8) {
+    while let Some(d) = r.next_digit(seat) {
         let mut i = idle(r);
-        i[seat as usize].1.glyph = Some(*g);
+        i[seat as usize].1.glyph = Some(d);
         r.step(&i);
     }
 }
 
 #[test]
-fn a_wrong_lock_costs_river_health_and_deals_new_keys() {
+fn a_lock_that_runs_out_of_time_costs_river_health_and_deals_new_numbers() {
     let mut r = crew_at_pipe(17, 2);
     let pipe = open_lock(&mut r, 0);
-    let keys = keys_for(&r, pipe);
+    let first = keys_for(&r, pipe);
     let before = r.health;
-    type_keys(&mut r, 0, &[keys[0], (keys[1] + 1) % GLYPHS]);
-    assert_eq!(r.crews[0].pipes, 0);
-    assert!(r.health <= before - LOCK_FAIL_COST + 0.5, "the river takes a hit");
-    let ev = r.drain_events();
-    assert!(ev.iter().any(|e| matches!(e, Event::PlugFailed { .. })));
-    assert!(ev.iter().any(|e| matches!(e, Event::KeysDealt { .. })), "new keys for the next try");
-    // Out of time also fails.
-    let pipe = open_lock(&mut r, 0);
     for _ in 0..(TICK_HZ as f32 * LOCK_TIME) as usize + 2 {
         let i = idle(&r);
         r.step(&i);
     }
     assert!(r.boats[0].plug.is_none());
     assert!(!r.objs.iter().find(|o| o.id == pipe).unwrap().plugged);
-    // With no lock open, a key is just a signal.
-    let mut i = idle(&r);
-    i[1].1.glyph = Some(3);
-    r.step(&i);
-    assert!(r.drain_events().contains(&Event::Ping { seat: 1, glyph: 3 }));
+    assert!(r.health <= before - LOCK_FAIL_COST + 0.5, "the river takes a hit");
+    let ev = r.drain_events();
+    assert!(ev.iter().any(|e| matches!(e, Event::PlugFailed { .. })));
+    assert!(ev.iter().any(|e| matches!(e, Event::KeysDealt { .. })), "new numbers for the next try");
+    let _ = first;
 }
 
 #[test]
@@ -288,25 +323,25 @@ fn two_fixers_at_one_pipe_first_correct_entry_wins() {
     let pipe = open_lock(&mut r, 0);
     open_lock(&mut r, 1);
     let keys = keys_for(&r, pipe);
-    // Seat 2 answers once; both fixers get it.
+    // Seat 2 sends once; both fixers get it.
     let mut i = idle(&r);
     i[2].1.glyph = Some(keys[2]);
     r.step(&i);
-    // Fixer 1 types its own key first (fills its slot for fixer 0), fixer 0 is slower.
-    type_keys(&mut r, 1, &keys);
+    // Fixer 1 is quicker.
+    type_lock(&mut r, 1);
     assert!(r.objs.iter().find(|o| o.id == pipe).unwrap().plugged);
     assert_eq!(r.boats[1].plugged, 1, "fixer 1 fixed it");
     assert!(r.boats[0].plug.is_none(), "the other lock closed");
 }
 
 #[test]
-fn away_players_keys_fill_in_by_themselves() {
+fn away_players_numbers_fill_in_by_themselves() {
     let mut r = crew_at_pipe(29, 3);
     r.set_away(vec![2]);
     let pipe = open_lock(&mut r, 0);
     let keys = keys_for(&r, pipe);
     let v = r.snapshot_for(0).plugs[0].1.clone();
-    assert_eq!(v.slots[2], (2, true, Some(keys[2])));
+    assert_eq!(v.tiles[2], TileView { seat: Some(2), digit: Some(keys[2]), ready: true, used: false });
 }
 
 #[test]
@@ -324,6 +359,7 @@ fn keys_are_dealt_as_the_crew_nears_a_pipe_and_shown_briefly() {
     assert_eq!(r.deals[0].pipe, pipe);
     let k1 = r.snapshot_for(1).my_key.expect("own key shown");
     assert_ne!(Some(k1), r.snapshot_for(0).my_key);
+    assert!(r.snapshot_for(1).key_left > KEY_SHOW - 0.5, "shown for a good while");
     for _ in 0..(TICK_HZ as f32 * KEY_SHOW) as usize + 2 {
         let i = idle(&r);
         r.step(&i);
@@ -432,9 +468,16 @@ fn bots_can_finish_a_healthy_run() {
 
 fn bot(r: &Run, b: &Boat) -> Input {
     let mut i = Input::default();
-    if let Some(p) = &b.plug {
-        i.glyph = Some(p.code[p.entered.len()]);
+    if b.plug.is_some() {
+        i.glyph = r.next_digit(b.seat);
         return i;
+    }
+    // Send your number for the pipe ahead.
+    if let Some(d) = r.deals.iter().find(|d| !d.answers.iter().any(|(s, _)| *s == b.seat)) {
+        if let Some((_, k)) = d.keys.iter().find(|(s, _)| *s == b.seat) {
+            i.glyph = Some(*k);
+            return i;
+        }
     }
     let ahead = |kind: Kind, lane: i8, d: f32| {
         r.objs.iter().any(|o| o.alive && o.kind == kind && o.lane == lane && o.z > b.z && o.z < b.z + d)
@@ -886,28 +929,39 @@ fn endless_speeds_up_and_still_has_exactly_two_player_chosen_changes() {
 }
 
 #[test]
-fn a_boat_with_no_crewmate_gets_a_memory_puzzle_not_a_scramble() {
+fn a_boat_with_no_crewmate_types_three_numbers_in_increasing_order() {
     let mut r = Run::new(41, &[0]);
     r.objs.clear();
     r.gen_z = f32::MAX;
     r.phase = Phase::Running;
     r.boats[0].lane = 0;
     let z = r.boats[0].z;
-    r.spawn(Kind::Pipe, -1, z);
+    let pipe = r.spawn(Kind::Pipe, -1, z);
     let mut i = idle(&r);
     i[0].1.action = true;
     r.step(&i);
-    let code = r.boats[0].plug.as_ref().expect("plugging").code.clone();
-    let v = &r.snapshot_for(0).plugs[0].1;
-    assert!(v.memory && v.clear && !v.hidden);
-    assert_eq!(v.code, code, "shown in the real order at first");
-    for _ in 0..(TICK_HZ as f32 * MEMORY_TIME) as usize + 2 {
+    let v = r.snapshot_for(0).plugs[0].1.clone();
+    let shown: Vec<u8> = v.tiles.iter().map(|t| t.digit.unwrap()).collect();
+    assert_eq!(shown.len(), 3);
+    let mut want = shown.clone();
+    want.sort();
+    // The numbers stay on screen the whole time (no memory).
+    for _ in 0..(TICK_HZ as usize * 3) {
         let i = idle(&r);
         r.step(&i);
     }
-    let v = &r.snapshot_for(0).plugs[0].1;
-    assert!(v.memory && v.hidden && !v.clear);
-    assert_eq!(v.code, vec![0; 3], "nothing to read once hidden");
+    assert_eq!(r.snapshot_for(0).plugs[0].1.tiles.len(), 3);
+    // Biggest first is ignored, then smallest first works.
+    let mut i = idle(&r);
+    i[0].1.glyph = Some(want[2]);
+    r.step(&i);
+    assert_eq!(r.snapshot_for(0).plugs[0].1.entered, 0);
+    for d in want {
+        let mut i = idle(&r);
+        i[0].1.glyph = Some(d);
+        r.step(&i);
+    }
+    assert!(r.objs.iter().any(|o| o.id == pipe && o.plugged));
 }
 
 #[test]
@@ -915,10 +969,8 @@ fn plugging_holds_the_boat_for_a_moment_while_the_crew_fixes_the_pipe() {
     let mut r = crew_at_pipe(43, 2);
     let pipe = open_lock(&mut r, 0);
     let keys = keys_for(&r, pipe);
-    let mut i = idle(&r);
-    i[1].1.glyph = Some(keys[1]);
-    r.step(&i);
-    type_keys(&mut r, 0, &keys);
+    send_all(&mut r, 0, &keys);
+    type_lock(&mut r, 0);
     assert!((r.boats[0].fixing - FIX_TIME).abs() < 0.05);
     let z0 = r.boats[0].z;
     for _ in 0..(TICK_HZ as usize / 2) {
@@ -1081,15 +1133,13 @@ fn a_paused_or_departed_player_waits_while_the_crew_races_on() {
 
 #[test]
 fn a_lone_player_left_in_a_crew_run_can_still_fix_pipes() {
-    // Two players at a pipe; seat 1 quits. Seat 0's lock still needs both keys,
-    // and seat 1's key fills in by itself.
+    // Two players at a pipe; seat 1 quits. Seat 1's number fills in by itself.
     let mut r = crew_at_pipe(93, 2);
     r.set_away(vec![1]);
     let i = idle(&r);
     r.step(&i);
     let pipe = open_lock(&mut r, 0);
-    let keys = keys_for(&r, pipe);
-    type_keys(&mut r, 0, &keys);
+    type_lock(&mut r, 0);
     assert!(r.objs.iter().any(|o| o.id == pipe && o.plugged), "the lone player plugged the pipe");
 }
 

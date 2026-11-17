@@ -96,7 +96,7 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 | type | payload | Notes |
 |---|---|---|
 | `run.start` | `{practice?: bool, tutorial?: bool, river?: "canal" \| "mangrove" \| "gorge", endless?: bool}` | Host only, from the lobby. `river` defaults to `canal` and must be unlocked for the host (errors `bad_river`, `river_locked`). `endless` starts solo Endless (only with one connected player, error `endless_solo`; pays like practice). A normal run needs at least 2 connected, ready players. `practice` lets the host play alone for half Seeds; `tutorial` starts the 60-second scripted course, which pays no Seeds. Errors: `not_host`, `run_in_progress`, `not_in_lobby`, `not_enough_players`, `not_all_ready`, `no_players`. |
-| `run.input` | `{steer?: -1\|0\|1, hop?: bool, action?: bool, glyph?: 0–5}` | Applied on the next tick. A `glyph` sent while plugging is a gate-code entry; otherwise it is a signal ping. |
+| `run.input` | `{steer?: -1\|0\|1, hop?: bool, action?: bool, glyph?: 1–9}` | Applied on the next tick. `glyph` is a lock number: while plugging it is typed into the lock (it must be the next number in increasing order, else `wrong_key`); otherwise it sends your number for the pipe ahead (only your own number counts, else `wrong_key`). |
 | `run.choose` | `{option}` | Twist vote (0–2) or Finale vote (0–1). Every player votes; a tie goes to the first vote (`reveal.tie_by` is that seat), no votes spins (`reveal.spin`). |
 | `run.pause` | `{paused}` | Pause or resume. Alone, the whole run stops (auto-resumes after 10 minutes). In a crew run only that player's boat parks (`boats[].parked`) while the others race on. Everyone gets `run.paused` `{paused, seat}`. Players who quit or disconnect are parked the same way. |
 
@@ -121,14 +121,15 @@ with `{duplicate: true}` and not applied again. `ping` gets a `pong`.
 | `boats` | Per boat: `seat`, `crew`, `lane`, `z`, `speed`, `hop`, `capsize`, `immune` (protection left after a capsize), `slow`, `boost`, `boosting`, `plastic` and `plugging` |
 | `crews` | `[[id, score, plastic, pipes, banks, nets]]` (`nets`: ghost nets freed) |
 | `objs` | Only the stretch of river near the boats. Each has `id`, `kind`, `lane` (for pipes: the bank side, -1 or +1), `z`, `alive`, `plugged`, and for waves on a 6-lane river `gap2`, the second gap lane. `kind` is `plastic`, `weed`, `log`, `wave`, `pipe`, `net` (spans `lane` and `lane + 1`, with `hp` cuts left), `current` (with `dir`, -1 or +1) or `rock` |
-| `plugs` | Only gate codes this viewer is involved in, each with `code`, `clear`, `entered` and `left`. `clear` is true only for crewmates, or briefly for a lone boat. |
+| `plugs` | `[[fixer seat, lock]]` for locks this viewer's crew has open. A lock has `pipe`, `team`, `tiles`, `entered`, `locked` and `left`. `tiles`: `{seat?, digit?, ready, used?}` per crewmate in seat order (solo: three numbers in shown order); `digit` is only shown to the fixer; after the set locks in, only its numbers remain. |
+| Your number | `my_key` (1–9, while shown, while a crewmate's lock waits for it, or once sent), `key_left` (seconds until it hides), `key_call` (a crewmate's lock is waiting for it), `key_sent` |
 | `results` | `{scores, winner, health, choked, revived}` once the run is finished |
 
 **Run event types:**
 - collecting and missing: `collected`, `missed`, `cut`;
 - boat state: `slowed`, `capsized` (with `dropped`, the plastic spilled), `bumped`, `boost`;
-- pipes: `plug_started`, `plugged`, `plug_failed`;
-- signals and waves: `ping`, `wave_incoming`;
+- pipes: `plug_started`, `plugged`, `plug_failed`, `pipe_missed`, `keys_dealt`, `answered {seat, pipe}` (a number was sent), `wrong_key {seat}`, `plug_skipped`;
+- waves: `wave_incoming`;
 - river mechanics: `net_hit {left}`, `net_freed`, `pushed {dir}`;
 - river: `rule_changed {change, choice}`, `choked`.
 

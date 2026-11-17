@@ -50,10 +50,6 @@
 .rh-code-card { background: rgba(8, 24, 32, 0.9); border: 3px solid #4fb3ff; border-radius: 18px; padding: 12px 18px; text-align: center; max-width: 520px; pointer-events: auto; }
 .rh-code-card.scrambled { border-color: #ff8a6a; }
 .rh-code-title { font-weight: 900; font-size: 1.2rem; }
-.rh-code-glyphs { display: flex; gap: 10px; justify-content: center; margin: 8px 0; }
-.rh-glyph { position: relative; font-size: 2.4rem; background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 4px 12px; }
-.rh-glyph.done { opacity: 0.35; }
-.rh-glyph kbd { position: absolute; bottom: -6px; right: -4px; font-size: 0.75rem; background: #4fb3ff; color: #00121c; border-radius: 6px; padding: 0 5px; font-family: inherit; text-shadow: none; }
 .rh-code-hint { font-size: 0.9rem; opacity: 0.9; text-shadow: none; }
 .rh-code-time { font-weight: 900; color: #ffd23f; }
 .rh-bottom { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); }
@@ -132,16 +128,6 @@
 @media (prefers-reduced-motion: reduce) { .spot-hole, .spot-hand { animation: none; } }
 
 /* ── Signals: desktop bar and names ── */
-.rh-signals { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 6px; pointer-events: auto; }
-.rh-sig { position: relative; display: grid; justify-items: center; gap: 0; min-width: 52px; padding: 4px 6px 3px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.25); background: rgba(10, 30, 40, 0.6); color: inherit; font: inherit; cursor: pointer; }
-.rh-sig:hover { border-color: #ffd23f; }
-.rh-sig b { font-size: 1.3rem; line-height: 1.2; }
-.rh-sig small { font-size: 0.68rem; opacity: 0.85; }
-.rh-sig kbd { position: absolute; top: -7px; left: -5px; font-size: 0.7rem; background: #4fb3ff; color: #00121c; border-radius: 6px; padding: 0 5px; font-family: inherit; text-shadow: none; }
-.touch-run .rh-signals { display: none; }
-.rh-glyph { display: inline-grid; justify-items: center; }
-.rh-glyph-name { font-size: 0.7rem; opacity: 0.85; line-height: 1; }
-.rh-code-tip { margin-top: 6px; font-size: 0.85rem; background: rgba(255, 210, 63, 0.18); border-radius: 10px; padding: 6px 10px; }
 
 /* ── Results: river stars and best score ── */
 .rh-stars { margin: 10px auto 4px; text-align: left; width: min(420px, 100%); background: rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 8px 14px; }
@@ -176,28 +162,14 @@
 .rh-pipe-mark small { font-size: 0.75rem; font-weight: 800; background: rgba(28, 22, 12, 0.85); border: 2px solid #b9853a; border-radius: 8px; padding: 0 6px; margin-top: 2px; }
 @keyframes rh-mark-bob { 50% { margin-top: -6px; } }
 .rh-mult { margin-left: 6px; font-size: 0.8rem; vertical-align: middle; background: #ffd23f; color: #2a2000; border-radius: 8px; padding: 1px 6px; text-shadow: none; }
-.rh-glyph.hidden { display: inline-grid; place-items: center; min-width: 64px; min-height: 64px; color: #ffd23f; font-weight: 900; }
 .rh-code-card.memory { border-color: #ffd23f; }
 .rh-banner.big { font-size: 1.9rem; top: 30%; }
 @media (prefers-reduced-motion: reduce) { .rh-pipe-mark { animation: none; } }
 
 /* ── Crew keys and locks ── */
-.rh-key { position: absolute; left: 16px; top: 36%; display: none; text-align: center; padding: 10px 22px; border-radius: 18px; background: rgba(8, 24, 32, 0.92); border: 3px solid #ffd23f; pointer-events: none; }
-.rh-key.on { display: block; }
-.rh-key-title { font-weight: 800; font-size: 0.95rem; }
-.rh-key-glyph { display: grid; justify-items: center; font-size: 3rem; line-height: 1.1; margin: 4px 0; }
-.rh-key-glyph small { font-size: 1rem; font-weight: 800; color: #ffd23f; }
-.rh-key-hint { font-size: 0.85rem; opacity: 0.9; }
 .rh-code-card.lock.fixer { border-color: #ffd23f; }
 .rh-code-card.lock.call { border-color: #ff8a6a; box-shadow: 0 0 0 4px rgba(255, 138, 106, 0.35); }
 .rh-code-card.lock.sent { border-color: #7fd38a; }
-.rh-slots { display: flex; gap: 10px; justify-content: center; margin: 10px 0 6px; flex-wrap: wrap; }
-.rh-slot { display: grid; justify-items: center; gap: 2px; min-width: 76px; padding: 6px 8px; border-radius: 14px; border: 3px solid var(--c); background: rgba(255, 255, 255, 0.06); }
-.rh-slot.in { background: rgba(255, 255, 255, 0.14); }
-.rh-slot.typed { opacity: 0.55; }
-.rh-slot-name { font-size: 0.8rem; font-weight: 800; color: var(--c); }
-.rh-slot-key { font-size: 2rem; line-height: 1.1; min-height: 2.2rem; }
-.rh-slot small { font-size: 0.7rem; opacity: 0.85; }
 .rh-pipe-mark small { border-color: var(--c, #b9853a); }
 
 /* River health: the empty part of the bar is muddy brown. */
@@ -221,7 +193,7 @@
 .rh-menu .btn.danger { background: #c0392b; border-color: #ffb0a0; color: #fff; }
 
 /* Results: hide everything that belongs to racing, so only the results card shows. */
-body:has(.rh-results) :is(.rh-top, .rh-bottom, .rh-pause, .rh-signals, .rh-keys, .rh-pipe, .rh-pipe-mark, .rh-key, .rh-code, .rh-tag) { display: none !important; }
+body:has(.rh-results) :is(.rh-top, .rh-bottom, .rh-pause, .rh-keys, .rh-pipe, .rh-pipe-mark, .rh-key, .rh-code, .rh-tag) { display: none !important; }
 
 /* On the results screen, banners (e.g. Seeds earned) sit below the card, and score pop-ups are hidden. */
 body:has(.rh-results) .rh-pop, body:has(.rh-results) .rh-bubble { display: none !important; }
@@ -235,7 +207,7 @@ body:has(.rh-results) .rh-banner { top: auto; bottom: 4%; }
      left   notices right     pipe card, banners (max 2), tutorial coach
      left   free    right     (open river) · your key card on the left
      lower  lower   lower     pipe lock / code card
-     bl     bottom  br        key hints · boost bar · signal buttons
+     bl     bottom  br        key hints · boost bar · (free)
 
    Layers, low to high: --z-world (tags, pops, pipe marker) < --z-hud (this grid)
    < --z-controls (thumb buttons) < --z-moment (countdown, votes, reveal, results)
@@ -275,7 +247,7 @@ body:has(.rh-results) .rh-banner { top: auto; bottom: 4%; }
 .rhud-bl { grid-area: bl; justify-content: flex-end; align-items: flex-start; }
 .rhud-br { grid-area: br; justify-content: flex-end; align-items: flex-end; }
 /* Pieces in slots flow; the old fixed offsets no longer apply. */
-.rhud :is(.rh-top, .rh-code, .rh-bottom, .rh-keys, .rh-signals, .rh-pipe, .rh-key, .rh-pause, .rh-banner, .coach) { position: static; inset: auto; transform: none; margin: 0; }
+.rhud :is(.rh-top, .rh-code, .rh-bottom, .rh-keys, .rh-pipe, .rh-key, .rh-pause, .rh-banner, .coach) { position: static; inset: auto; transform: none; margin: 0; }
 .rhud .rh-pipe { width: min(380px, 100%); }
 .rhud .rh-code { max-width: 100%; }
 .rhud .coach { width: min(520px, 100%); }
@@ -291,9 +263,11 @@ body:has(.rh-results) .rh-banner { top: auto; bottom: 4%; }
 body:has(.rh-choice, .rh-reveal, .rh-results) .rhud :is(.rhud-notices, .rhud-left, .rhud-lower, .rhud-bottom) { visibility: hidden; }
 /* Priorities when pieces compete for room:
    at a lock the lock card wins and the pipe card steps aside (you're there). When you are
-   the one fixing, your key card steps aside too: your slot is typed from memory. */
+   the one fixing, your number is on the lock itself. While your big number is calling,
+   a crewmate's lock card steps aside (the big number says it all). */
 body:has(.rh-code-card) .rhud .rh-pipe { display: none; }
-body:has(.rh-code-card.fixer, .rh-code-card:not(.lock)) .rhud .rh-key { display: none; }
+body:has(.rh-code-card.fixer) .rhud .rh-key { display: none; }
+body:has(.rh-key.on:not(.sent)) .rhud .rh-code-card.call { display: none; }
 /* At a lock, or on short screens: one banner at a time. */
 body:has(.rh-code-card) .rh-banners > .rh-banner:nth-child(n + 2) { display: none; }
 /* Short screens: one banner at a time. */
@@ -307,24 +281,53 @@ body:has(.rh-code-card) .rh-banners > .rh-banner:nth-child(n + 2) { display: non
   --side-min: 170px;
   grid-template-areas: "top top top" "left notices right" "left free right" "bl lower br" "bl bottom br";
 }
-.touch-run .rh-signals { display: none; }
-/* Tablets: the signal column sits on the right edge. */
-.touch-run { --reserve-right: 58px; }
-/* Phone landscape: the signal grid sits top-right under the health bar. */
 @media (max-height: 500px) and (orientation: landscape) {
-  .touch-run { --reserve-right: 0px; }
   .touch-run .rhud { --side-min: 160px; padding-top: calc(6px + env(safe-area-inset-top, 0px)); padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
 }
-/* Phone portrait: thumbs and a row of signals along the bottom; everything else stacks above. */
+/* Phone portrait: thumbs along the bottom; everything else stacks above. */
 @media (max-width: 760px) and (orientation: portrait) {
   .rhud { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "notices" "free" "lower" "bottom"; padding-left: 8px; padding-right: 8px; }
   .rhud-left { grid-area: free; align-items: center; justify-content: flex-start; }
   .rhud-bl, .rhud-br { display: none; }
   .touch-run .rhud { --side-min: 0px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "notices" "free" "lower" "bottom"; }
-  .touch-run { --reserve-right: 0px; --reserve-bottom: 168px; }
+  .touch-run { --reserve-bottom: 112px; }
   body:has(.tc-swipe-only) { --reserve-bottom: 92px; }
 }
 
 /* A paused, disconnected or departed player's boat waits: its tag says so. */
 .rh-tag.parked { opacity: 0.75; }
 .rh-tag.parked::after { content: " ⏸ away"; font-weight: 700; }
+
+/* ── Pipe numbers ──
+   Your number: big, tappable, and blinking while it is about to hide or while a crewmate
+   at the lock waits for it. Once sent it shrinks to a calm "your 7 is in" chip. */
+.rh-key { display: none; pointer-events: auto; cursor: pointer; font: inherit; color: inherit; text-align: center; padding: 8px 26px 10px; border-radius: 22px; background: rgba(8, 24, 32, 0.94); border: 4px solid #ffd23f; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); touch-action: manipulation; }
+.rh-key.on { display: grid; justify-items: center; }
+.rh-key-title { font-weight: 900; font-size: 1rem; letter-spacing: 0.04em; text-transform: uppercase; color: #ffd23f; }
+.rh-key-digit { font-size: clamp(4.5rem, 15vh, 8.5rem); line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 4px 0 #b9853a, 0 0 24px rgba(255, 210, 63, 0.55); }
+.rh-key-hint { font-size: 0.95rem; font-weight: 700; opacity: 0.95; }
+.rh-key.blink { animation: rh-key-blink 0.5s steps(2, jump-none) infinite alternate; }
+.rh-key.call { border-color: #ff6b5b; }
+.rh-key.call .rh-key-title { color: #ff9d92; }
+@keyframes rh-key-blink { from { opacity: 1; transform: scale(1); } to { opacity: 0.35; transform: scale(0.94); } }
+.rh-key.sent { cursor: default; grid-auto-flow: column; align-items: center; gap: 8px; padding: 6px 16px; border-width: 3px; border-color: #5ad19a; box-shadow: none; }
+.rh-key-ok { font-size: 1.3rem; color: #5ad19a; }
+.rh-key-small { font-weight: 800; }
+
+/* Lock tiles: the numbers sent so far (the fixer taps them smallest first). */
+.rh-tiles { display: flex; gap: 10px; justify-content: center; margin: 10px 0 6px; flex-wrap: wrap; }
+.rh-tile { display: grid; justify-items: center; gap: 2px; min-width: 76px; padding: 6px 10px 5px; border-radius: 16px; border: 3px solid var(--c, #ffd23f); background: rgba(255, 255, 255, 0.1); color: inherit; font: inherit; touch-action: manipulation; }
+button.rh-tile { cursor: pointer; pointer-events: auto; }
+button.rh-tile:hover { background: rgba(255, 210, 63, 0.22); }
+.rh-tile b { font-size: 2.8rem; line-height: 1.05; font-weight: 900; font-variant-numeric: tabular-nums; }
+.rh-tile.used { opacity: 0.4; }
+.rh-tile.wait { border-style: dashed; opacity: 0.75; }
+.rh-tile.wait.in { border-style: solid; opacity: 1; }
+.rh-tile.wait b { font-size: 1.8rem; }
+.rh-tile-name { font-size: 0.78rem; font-weight: 800; color: var(--c, inherit); }
+.rh-code-card.shake, .rh-key.shake { animation: rh-shake 0.32s ease-in-out; }
+@keyframes rh-shake { 0%, 100% { translate: 0; } 25% { translate: -8px; } 75% { translate: 8px; } }
+@media (prefers-reduced-motion: reduce) {
+  .rh-key.blink { animation: none; border-color: #ff6b5b; }
+  .rh-code-card.shake, .rh-key.shake { animation: none; }
+}

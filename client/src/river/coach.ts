@@ -36,7 +36,6 @@ export class Coach {
   plugging = false;
   plugged = false;
   pluggingFailed = false;
-  pings = 0;
   private card: HTMLElement;
   private spot: Spotlight;
   private finished = false;
@@ -88,28 +87,17 @@ export class Coach {
     },
     {
       title: "Plug the pipe",
-      keys: () => `${hint("action")} then ${usesTouch() ? "tap the symbols" : "1–6"}`,
-      text: "Pull up beside the sewage pipe, use the same ✂ button, then enter the 3-symbol gate code.",
+      keys: () => `${hint("action")} then ${usesTouch() ? "tap the numbers" : "1–9"}`,
+      text: "Pull up beside the sewage pipe, use the same ✂ button, then enter the 3 numbers, smallest first.",
       spot: (c) =>
         c.plugging
           ? {
               name: "code",
-              title: "Gate code",
-              text: `Remember the order, then ${usesTouch() ? "tap the symbols" : "press their keys 1–6"}. With friends, everyone holds one key for each pipe.`,
+              title: "Number lock",
+              text: `Enter the numbers smallest first: ${usesTouch() ? "tap them" : "press keys 1–9"}. With friends, each of you gets a number before every pipe — press it and it goes to whoever fixes the pipe.`,
             }
           : { name: "action", title: "Plug a pipe", text: `Steer into the lane next to the pipe and ${tap().toLowerCase()} ✂ when you're beside it.` },
       done: (c) => c.plugged || c.pluggingFailed,
-    },
-    {
-      title: "Signal your crew",
-      keys: () => (usesTouch() ? "🍃 💧 🐟" : "1–6"),
-      text: "Send any symbol. It pops up over your boat for everyone to see.",
-      spot: () => ({
-        name: "signals",
-        title: "Signals",
-        text: "Six symbols. With friends, each of you is shown one as your key before every pipe, and the pipe's lock needs everyone's key.",
-      }),
-      done: (c) => c.pings >= 1 || c.age > 12,
     },
   ];
 
@@ -137,7 +125,6 @@ export class Coach {
     for (const e of events) {
       if ("seat" in e && e.seat !== mySeat) continue;
       if (e.type === "collected") this.collected++;
-      if (e.type === "ping") this.pings++;
       if (e.type === "cut") this.cut = true;
       if (e.type === "plug_started") this.plugging = true;
       if (e.type === "plugged") this.plugged = true;
