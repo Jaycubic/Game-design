@@ -205,27 +205,24 @@
 .rh-badge.lives { letter-spacing: 1px; }
 .rh-fixers { margin: 6px 0; font-weight: 700; font-size: 0.95rem; }
 
-/* Quit: a small button beside the timer; the first tap asks "Quit?". */
-.rh-quit { position: absolute; top: 18px; left: calc(50% - 112px); min-width: 40px; height: 40px; padding: 0 10px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.35); background: rgba(10, 30, 40, 0.7); color: #fff; font: inherit; font-weight: 800; cursor: pointer; pointer-events: auto; z-index: 6; }
-.rh-quit:hover { border-color: #ffd23f; }
-.rh-quit.confirm { background: #c0392b; border-color: #ffb0a0; left: calc(50% - 132px); }
+/* Pause: a labelled button in the top-left corner, on every device, clear of the timer and health bar. */
+.rh-pause { position: absolute; top: calc(12px + env(safe-area-inset-top, 0)); left: calc(12px + env(safe-area-inset-left, 0)); display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.45); background: rgba(10, 30, 40, 0.78); color: #fff; font: inherit; font-weight: 800; cursor: pointer; pointer-events: auto; z-index: 7; }
+.rh-pause:hover, .rh-pause:focus-visible { border-color: #ffd23f; }
+.rh-pause-icon { font-size: 1.1rem; line-height: 1; }
+.tutorial .rh-pause { display: none !important; }
+
+/* Pause menu: dims the river, one card in the middle. */
+.rh-menu { position: absolute; inset: 0; display: none; place-items: center; background: rgba(4, 14, 20, 0.6); pointer-events: auto; z-index: 30; }
+.rh-menu.open { display: grid; }
+.rh-menu-card { background: rgba(8, 24, 32, 0.95); border: 3px solid #ffd23f; border-radius: 22px; padding: 24px 28px; display: grid; gap: 12px; width: min(360px, 88vw); text-align: center; }
+.rh-menu-title { font-size: 2rem; font-weight: 900; color: #ffd23f; }
+.rh-menu-sub { margin: 0; opacity: 0.85; }
+.rh-menu-note { margin: 0; min-height: 1.2em; font-size: 0.9rem; color: #ffb0a0; }
+.rh-menu .btn.danger { background: #c0392b; border-color: #ffb0a0; color: #fff; }
 
 /* Results: hide everything that belongs to racing, so only the results card shows. */
-body:has(.rh-results) :is(.rh-top, .rh-bottom, .rh-quit, .rh-signals, .rh-keys, .rh-pipe, .rh-pipe-mark, .rh-key, .rh-code, .rh-tag) { display: none !important; }
+body:has(.rh-results) :is(.rh-top, .rh-bottom, .rh-pause, .rh-signals, .rh-keys, .rh-pipe, .rh-pipe-mark, .rh-key, .rh-code, .rh-tag) { display: none !important; }
 
-/* Quit: Esc on a computer; the X button only with on-screen controls, placed clear of the HUD. */
-.rh-quit { display: none; }
-.touch-run .rh-quit { display: block; top: 70px; left: 50%; transform: translateX(-50%); }
-.touch-run .rh-quit.confirm { left: 50%; }
-/* Landscape phones: the timer moves to the right, so the top centre is free. */
-@media (max-height: 500px) and (orientation: landscape) {
-  .touch-run .rh-quit { top: calc(8px + env(safe-area-inset-top, 0)); }
-}
-.tutorial .rh-quit { display: none !important; }
-@media (orientation: portrait) {
-  .touch-run .rh-quit { top: 40%; left: auto; right: calc(10px + env(safe-area-inset-right, 0)); transform: none; }
-  .touch-run .rh-quit.confirm { left: auto; }
-}
 /* On the results screen, banners (e.g. Seeds earned) sit below the card, and score pop-ups are hidden. */
 body:has(.rh-results) .rh-pop, body:has(.rh-results) .rh-bubble { display: none !important; }
 body:has(.rh-results) .rh-banner { top: auto; bottom: 4%; }

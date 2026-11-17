@@ -14,11 +14,13 @@ use serde_json::json;
 use sqlx::PgPool;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
 const MAX_QUEUED: usize = 8;
+/// A paused solo run resumes by itself after this long, so a forgotten pause never holds a room forever.
+const MAX_PAUSE: Duration = Duration::from_secs(10 * 60);
 
 /// How a run was started.
 #[derive(Clone, Copy, Debug, Default)]
@@ -39,9 +41,21 @@ pub struct RunHost {
     /// seat → equipped boat key (sets the 3D model and its stats).
     pub skins: HashMap<u8, String>,
     pending: HashMap<u8, VecDeque<Input>>,
+    /// When a solo player paused (the loop does not step while set).
+    paused: Option<Instant>,
 }
 
 impl RunHost {
+    /// Pause or resume. Only works when one player is racing; returns whether the run is now paused.
+    pub fn set_paused(&mut self, paused: bool) -> bool {
+        let solo = self.run.boats.len() == 1;
+        self.paused = if paused && solo && self.run.phase != RunPhase::Finished { Some(Instant::now()) } else { None };
+        if self.paused.is_some() {
+            self.pending.clear();
+        }
+        self.paused.is_some()
+    }
+
     pub fn queue(&mut self, seat: u8, input: Input) {
         let q = self.pending.entry(seat).or_default();
         if q.len() < MAX_QUEUED {
@@ -128,7 +142,7 @@ pub fn start(
     for c in g.conns.values() {
         let _ = c.tx.send(msg.clone());
     }
-    g.run = Some(RunHost { run, practice, tutorial, endless, skins, pending: HashMap::new() });
+    g.run = Some(RunHost { run, practice, tutorial, endless, skins, pending: HashMap::new(), paused: None });
     tokio::spawn(run_loop(entry_arc, db));
     Ok(())
 }
@@ -143,6 +157,12 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
         // Disconnected players' keys fill in by themselves, so a pipe lock is never impossible.
         let away: Vec<u8> = g.state.roster.members.iter().filter(|m| !m.connected).map(|m| m.seat).collect();
         let Some(host) = g.run.as_mut() else { return };
+        if let Some(since) = host.paused {
+            if since.elapsed() < MAX_PAUSE {
+                continue;
+            }
+            host.paused = None;
+        }
         host.run.set_away(away);
         let inputs = host.take_inputs();
         host.run.step(&inputs);

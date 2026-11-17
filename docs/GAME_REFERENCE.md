@@ -171,7 +171,7 @@ The run clock only advances while the river is moving (pauses for votes and reve
 | Send a symbol / your key (1–6) | keys 1–6, or the signal bar | hold RT + A/B/X/Y/LB/RB | the six symbol buttons |
 | Vote in a rule change | keys 1–3 | A / B / X | tap a card |
 | Leave a pipe lock | ▲ (hop) | A | ▲ |
-| Quit the run | **Esc** twice | — | **✕** at the top (tap twice) |
+| Pause / quit | **Esc** or **P** (opens the menu) | — | **⏸** top-left corner |
 
 - Arrow keys always work; the letter keys can be rebound in Settings.
 - The six symbols: **1 Leaf 🍃, 2 Drop 💧, 3 Fish 🐟, 4 Bridge 🌉, 5 Arrow ➜, 6 Star ⭐**.
@@ -515,8 +515,9 @@ falls **at most one step per UTC day**.
 | Over the world | Name tags, pipe marker, signal bubbles, "+1 ♻" pop-ups |
 | Bottom centre | Boost meter |
 | Bottom right (PC) | Signal bar (symbols, numbers, names) |
-| Bottom left (PC) | Key hints, including "Esc quit" |
-| Phones | Thumb buttons, symbol buttons, ✕ quit |
+| Bottom left (PC) | Key hints, including "Esc pause" |
+| Phones | Thumb buttons, symbol buttons |
+| Top left (every device) | ⏸ Pause button: menu with Resume and Quit run |
 
 ---
 
@@ -555,7 +556,7 @@ Settings are saved per browser.
   (portrait suggests turning the phone sideways).
 - Thumb buttons (◀ ▶ bottom left, ✂ ▲ bottom right), six symbol buttons with numbers and names, swipe gestures on
   the river (36 px threshold), haptic buzzes.
-- The ✕ quit button sits at the top centre in landscape and on the right edge in portrait; on a PC, Esc quits.
+- The ⏸ Pause button sits in the top-left corner on every device (labelled "Pause" on wide screens); the top bar moves right to make room. Solo runs really pause on the server (`run.pause`, auto-resume after 10 minutes); crew runs keep going while the menu is open.
 - Touch wording everywhere ("tap ✂", "swipe down") follows the chosen control scheme.
 
 ---

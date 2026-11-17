@@ -39,9 +39,11 @@ together against the pollution. A grumpy brown smog cloud sulks over every open 
 
 Your boat moves forward on its own. The letter keys can be rebound in **Settings**; the arrow keys always work.
 
-**Quit:** on a computer, press **Esc** to leave a run early (once to ask, again to confirm). With on-screen controls,
-tap the **✕** at the top of the screen (once, it turns into "Quit?", then again). You go back to the hub, and your crew
-keeps playing without you.
+**Pause and quit:** tap the **⏸ Pause** button in the top-left corner (or press **Esc** or **P** on a computer).
+The menu has **Resume** and **Quit run** (Quit asks once more). Playing alone, the river really stops until you resume
+(it resumes by itself after 10 minutes, and the game pauses when you switch away from the tab). In a crew run
+the river keeps flowing for your crew while the menu is open; quitting takes you back to the hub and your crew keeps
+playing without you. The tutorial has its own **Skip tutorial** button instead.
 
 **On-screen controls** (Settings → Controls), as in most mobile games:
 

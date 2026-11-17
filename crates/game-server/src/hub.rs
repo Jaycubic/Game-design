@@ -274,6 +274,18 @@ impl Hub {
                 host.queue(seat, river_core::Input { steer: steer.clamp(-1, 1), hop, action, glyph });
                 return Ok(Outcome2::default());
             }
+            Command::RunPause { paused } => {
+                let mut g = entry.lock().await;
+                g.state.seat_of(&pid)?;
+                let host = g.run.as_mut().ok_or_else(|| GameError::new("no_run", "No run is under way."))?;
+                let now = host.set_paused(paused);
+                let tick = host.run.tick;
+                let msg = crate::hub::envelope("run.paused", g.state.id, tick, serde_json::json!({ "paused": now }));
+                for c in g.conns.values() {
+                    let _ = c.tx.send(msg.clone());
+                }
+                return Ok(Outcome2::default());
+            }
             Command::RunChoose { option } => {
                 let mut g = entry.lock().await;
                 let seat = g.state.seat_of(&pid)?;

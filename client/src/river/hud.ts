@@ -25,6 +25,8 @@ export interface HudCallbacks {
   leave(): void;
   /** Leave the run (and the room) before it ends. */
   quit(): void;
+  /** The pause menu opened (true) or closed (false). */
+  pause(open: boolean): void;
 }
 
 export class RunHud {
@@ -64,7 +66,8 @@ export class RunHud {
       this.pipeCard,
       this.pipeMark,
       this.keyCard,
-      this.quitBtn,
+      this.pauseBtn,
+      this.menu,
       h(
         "div",
         { class: "rh-keys" },
@@ -73,7 +76,7 @@ export class RunHud {
         h("span", { "data-tut": "hop" }, `${hint("hop")} hop`),
         " · ",
         h("span", { "data-tut": "action" }, `${hint("action")} cut / plug`),
-        " · Esc quit",
+        " · Esc pause",
       ),
       // Desktop signal bar: the six symbols with their key and name (touch has its own buttons).
       h(
@@ -237,30 +240,54 @@ export class RunHud {
   }
 
   private keyCard = h("div", { class: "rh-key" });
-  // Quit: first tap asks, second tap leaves (so a stray tap never ends a run).
-  private quitTimer = 0;
-  private quitBtn = h(
+  // Pause: always on screen during a run. Opens a menu with Resume and Quit
+  // (Quit asks once more, so a stray tap never ends a run).
+  private pauseBtn = h(
     "button",
-    {
-      class: "rh-quit",
-      title: "Quit this run",
-      "aria-label": "Quit this run",
-      onclick: () => {
-        if (this.quitBtn.classList.contains("confirm")) {
-          this.cb.quit();
-          return;
-        }
-        this.quitBtn.classList.add("confirm");
-        this.quitBtn.textContent = "Quit?";
-        clearTimeout(this.quitTimer);
-        this.quitTimer = window.setTimeout(() => {
-          this.quitBtn.classList.remove("confirm");
-          this.quitBtn.textContent = "✕";
-        }, 3000);
-      },
-    },
-    "✕",
+    { class: "rh-pause", title: "Pause (Esc)", "aria-label": "Pause menu", onclick: () => this.cb.pause(true) },
+    h("span", { class: "rh-pause-icon", "aria-hidden": "true" }, "⏸"),
+    h("span", { class: "rh-pause-label" }, "Pause"),
   );
+  private menu = h("div", { class: "rh-menu", role: "dialog", "aria-modal": "true", "aria-label": "Paused" });
+  menuOpen = false;
+
+  /** Show the pause menu. `solo`: the run really stops; otherwise the crew keeps rowing. */
+  showMenu(solo: boolean) {
+    this.menuOpen = true;
+    const resume = h("button", { class: "btn primary big", onclick: () => this.cb.pause(false) }, "▶ Resume");
+    const quit = h("button", { class: "btn ghost" }, "Quit run");
+    const note = h("p", { class: "rh-menu-note" });
+    quit.onclick = () => {
+      if (quit.classList.contains("danger")) {
+        this.cb.quit();
+        return;
+      }
+      quit.classList.add("danger");
+      quit.textContent = "Yes, quit";
+      note.textContent = solo
+        ? "Quitting ends this run. You go back to the dock with no Seeds for it."
+        : "You leave the room. Your crew keeps playing without you.";
+    };
+    this.menu.replaceChildren(
+      h(
+        "div",
+        { class: "rh-menu-card" },
+        h("div", { class: "rh-menu-title" }, solo ? "Paused" : "Menu"),
+        h("p", { class: "rh-menu-sub" }, solo ? "The river is waiting for you." : "Your crew is still rowing — the river doesn't stop in team games."),
+        resume,
+        quit,
+        note,
+      ),
+    );
+    this.menu.classList.add("open");
+    resume.focus();
+  }
+
+  hideMenu() {
+    this.menuOpen = false;
+    this.menu.classList.remove("open");
+    this.menu.replaceChildren();
+  }
   private sigKey = "";
   private buzzed = new Set<string>();
 

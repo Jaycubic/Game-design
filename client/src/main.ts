@@ -119,7 +119,7 @@ function openRun() {
     engineInfo.engine,
     room?.my_seat ?? 0,
     names,
-    { input: (i) => void socket?.sendRaw("run.input", i), choose: (option) => send("run.choose", { option }) },
+    { input: (i) => void socket?.sendRaw("run.input", i), choose: (option) => send("run.choose", { option }), pause: (paused) => send("run.pause", { paused }) },
     closeRun,
     quitRun,
     !!room?.members.find((x) => x.you)?.host,

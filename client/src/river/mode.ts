@@ -17,6 +17,7 @@ const RIVER_TITLES: Record<string, string> = { canal: "🏘️ Town Canal", mang
 export interface RunSender {
   input(i: { steer?: number; hop?: boolean; action?: boolean; glyph?: number }): void;
   choose(option: number): void;
+  pause(paused: boolean): void;
 }
 
 interface Smooth {
@@ -44,7 +45,7 @@ export class RunMode {
   private touch: TouchControls | null = null;
   private lastBeat = "";
   private lastSpark = 0;
-  private escUntil = 0;
+  private visHandler: () => void;
   /** Client-only freeze-frame after your own capsize; the server never pauses. */
   private freezeUntil = 0;
 
@@ -63,7 +64,12 @@ export class RunMode {
       glyph: (g) => send.input({ glyph: g }),
       leave: () => this.onLeave(),
       quit: () => this.onQuit(),
+      pause: (open) => (open ? this.openMenu() : this.closeMenu()),
     });
+    this.visHandler = () => {
+      if (document.hidden) this.openMenu();
+    };
+    document.addEventListener("visibilitychange", this.visHandler);
     this.keyHandler = (e) => this.onKey(e);
     window.addEventListener("keydown", this.keyHandler);
     if (usesTouch()) this.touch = new TouchControls(document.getElementById("run-ui")!, document.getElementById("scene")!, (it) => this.apply(it));
@@ -74,23 +80,40 @@ export class RunMode {
     if (e.repeat || (e.target as HTMLElement).closest?.("input, textarea")) return;
     const s = this.snap;
     if (!s) return;
-    // Esc quits on a computer: press once to ask, again within 3 s to leave.
-    if (e.key === "Escape" && !this.finished && !document.querySelector(".modal")) {
+    // Esc (or P) opens and closes the pause menu.
+    if ((e.key === "Escape" || e.key === "p" || e.key === "P") && !document.querySelector(".modal")) {
       e.preventDefault();
-      if (performance.now() < this.escUntil) this.onQuit();
-      else {
-        this.escUntil = performance.now() + 3000;
-        this.hud.banner("Press Esc again to quit the run", "warn");
-      }
+      if (this.hud.menuOpen) this.closeMenu();
+      else this.openMenu();
       return;
     }
+    if (this.hud.menuOpen) return;
     const it = intentForKey(e.key, s.phase.phase === "choosing");
     if (!it) return;
     e.preventDefault();
     this.apply(it);
   }
 
+  /** Solo runs really pause on the server; crew runs keep going (the menu says so). */
+  private solo() {
+    return (this.snap?.boats.length ?? 0) <= 1;
+  }
+
+  private openMenu() {
+    if (this.finished || this.hud.menuOpen || !this.snap || this.snap.tutorial) return;
+    const solo = this.solo();
+    this.hud.showMenu(solo);
+    if (solo) this.send.pause(true);
+  }
+
+  private closeMenu() {
+    if (!this.hud.menuOpen) return;
+    this.hud.hideMenu();
+    if (this.solo()) this.send.pause(false);
+  }
+
   private apply(it: Intent) {
+    if (this.hud.menuOpen) return;
     switch (it.type) {
       case "choose":
         this.send.choose(it.option);
@@ -290,6 +313,7 @@ export class RunMode {
 
   private finish(r: RunResults) {
     this.finished = true;
+    this.hud.hideMenu();
     const me = this.snap?.boats.find((b) => b.seat === this.mySeat);
     const won = r.winner !== null ? r.winner === me?.crew : r.revived;
     sound.play(won ? "win" : "lose");
@@ -365,6 +389,7 @@ export class RunMode {
 
   dispose() {
     window.removeEventListener("keydown", this.keyHandler);
+    document.removeEventListener("visibilitychange", this.visHandler);
     this.engine.stopRenderLoop();
     this.hud.dispose();
     this.coach?.dispose();

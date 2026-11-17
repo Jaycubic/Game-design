@@ -144,6 +144,12 @@ pub enum Command {
     /// River run: Twist vote or Finale pick.
     #[serde(rename = "run.choose")]
     RunChoose { option: u8 },
+    /// River run: pause or resume. Only a solo run really stops; in a crew run the river keeps flowing.
+    #[serde(rename = "run.pause")]
+    RunPause {
+        #[serde(default)]
+        paused: bool,
+    },
 }
 
 /// What happened, for clients to animate (the envelope `type` uses these names).
@@ -409,7 +415,7 @@ impl RoomState {
         let mut out = Outcome2::default();
         match cmd {
             // River-run commands are handled by the hub's real-time loop.
-            Command::Ping | Command::RunStart { .. } | Command::RunInput { .. } | Command::RunChoose { .. } => {}
+            Command::Ping | Command::RunStart { .. } | Command::RunInput { .. } | Command::RunChoose { .. } | Command::RunPause { .. } => {}
             Command::Hint => {} // computed by the hub off the async runtime
             Command::Leave => return self.leave(player),
             Command::Ready { ready } => {
