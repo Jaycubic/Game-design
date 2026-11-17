@@ -25,7 +25,7 @@ places; the real-world case is shown in the presentation.
 | Cooperation | Every player in the room is one crew against the pollution, the pollution: one score, one River Health bar, one result. |
 | Communication | Crew number locks: each player gets their own number 1–9 before each pipe and chooses to send it; the fixer sees the sent numbers and calls for more, so the crew talks ("press your number!"). |
 | Negotiation | Both rule changes are crew votes argued out loud (Second Wind for points or Clean Sweep for the river?). Crews also plan who stays behind to fix which pipe. Bluffing was optional in the brief and is not used. |
-| Puzzles | The number lock: the fixer puts the crew's numbers in increasing order under time pressure while the boat waits. Solo: three numbers, smallest first. |
+| Puzzles | The number lock: the fixer needs every crewmate's number on the board and types them in under time pressure while the boat waits. Solo: three numbers. |
 | Simple rules | Three controls, one score formula, one shared bar. A 60-second scripted tutorial spotlights each control in place and teaches it by doing. |
 | Limited number of players | 1–4 per room, enforced by the server and the database. |
 | Reasons to come back (beyond the brief) | Three rivers with new mechanics, three stars each, best scores, daily missions, ranks, Endless for 1–4 players, and difficulty that adapts to each room (§5). |
@@ -145,12 +145,12 @@ First-time players struggled with the symbol keys: remembering a symbol while ra
 was too much at once, and the symbol bar cluttered the bottom of the screen. Round 4 keeps the cooperation and drops
 the memory load:
 - Keys are plain **numbers 1–9**, shown **big** for 8 s and **blinking** as they are about to hide. No symbol bar.
-- Pressing your number **sends it** straight away (a wrong press is ignored); the server keeps it for the pipe. Not
-  pressing means not taking part. Your number comes back, blinking, whenever a crewmate's lock is waiting for it.
-- The fixer's lock shows the numbers already sent; they type them, with their own, **in increasing order**. At least one
-  crewmate's number is needed; the set locks in on the first number typed. Out-of-order numbers are ignored; only
-  running out of time costs River Health.
-- Solo: three numbers on screen, smallest first (no memory phase).
+- Pressing your number **sends it** straight away (a wrong press is ignored); the server keeps it on the crew's
+  board. Every player must press. Your number comes back, blinking, whenever a crewmate's lock is waiting for it.
+- The fixer's lock shows the board (numbers in the order they were sent, plus their own); they type them **in any
+  order**. The lock needs **every player's number** (away players' numbers send themselves). Numbers not on the
+  board are ignored; only running out of time costs River Health.
+- Solo: three numbers on screen, any order (no memory phase).
 
 ### 5.1 River Director (adaptive difficulty, internal)
 

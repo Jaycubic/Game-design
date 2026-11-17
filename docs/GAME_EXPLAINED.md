@@ -76,9 +76,9 @@ The brief asked for a game about **environmental awareness**, addressed **indire
 | Environmental awareness, indirectly | You never read a lecture. You *feel* the problem: missed plastic and open pipes make the shared river sicker, and a dead river cuts everyone's score in half. |
 | Players change the rules exactly twice | Every run has a **Twist** and a **Finale**, both voted by the crew. The game enforces exactly two. |
 | Cooperation | Everyone is **one crew** with one score and one River Health bar, playing together against the pollution, the pollution. |
-| Communication | Each player gets a number for each pipe and chooses to send it. The fixer calls out "press your number!" and needs at least one crewmate's number. |
+| Communication | Each player gets a number for each pipe and must send it. The fixer reads the board and calls out "press your number!" until every number is in. |
 | Negotiation | Both rule changes are crew votes, argued out loud ("points now, or protect the river?"). Crews also plan who fixes which pipe. |
-| Puzzles | The number lock: put the crew's numbers in increasing order, fast, while still steering; alone, three numbers smallest first. |
+| Puzzles | The number lock: get every crewmate's number on the board and type them in, fast, while still steering; alone, three numbers. |
 | Competition (without fighting friends) | The crew competes against the pollution, against its own best scores and stars, and for Endless records. |
 | Simple rules | Three buttons: steer, hop, action. A 60-second tutorial teaches everything. |
 | Limited players | 1–4 players per room. |
@@ -215,18 +215,18 @@ source makes every clean-up effort more effective.
 5. **Failed:** the river takes a hit (River Health −5) and the pipe keeps pouring. You can try again with new numbers.
 6. **Changed your mind?** Press **▲ (hop)** to leave the lock and sail on, with no penalty.
 
-### The number lock: see it, press it, the fixer sorts it
+### The number lock: see it, press it, the fixer reads the board
 
 As the crew nears a pipe (about 90 m), **every player gets a big number from 1 to 9** on their own screen, different
 for each player. It stays for 8 seconds and **blinks** as it is about to go. Nothing to remember: **press it** (or tap
-it) and it is sent. That press is your choice to help fix the pipe; the card turns into "✔ Your 7 is in".
+it) and it is sent. Every player must press theirs; the card turns into "✔ Your 7 is in".
 
-When someone presses Action at the pipe, they become the **fixer**. Their lock shows their own number and **every
-number the crew has sent**, under each player's name. Anyone who hasn't pressed yet sees their number come back,
-blinking: "Your crew needs it!". The fixer types the numbers **smallest first** within **12 seconds**. It needs at
-least **one crewmate's number** on top of their own.
+When someone presses Action at the pipe, they become the **fixer**. Their lock shows the crew's **board**: every number
+sent, in the order it was sent, plus their own. Anyone who hasn't pressed yet sees their number come back,
+blinking: "Your crew needs it!". The fixer types the board's numbers, **in any order**, within **12 seconds**. The lock
+opens only when **every player's number** is in.
 
-**Nobody can fix a pipe alone**: the fixer needs a crewmate who chose to press. That's the teamwork, and the talking:
+**Nobody can fix a pipe alone**: the fixer needs every crewmate to press. That's the teamwork, and the talking:
 "Press your number!"
 
 #### Worked example: Ben, You and Asha
@@ -236,7 +236,7 @@ least **one crewmate's number** on top of their own.
 | 1 | Your number: **6**. | Ben gets **1**. Asha gets **3**. |
 | 2 | Press **6** (or don't: it's on your lock anyway). | Ben presses **1**. Asha is dodging a log. |
 | 3 | Press **Action** beside the pipe. The lock shows Ben **1** · You **6** · Asha … | Asha's **3** comes back, blinking. She presses it. |
-| 4 | Type smallest first: **1, 3, 6**. | Keep sailing. |
+| 4 | The board shows 1 · 6 · 3. Type them: **1, 6, 3** (any order works). | Keep sailing. |
 | 5 | Fixed! River +10, every plastic now ×1.5. | Same score boost for everyone. |
 
 **Several fixers.** Two or more players can open a lock at the same pipe; sent numbers show on all of them, and the
@@ -244,7 +244,7 @@ least **one crewmate's number** on top of their own.
 (the others press ▲ and sail on) while the rest keep collecting. A boat that falls more than 25 m behind gets a
 **catch-up current** (+15 % speed), so nobody is stranded.
 
-**Playing alone.** The lock shows three numbers (say 7 · 2 · 5); type them smallest first (2, 5, 7) within
+**Playing alone.** The lock shows three numbers (say 7 · 2 · 5); type all three, in any order, within
 8 seconds. They stay on screen.
 
 ### Why the code works this way
@@ -513,7 +513,7 @@ source, which you can only do when your crewmates send their numbers.**
 | **Outfall / sewage pipe** | A pipe in the bank pouring waste water into the river. |
 | **Pipe number** | The number 1–9 you're shown before a pipe. Press it to send it to the fixer. |
 | **Lock / fixer** | What opens when someone presses Action at a pipe; that player is the fixer. |
-| **Solo lock** | Playing alone: three numbers, typed smallest first. |
+| **Solo lock** | Playing alone: three numbers, typed in any order. |
 | **Multiplier** | How much each plastic is worth; raised by plugging pipes. |
 | **Banks greened** | Weed mats cut: +5 each. |
 | **Capsize** | Your boat flips after hitting a log or wave. |
@@ -536,14 +536,14 @@ final score is halved and the river chokes. Plug pipes!
 
 **Why does the lock show "…" in my friend's slot?**
 They haven't pressed their number yet. Call out "press your number!": their number is blinking on their screen,
-and once they press it, it shows on your lock. Then type everything smallest first.
+and once they press it, it shows on your lock. Once every number is in, type them all.
 
 **Should I always plug pipes?**
 Usually yes: each one heals the river by 10, stops the drain for good, and makes every future plastic worth more.
 But your boat stops while you plug, so timing matters.
 
 **What if I'm playing alone?**
-Use Practice solo or Endless. When you plug a pipe alone, the lock shows three numbers; type them smallest first.
+Use Practice solo or Endless. When you plug a pipe alone, the lock shows three numbers; type them in any order.
 
 **What if my friend is far ahead or behind?**
 Distance doesn't matter: keys reach the lock from anywhere. A boat left far behind gets a catch-up current.

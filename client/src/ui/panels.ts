@@ -145,7 +145,7 @@ export function howToPlay(): HTMLElement {
     h(
       "p",
       { class: "small" },
-      `With friends, before each pipe every player gets a big number (1–9). ${usesTouch() ? "Tap it" : "Press it"} to send it — that's you helping fix the pipe. Whoever stops at the pipe sees every number sent and enters them smallest first, with their own. Playing alone, the lock shows 3 numbers: enter them smallest first.`,
+      `With friends, before each pipe every player gets a big number (1–9). ${usesTouch() ? "Tap it" : "Press it"} to send it — that's you helping fix the pipe. Every player must send theirs: the numbers go on a board, and whoever stops at the pipe enters them all (with their own), in any order. Playing alone, the lock shows 3 numbers: enter them in any order.`,
     ),
   );
 }

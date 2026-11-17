@@ -67,5 +67,5 @@ export function stress(hud: { banner(t: string, k?: string): void }) {
   key.className = "rh-key on blink call";
   const tile = (c: string, n: string, k: string) => `<div class="rh-tile" style="--c:${c}"><b>${k}</b><small class="rh-tile-name">${n}</small></div>`;
   document.querySelector(".rh-code")!.innerHTML =
-    `<div class="rh-code-card lock sent"><div class="rh-code-title">✔ Your number is in — Asha is entering the lock, smallest first</div><div class="rh-tiles">${tile("#f2c14e", "You", "3")}${tile("#4fb3ff", "Asha", "8")}${tile("#ff7a59", "Ravi", "…")}${tile("#9b6bff", "Mei", "5")}</div><div class="rh-code-hint">Keep sailing!</div><div class="rh-code-time">9 s</div></div>`;
+    `<div class="rh-code-card lock sent"><div class="rh-code-title">✔ Your number is in — Asha is entering the lock</div><div class="rh-tiles">${tile("#f2c14e", "You", "3")}${tile("#4fb3ff", "Asha", "8")}${tile("#ff7a59", "Ravi", "…")}${tile("#9b6bff", "Mei", "5")}</div><div class="rh-code-hint">Keep sailing!</div><div class="rh-code-time">9 s</div></div>`;
 }

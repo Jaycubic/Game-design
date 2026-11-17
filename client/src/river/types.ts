@@ -68,12 +68,10 @@ export interface PlugView {
   pipe: number;
   /** A crew number lock (otherwise the solo lock). */
   team: boolean;
-  /** The lock's numbers: crew locks in seat order, solo in shown order. */
+  /** The board: every crewmate's tile, sent numbers first in the order they were sent (solo: three numbers). Any order may be typed. */
   tiles: TileView[];
   /** Numbers typed so far. */
   entered: number;
-  /** A crew lock has locked in its numbers (on the fixer's first number). */
-  locked?: boolean;
   left: number;
 }
 

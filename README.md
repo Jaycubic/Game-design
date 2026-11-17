@@ -39,8 +39,8 @@ The two rule changes are **always chosen by players and happen exactly twice per
 formula and the win condition never change.
 
 **Teamwork puzzle:** before each pipe, every player gets a big number (1–9) and presses it to send it. Whoever stops
-at the pipe sees the numbers that were sent and enters them, with their own, smallest first. Playing alone, the lock
-shows three numbers to enter smallest first.
+at the pipe reads them off a board (in the order they were sent) and enters them, with their own, in any order. The
+lock needs every player's number. Playing alone, the lock shows three numbers to enter in any order.
 
 ## 3. Around the run
 

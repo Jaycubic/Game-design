@@ -57,13 +57,13 @@ pub const FIX_TIME: f32 = 1.0;
 // ── Number locks ──
 // Crew (2+ players): when the front boat nears an open pipe, every player is
 // dealt a different number 1–9, shown big on their own screen. Pressing your
-// number sends it to the crew (a wrong press is ignored). Whoever stops at the
-// pipe sees their own number plus every number sent so far, and types them in
-// increasing order. A player who doesn't press simply doesn't take part; the lock
-// needs at least one crewmate's number. Several fixers may open locks at the
-// same pipe; the first to finish fixes it. Running out of time costs River
-// Health and deals new numbers.
-// Solo: the lock shows three numbers; type them in increasing order.
+// number sends it to the crew's board (a wrong press is ignored). Whoever stops
+// at the pipe reads the board: their own number plus every number sent, in the
+// order they were sent. The lock needs EVERY player's number; the fixer types
+// them in any order (a number not on the board is ignored). Several fixers may
+// open locks at the same pipe; the first to finish fixes it. Running out of time
+// costs River Health and deals new numbers.
+// Solo: the lock shows three numbers; type them in any order.
 pub const KEY_DEAL_AT: f32 = 90.0;
 /// How long a number stays on screen if its player hasn't pressed it yet.
 pub const KEY_SHOW: f32 = 8.0;
@@ -310,8 +310,7 @@ pub const FINALES: [Finale; 2] = [Finale::SecondWind, Finale::CleanSweep];
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plug {
     pub pipe: u32,
-    /// The numbers to type, in increasing order. Crew locks fill this in when the
-    /// fixer types their first number (their own plus every number sent so far).
+    /// Solo: the three numbers to type (any order). Crew locks read the board instead.
     pub code: Vec<u8>,
     pub entered: Vec<u8>,
     pub left: f32,
@@ -1243,8 +1242,7 @@ impl Run {
                 Plug { pipe, code: Vec::new(), entered: Vec::new(), left: LOCK_TIME, team: true, tiles: Vec::new() }
             } else {
                 let tiles: Vec<u8> = self.shuffled_digits().into_iter().take(3).collect();
-                let mut code = tiles.clone();
-                code.sort();
+                let code = tiles.clone();
                 Plug { pipe, code, entered: Vec::new(), left: PLUG_TIME, team: false, tiles }
             };
             self.boats[i].plug = Some(plug);
@@ -1291,60 +1289,58 @@ impl Run {
         }
     }
 
-    /// The numbers a crew lock needs right now: the fixer's own plus every
-    /// crewmate number sent so far, in increasing order. None until at least one
-    /// crewmate has sent theirs.
-    pub fn lock_code(&self, pipe: u32, fixer: u8) -> Option<Vec<u8>> {
-        let crew = self.boats.iter().find(|b| b.seat == fixer)?.crew;
-        let deal = self.deals.iter().find(|d| d.pipe == pipe)?;
-        let own = deal.keys.iter().find(|(s, _)| *s == fixer)?.1;
-        let mates: Vec<u8> = deal
-            .answers
-            .iter()
-            .filter(|(s, _)| *s != fixer && self.boats.iter().any(|b| b.seat == *s && b.crew == crew))
-            .map(|(_, k)| *k)
-            .collect();
-        if mates.is_empty() {
-            return None;
+    /// The crew's board for a fixer's lock: (seat, number, sent) for every crewmate,
+    /// sent numbers first in the order they were sent, then the fixer's own (on the
+    /// board as soon as they are at the lock), then the ones still missing (seat order).
+    pub fn board(&self, pipe: u32, fixer: u8) -> Vec<(u8, u8, bool)> {
+        let Some(crew) = self.boats.iter().find(|b| b.seat == fixer).map(|b| b.crew) else { return Vec::new() };
+        let Some(deal) = self.deals.iter().find(|d| d.pipe == pipe) else { return Vec::new() };
+        let mates = |s: u8| self.boats.iter().any(|b| b.seat == s && b.crew == crew);
+        let mut out: Vec<(u8, u8, bool)> = deal.answers.iter().filter(|(s, _)| mates(*s)).map(|(s, k)| (*s, *k, true)).collect();
+        // A player at a lock on this pipe has their number on the board too.
+        let at_lock = |s: u8| s == fixer || self.boats.iter().any(|b| b.seat == s && b.plug.as_ref().is_some_and(|p| p.pipe == pipe));
+        for (s, k) in &deal.keys {
+            if mates(*s) && !out.iter().any(|(o, _, _)| o == s) {
+                out.push((*s, *k, at_lock(*s)));
+            }
         }
-        let mut code = mates;
-        code.push(own);
-        code.sort();
-        code.dedup();
-        Some(code)
+        // The fixer's own number sits with the sent ones, ahead of the missing ones.
+        out.sort_by_key(|(_, _, sent)| !*sent);
+        out
     }
 
-    /// The next number a fixer should type (for bots and tests).
+    /// The next number a fixer could type (for bots and tests).
     pub fn next_digit(&self, seat: u8) -> Option<u8> {
         let p = self.boats.iter().find(|b| b.seat == seat)?.plug.as_ref()?;
-        if p.code.is_empty() {
-            return self.lock_code(p.pipe, seat)?.first().copied();
+        if p.team {
+            return self.board(p.pipe, seat).into_iter().find(|(_, k, sent)| *sent && !p.entered.contains(k)).map(|(_, k, _)| k);
         }
-        p.code.get(p.entered.len()).copied()
+        p.code.iter().find(|k| !p.entered.contains(k)).copied()
     }
 
-    /// A fixer typed a number. A crew lock locks in its numbers on the first one;
-    /// a number out of order is ignored (no penalty, just try again).
+    /// A fixer typed a number. Any order works; a number that isn't on the board
+    /// (or not sent yet) is ignored, with no penalty. The lock opens once every
+    /// player's number is in.
     fn type_digit(&mut self, i: usize, d: u8) {
         let seat = self.boats[i].seat;
-        let (pipe, team, empty) = {
+        let (pipe, team) = {
             let p = self.boats[i].plug.as_ref().expect("plugging");
-            (p.pipe, p.team, p.code.is_empty())
+            (p.pipe, p.team)
         };
-        if team && empty {
-            let Some(code) = self.lock_code(pipe, seat) else {
-                self.events.push(Event::WrongKey { seat });
-                return;
-            };
-            self.boats[i].plug.as_mut().expect("plugging").code = code;
-        }
+        let (allowed, need): (Vec<u8>, usize) = if team {
+            let board = self.board(pipe, seat);
+            (board.iter().filter(|(_, _, sent)| *sent).map(|(_, k, _)| *k).collect(), board.len())
+        } else {
+            let p = self.boats[i].plug.as_ref().expect("plugging");
+            (p.code.clone(), p.code.len())
+        };
         let p = self.boats[i].plug.as_mut().expect("plugging");
-        if p.code.get(p.entered.len()) != Some(&d) {
+        if !allowed.contains(&d) || p.entered.contains(&d) {
             self.events.push(Event::WrongKey { seat });
             return;
         }
         p.entered.push(d);
-        if p.entered.len() == p.code.len() {
+        if need > 0 && p.entered.len() >= need {
             self.boats[i].plug = None;
             self.finish_plug(i, pipe, true);
         }
@@ -1848,14 +1844,11 @@ pub struct PlugView {
     pub pipe: u32,
     /// A crew number lock.
     pub team: bool,
-    /// The lock's numbers in seat order (solo: shown order). Before a crew lock
-    /// locks in, every crewmate has a tile; afterwards only the locked-in numbers.
+    /// The board: every crewmate's tile, sent numbers first in the order they were
+    /// sent (solo: the three numbers). Any order may be typed.
     pub tiles: Vec<TileView>,
     /// Numbers typed so far.
     pub entered: usize,
-    /// A crew lock has locked in its numbers.
-    #[serde(skip_serializing_if = "is_false")]
-    pub locked: bool,
     #[serde(serialize_with = "round2")]
     pub left: f32,
 }
@@ -1925,24 +1918,13 @@ impl Run {
                 }
                 let own = b.seat == viewer;
                 let tiles = if p.team {
-                    let deal = self.deals.iter().find(|d| d.pipe == p.pipe);
-                    let mut seats: Vec<u8> = self.boats.iter().filter(|x| x.crew == b.crew).map(|x| x.seat).collect();
-                    seats.sort();
-                    seats
+                    self.board(p.pipe, b.seat)
                         .into_iter()
-                        .filter_map(|s| {
-                            let key = deal.and_then(|d| d.keys.iter().find(|(k, _)| *k == s)).map(|(_, k)| *k);
-                            let sent = s == b.seat || deal.is_some_and(|d| d.answers.iter().any(|(a, _)| *a == s));
-                            let digit = if sent { key } else { None };
-                            if !p.code.is_empty() && !digit.is_some_and(|d| p.code.contains(&d)) {
-                                return None; // locked in without this number
-                            }
-                            Some(TileView {
-                                seat: Some(s),
-                                digit: if own { digit } else { None },
-                                ready: sent,
-                                used: digit.is_some_and(|d| p.entered.contains(&d)),
-                            })
+                        .map(|(s, k, sent)| TileView {
+                            seat: Some(s),
+                            digit: if own && sent { Some(k) } else { None },
+                            ready: sent,
+                            used: sent && p.entered.contains(&k),
                         })
                         .collect()
                 } else {
@@ -1953,7 +1935,7 @@ impl Run {
                 };
                 Some((
                     b.seat,
-                    PlugView { pipe: p.pipe, team: p.team, tiles, entered: p.entered.len(), locked: p.team && !p.code.is_empty(), left: p.left },
+                    PlugView { pipe: p.pipe, team: p.team, tiles, entered: p.entered.len(), left: p.left },
                 ))
             })
             .collect();
@@ -1970,7 +1952,7 @@ impl Run {
                 .iter()
                 .filter(|b| b.seat != viewer && me.is_some_and(|m| m.crew == b.crew))
                 .filter_map(|b| b.plug.as_ref())
-                .filter(|p| p.pipe == d.pipe && p.code.is_empty())
+                .filter(|p| p.pipe == d.pipe)
                 .map(|p| p.left)
                 .fold(0.0f32, f32::max);
             if sent {

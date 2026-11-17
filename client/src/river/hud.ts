@@ -301,7 +301,6 @@ export class RunHud {
   private lockCard(fixer: number, pv: import("./types").PlugView) {
     const own = fixer === this.mySeat;
     const how = usesTouch() ? "tap them" : "press 1–9";
-    const ready = pv.tiles.filter((t) => t.ready).length;
     const tile = (t: import("./types").TileView) => {
       const who = t.seat === undefined ? null : h("small", { class: "rh-tile-name" }, t.seat === this.mySeat ? "You" : this.name(t.seat));
       const colour = t.seat === undefined ? "" : `--c:${SEAT_COLOURS[t.seat % 4]}`;
@@ -331,21 +330,15 @@ export class RunHud {
     let hint: string;
     let cls: string;
     if (!pv.team) {
-      title = "Number lock — smallest first";
-      hint = `Enter the 3 numbers from smallest to biggest: ${how}. Press ▲ to leave.`;
+      title = `Number lock · ${pv.entered}/${pv.tiles.length}`;
+      hint = `Enter the 3 numbers on the board, in any order: ${how}. Press ▲ to leave.`;
       cls = "fixer";
     } else if (own) {
-      const mates = ready - 1;
-      if (pv.locked) {
-        title = `Enter them smallest first · ${pv.entered}/${pv.tiles.length}`;
-        hint = `Your number and your crew's, from smallest to biggest: ${how}. Press ▲ to leave.`;
-      } else if (mates < 1) {
-        title = "Waiting for your crew's numbers…";
-        hint = "Call out: “Press your number!” Their numbers appear here as they send them.";
-      } else {
-        title = "Enter them smallest first";
-        hint = `Start when you're ready (numbers sent later won't count): ${how}. Press ▲ to leave.`;
-      }
+      const missing = pv.tiles.filter((t) => !t.ready).map((t) => (t.seat === undefined ? "?" : this.name(t.seat)));
+      title = `Fix the pipe · ${pv.entered}/${pv.tiles.length} entered`;
+      hint = missing.length
+        ? `Waiting for ${missing.join(", ")} — call out “Press your number!” Every player's number is needed.`
+        : `Every number is in! Enter them all, in any order: ${how}. Press ▲ to leave.`;
       cls = "fixer";
     } else {
       const mine = pv.tiles.find((t) => t.seat === this.mySeat);
@@ -354,7 +347,7 @@ export class RunHud {
         hint = usesTouch() ? "Tap your big number." : "Press your big number.";
         cls = "call";
       } else {
-        title = `✔ Your number is in — ${this.name(fixer)} is entering the lock`;
+        title = `✔ Your number is on the board — ${this.name(fixer)} is entering the lock`;
         hint = "Keep sailing!";
         cls = "sent";
       }

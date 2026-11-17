@@ -63,7 +63,7 @@ All numbers below come from the code (`crates/river-core/src/lib.rs`, `crates/ga
 - Everyone in a room is **one crew**. Together you race small cleanup boats down a polluted river for **3 minutes**.
 - Boats move forward on their own. You only **steer**, **hop** and press one **action** button.
 - You **collect plastic**, **cut weed**, **hop logs** and, most importantly, **plug sewage pipes**, which only works
-  with your crew's help: each player presses their own number, and the fixer enters them smallest first.
+  with your crew's help: every player presses their own number, and the fixer enters them all from the board.
 - One shared **River Health** bar decides how the run ends: keep it at 60 or more and the river is revived;
   let it reach 0 and the river chokes.
 - **Exactly twice** per run, the players **vote to change the rules**.
@@ -85,7 +85,7 @@ commons* behind it: each person or group gains a little by ignoring a shared riv
 2. **Stop pollution at its source.** Collecting plastic helps a little, but open sewage pipes keep draining the river
    every second. Plugging a pipe is the single biggest thing you can do, and it makes all other cleaning count for
    more (the score multiplier).
-3. **Fixing the source is never a one-person job.** A pipe's lock needs at least one crewmate's number on top of the fixer's own.
+3. **Fixing the source is never a one-person job.** A pipe's lock needs every player's number.
 
 **How it is told:** indirectly, through rules and consequences rather than text. The water turns from blue-green to
 murky brown as River Health falls; missed plastic hurts the river; open pipes drain it; a grumpy brown smog cloud
@@ -105,9 +105,9 @@ debris waves, monsoon and dry-season effects on pollution, abandoned "ghost" fis
 | Environmental awareness, addressed indirectly | The whole score and outcome depend on a shared River Health bar; pollution is felt through lost points, murky water and choked rivers, not lectures. |
 | Players change the rules dynamically, **exactly twice** | Every run has a **Twist** vote (~1:03) and a **Finale** vote (~2:20), both chosen by the players. The engine enforces exactly two changes in every mode (Endless too, at 1:00 and 2:30), and automated tests prove it. |
 | Cooperation | One crew, one score, one River Health bar. |
-| Communication | Pipe number locks: each player gets one number per pipe and chooses to send it; the fixer calls for numbers ("press your number!") and needs at least one. |
+| Communication | Pipe number locks: each player gets one number per pipe and must send it; the fixer reads the board and calls for missing numbers ("press your number!"). |
 | Negotiation | Both rule changes are crew votes argued out loud; crews also plan who fixes which pipe. (Bluffing was optional in the brief and is not used.) |
-| Puzzles | Number lock: put the crew's numbers in increasing order under time pressure, while still steering. Alone: three numbers, smallest first. |
+| Puzzles | Number lock: get every crewmate's number onto the board and type them in under time pressure, while still steering. Alone: three numbers. |
 | Simple rules | Three controls, one score formula, one shared bar, a 60-second tutorial. |
 | Limited number of players | 1–4 per room, enforced by the server and the database. |
 | No violence | Nobody attacks anybody. Running into a boat ahead only slows you for a moment. |
@@ -255,13 +255,13 @@ rock in your lane for the last 1.5 s before you reach it.
    passed it.
 2. **Players press their number** (keys 1–9, tap the big number, or RT + a face button). The server keeps it for the
    pipe; the card becomes a calm "✔ Your 7 is in" and a ✔ pops over that boat. A wrong number is ignored (the card
-   shakes). Not pressing = not taking part in this pipe.
-3. **A fixer presses Action** beside the pipe. Their boat stops; the **lock** shows a tile per crewmate in seat order:
-   the fixer's own number, every number sent so far, and "…" for players who haven't pressed. Those players get their
+   shakes). **Every player must press**: the lock needs all the numbers.
+3. **A fixer presses Action** beside the pipe. Their boat stops; the **lock** shows the crew's **board**: the numbers in the
+   order they were sent, the fixer's own, and "…" for players who haven't pressed. Those players get their
    number back on screen, blinking, with "Your crew needs it!" (and a buzz on phones) while the lock is open.
-4. **The fixer types the numbers smallest first** (increasing order) within **12 s**. It needs **at least one
-   crewmate's number** besides their own. The first number typed **locks in** the set (later presses don't join this
-   attempt). A number out of order is ignored, with no penalty.
+4. **The fixer types the board's numbers, in any order,** within **12 s** (as shown is easiest). The lock opens once
+   **every player's number** is in (2 players: 2 numbers, 3: 3, 4: 4). A number not on the board (yet) is ignored,
+   with no penalty. A player at a lock on the same pipe counts as having sent theirs.
 5. **Success:** the boat stays put **1 s** while the crew member hammers (sparks, clanks); the pipe is plugged,
    **River Health +10**, crew pipes +1 (multiplier up), the smog cloud disappears.
 6. **Time out:** **River Health −5**, the pipe keeps pouring, every open lock on that pipe closes, and **new numbers**
@@ -273,8 +273,8 @@ rock in your lane for the last 1.5 s before you reach it.
 
 ### Solo number lock (1 player, and the tutorial)
 
-Three different numbers 1–9 show in a random order (e.g. 7 · 2 · 5) and **stay on screen**; type them **smallest
-first** (2, 5, 7) within **8 s**. ▲ leaves. A number out of order is ignored; running out of time costs River
+Three different numbers 1–9 show in a random order (e.g. 7 · 2 · 5) and **stay on screen**; type all three **in any
+order** within **8 s**. ▲ leaves. A number that isn't shown is ignored; running out of time costs River
 Health −5.
 
 ### Why it matters
@@ -405,7 +405,7 @@ point at it, a bubble explains it):
 3. **River Health** (the bar): 4.5 s.
 4. **Hop** (▲): past the first log row.
 5. **Cut weed** (✂): a mat cut (or both passed).
-6. **Plug the pipe** (✂, then three numbers smallest first): plugged or failed (or both pipes passed).
+6. **Plug the pipe** (✂, then the three numbers shown): plugged or failed (or both pipes passed).
 
 ---
 
@@ -647,7 +647,7 @@ A run itself lives in server memory for its 3 minutes; only results, rewards and
 
 | Suite | Count | Covers |
 |---|---|---|
-| `river-core` unit tests | 52 | Determinism; one crew; lane counts and spawns; every obstacle and river mechanic; capsizes and spill; crew number locks (dealing, privacy, sending, increasing order, waiting for a crewmate, time-out, skip, several fixers, away players, one pipe at a time); solo number lock; fixing stop; catch-up current; River Health; stars; exactly two rule changes (including Endless); vote ties; tutorial; boat stats; difficulty; a full bot-played run |
+| `river-core` unit tests | 52 | Determinism; one crew; lane counts and spawns; every obstacle and river mechanic; capsizes and spill; crew number locks (dealing, privacy, sending, board order, every number needed, any order, time-out, skip, several fixers, away players, one pipe at a time); solo number lock; fixing stop; catch-up current; River Health; stars; exactly two rule changes (including Endless); vote ties; tutorial; boat stats; difficulty; a full bot-played run |
 | `game-server` tests | 19 | Seeds rules, rating maths, river unlocks and star masks, mission draws and amounts, rank rules, room rules |
 | Client tests | 2 | Input mapping |
 | Live checks | — | Two-client room test; two-bot crew-lock run; browser playthroughs on desktop and phone sizes |

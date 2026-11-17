@@ -1,5 +1,5 @@
 // Dev builds only: a simple autopilot for multiplayer play-tests. It steers to the
-// next open pipe, opens the lock, types the sent numbers smallest first, sends its own
+// next open pipe, opens the lock, types the board numbers once every number is in, sends its own
 // number when dealt one, votes a set option, and samples the layout audit
 // every second. Start it with `__autopilot(vote)`; read `__report()`.
 import { audit } from "./layout-audit";
@@ -7,7 +7,7 @@ import { audit } from "./layout-audit";
 interface Boat { seat: number; lane: number; z: number; plugging?: boolean }
 interface Obj { kind: string; lane: number; z: number; plugged: boolean; alive: boolean }
 interface Tile { seat?: number; digit?: number; ready: boolean; used?: boolean }
-interface Plug { pipe: number; team: boolean; tiles: Tile[]; locked?: boolean }
+interface Plug { pipe: number; team: boolean; tiles: Tile[] }
 interface Snap {
   t: number;
   phase: { phase: string; change?: string };
@@ -61,12 +61,11 @@ export function autopilot(getRun: () => unknown, vote: number) {
     if (key !== null && !s.key_sent && !s.plugs.some(([x]) => x === run.mySeat)) {
       run.send.input({ glyph: key }); lastSent = now; say(`sent number ${key}`); return;
     }
-    // My own lock: tap the ready numbers smallest first.
+    // My own lock: once every number is on the board, tap them in board order.
     const own = s.plugs.find(([x]) => x === run.mySeat)?.[1];
     if (own) {
-      const ready = own.tiles.filter((t) => t.digit !== undefined && !t.used).map((t) => t.digit!).sort((a, b) => a - b);
-      const others = own.tiles.filter((t) => t.ready && t.seat !== run.mySeat).length;
-      if (ready.length && (!own.team || own.locked || others > 0)) { run.send.input({ glyph: ready[0] }); lastSent = now; say(`typed ${ready[0]}`); }
+      const ready = own.tiles.filter((t) => t.digit !== undefined && !t.used).map((t) => t.digit!);
+      if (ready.length && own.tiles.every((t) => t.ready)) { run.send.input({ glyph: ready[0] }); lastSent = now; say(`typed ${ready[0]}`); }
       return;
     }
     // Steer to the next open pipe and plug it.

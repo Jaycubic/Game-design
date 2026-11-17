@@ -88,13 +88,13 @@ export class Coach {
     {
       title: "Plug the pipe",
       keys: () => `${hint("action")} then ${usesTouch() ? "tap the numbers" : "1–9"}`,
-      text: "Pull up beside the sewage pipe, use the same ✂ button, then enter the 3 numbers, smallest first.",
+      text: "Pull up beside the sewage pipe, use the same ✂ button, then enter the 3 numbers shown, in any order.",
       spot: (c) =>
         c.plugging
           ? {
               name: "code",
               title: "Number lock",
-              text: `Enter the numbers smallest first: ${usesTouch() ? "tap them" : "press keys 1–9"}. With friends, each of you gets a number before every pipe — press it and it goes to whoever fixes the pipe.`,
+              text: `Enter the numbers on the board, in any order: ${usesTouch() ? "tap them" : "press keys 1–9"}. With friends, each of you gets a number before every pipe — everyone presses theirs, and it goes on the board for whoever fixes the pipe.`,
             }
           : { name: "action", title: "Plug a pipe", text: `Steer into the lane next to the pipe and ${tap().toLowerCase()} ✂ when you're beside it.` },
       done: (c) => c.plugged || c.pluggingFailed,

@@ -176,7 +176,7 @@ fn weed_slows_unless_cut_and_cutting_greens_a_bank() {
 }
 
 #[test]
-fn a_crew_lock_takes_the_sent_numbers_in_increasing_order() {
+fn a_crew_lock_needs_every_players_number_in_any_order() {
     let mut r = crew_at_pipe(13, 4);
     let pipe = open_lock(&mut r, 0);
     let keys = keys_for(&r, pipe);
@@ -189,23 +189,19 @@ fn a_crew_lock_takes_the_sent_numbers_in_increasing_order() {
     let s2 = r.snapshot_for(2);
     assert_eq!(s2.my_key, Some(keys[2]));
     assert!(s2.key_call, "a crewmate at the lock calls for the number");
-    assert_eq!(r.snapshot_for(0).my_key, None, "the fixer sees theirs on the lock");
+    assert_eq!(r.snapshot_for(0).my_key, None, "the fixer sees theirs on the board");
     assert_eq!(r.boats[0].speed(), 0.0, "the boat stops while fixing");
-    // Before anyone sends, the fixer sees only their own number and can't start.
+    // The board: the fixer's own number, then everyone still missing.
     let v = r.snapshot_for(0).plugs[0].1.clone();
-    assert!(v.team && !v.locked);
+    assert!(v.team && v.tiles.len() == 4);
     assert_eq!(v.tiles[0].digit, Some(keys[0]));
     assert!(v.tiles[1..].iter().all(|t| !t.ready && t.digit.is_none()));
-    let mut i = idle(&r);
-    i[0].1.glyph = Some(keys[0]);
-    r.step(&i);
-    assert!(r.drain_events().contains(&Event::WrongKey { seat: 0 }), "waits for a crewmate");
-    // A wrong press is ignored; the right one is sent once.
+    // A wrong press is ignored; the right one goes on the board, in the order sent.
     let mut i = idle(&r);
     i[1].1.glyph = (1..=DIGITS).find(|d| !keys.contains(d));
     r.step(&i);
     assert!(r.drain_events().contains(&Event::WrongKey { seat: 1 }));
-    for seat in 1..3u8 {
+    for seat in [3u8, 1] {
         let mut i = idle(&r);
         i[seat as usize].1.glyph = Some(keys[seat as usize]);
         r.step(&i);
@@ -213,24 +209,27 @@ fn a_crew_lock_takes_the_sent_numbers_in_increasing_order() {
     let s1 = r.snapshot_for(1);
     assert!(s1.key_sent && s1.my_key == Some(keys[1]) && !s1.key_call, "sent: no more alerts");
     let v = r.snapshot_for(0).plugs[0].1.clone();
-    assert_eq!(v.tiles[1].digit, Some(keys[1]), "the fixer sees sent numbers");
-    assert!(!v.tiles[3].ready, "seat 3 didn't press");
-    assert_eq!(r.snapshot_for(2).plugs[0].1.tiles[1].digit, None, "others only see that seat 1 sent");
-    // The fixer types own + sent numbers, smallest first. Seat 3 is left out.
-    let mut want = vec![keys[0], keys[1], keys[2]];
-    want.sort();
-    let before = r.health;
-    // Out of order is ignored.
-    let mut i = idle(&r);
-    i[0].1.glyph = Some(want[2]);
-    r.step(&i);
-    assert!(r.boats[0].plug.as_ref().unwrap().entered.is_empty());
-    assert_eq!(r.snapshot_for(0).plugs[0].1.tiles.len(), 3, "locked in without seat 3");
-    for d in &want {
+    let shown: Vec<Option<u8>> = v.tiles.iter().map(|t| t.digit).collect();
+    assert_eq!(shown, vec![Some(keys[3]), Some(keys[1]), Some(keys[0]), None], "sent order, then own, then missing");
+    assert_eq!(r.snapshot_for(2).plugs[0].1.tiles[0].digit, None, "others only see that a number was sent");
+    // The fixer types what's on the board, in any order — but seat 2 hasn't sent yet.
+    for d in [keys[1], keys[0], keys[3]] {
         let mut i = idle(&r);
-        i[0].1.glyph = Some(*d);
+        i[0].1.glyph = Some(d);
         r.step(&i);
     }
+    let mut i = idle(&r);
+    i[0].1.glyph = Some(keys[2]);
+    r.step(&i);
+    assert!(r.drain_events().contains(&Event::WrongKey { seat: 0 }), "not on the board yet");
+    assert!(!r.objs.iter().find(|o| o.id == pipe).unwrap().plugged, "every player's number is needed");
+    let before = r.health;
+    let mut i = idle(&r);
+    i[2].1.glyph = Some(keys[2]);
+    r.step(&i);
+    let mut i = idle(&r);
+    i[0].1.glyph = Some(keys[2]);
+    r.step(&i);
     assert!(r.objs.iter().any(|o| o.id == pipe && o.plugged));
     assert_eq!(r.crews[0].pipes, 1);
     assert!(r.health > before + 5.0);
@@ -341,7 +340,8 @@ fn away_players_numbers_fill_in_by_themselves() {
     let pipe = open_lock(&mut r, 0);
     let keys = keys_for(&r, pipe);
     let v = r.snapshot_for(0).plugs[0].1.clone();
-    assert_eq!(v.tiles[2], TileView { seat: Some(2), digit: Some(keys[2]), ready: true, used: false });
+    let t = v.tiles.iter().find(|t| t.seat == Some(2)).expect("seat 2 on the board");
+    assert_eq!(*t, TileView { seat: Some(2), digit: Some(keys[2]), ready: true, used: false });
 }
 
 #[test]
@@ -929,7 +929,7 @@ fn endless_speeds_up_and_still_has_exactly_two_player_chosen_changes() {
 }
 
 #[test]
-fn a_boat_with_no_crewmate_types_three_numbers_in_increasing_order() {
+fn a_boat_with_no_crewmate_types_three_numbers_in_any_order() {
     let mut r = Run::new(41, &[0]);
     r.objs.clear();
     r.gen_z = f32::MAX;
@@ -943,20 +943,18 @@ fn a_boat_with_no_crewmate_types_three_numbers_in_increasing_order() {
     let v = r.snapshot_for(0).plugs[0].1.clone();
     let shown: Vec<u8> = v.tiles.iter().map(|t| t.digit.unwrap()).collect();
     assert_eq!(shown.len(), 3);
-    let mut want = shown.clone();
-    want.sort();
     // The numbers stay on screen the whole time (no memory).
     for _ in 0..(TICK_HZ as usize * 3) {
         let i = idle(&r);
         r.step(&i);
     }
     assert_eq!(r.snapshot_for(0).plugs[0].1.tiles.len(), 3);
-    // Biggest first is ignored, then smallest first works.
+    // A number that isn't shown is ignored; the shown ones work in any order.
     let mut i = idle(&r);
-    i[0].1.glyph = Some(want[2]);
+    i[0].1.glyph = (1..=DIGITS).find(|d| !shown.contains(d));
     r.step(&i);
     assert_eq!(r.snapshot_for(0).plugs[0].1.entered, 0);
-    for d in want {
+    for d in [shown[2], shown[0], shown[1]] {
         let mut i = idle(&r);
         i[0].1.glyph = Some(d);
         r.step(&i);

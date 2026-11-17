@@ -111,15 +111,15 @@ whoever has fixed the fewest so far). It's only a hint: anyone can fix any pipe.
    own screen ("YOUR NUMBER 7"). Every player gets a different number. It stays up for **8 seconds** and **blinks**
    as it is about to disappear. Nothing to remember.
 2. **Press it.** Press that number (or tap the big number on a phone). That's you **helping fix the pipe**: the
-   game keeps it for whoever fixes the pipe, and your card turns into a calm "✔ Your 7 is in". A wrong number does
-   nothing; try again. Don't press, and you simply don't take part in this pipe.
+   game puts it on the crew's **board** for whoever fixes the pipe, and your card turns into a calm "✔ Your 7 is in".
+   A wrong number does nothing; try again. **Every player must press**: the pipe can't be fixed without all the numbers.
 3. **Fix.** A player beside the pipe presses **Action**. Their boat stops and the **lock** opens. It shows the
-   fixer's own number and **every number already sent**, under each player's name. Anyone who hasn't pressed yet gets
+   board: **every number already sent, in the order it was sent**, the fixer's own, and "…" for anyone still missing. Anyone who hasn't pressed yet gets
    their number back on screen, blinking, with "Your crew needs it!" — until they press or the lock closes.
-4. **Smallest first.** The fixer types the numbers **in increasing order** (keys 1–9, or tap them): for 6, 2, 9 that
-   is 2, 6, 9. The lock needs **at least one crewmate's number** besides the fixer's own; the numbers lock in when
-   the fixer types the first one (numbers sent later don't count this time). A number out of order is ignored: no
-   penalty, just type the right one. The fixer has **12 seconds**.
+4. **Type them in.** The fixer types the numbers on the board (keys 1–9, or tap them) **in any order**; the easy way
+   is just as they appear (board 5 · 6 · 7 → type 5, 6, 7). The lock opens only when **every player's number** is in:
+   2 players need both numbers, 3 players all three, 4 players all four. A number that isn't on the board (yet) is
+   ignored, with no penalty. The fixer has **12 seconds**.
 5. **Fixed!** The boat stays put 1 more second while the crew member hammers the pipe shut. The smog cloud over that pipe
    is gone, the river heals by 10, and your crew's **multiplier** goes up for the rest of the run (×1.5, ×2… next to
    your score).
@@ -144,15 +144,15 @@ fixed or everyone has passed it.
 |---|---|---|
 | 1 | Your number: **6**. | Ben gets **1**. Asha gets **3**. |
 | 2 | Press **6** straight away (or wait: the lock shows it anyway). | Ben presses **1**. Asha is busy dodging a log and doesn't press yet. |
-| 3 | Press **Action** beside the pipe. The lock shows: Ben **1** · You **6** · Asha … | Asha's **3** comes back, blinking: "Your crew needs it!" She presses **3**. |
-| 4 | The lock now shows 1 · 6 · 3. Type smallest first: **1, 3, 6**. | Keep sailing. |
+| 3 | Press **Action** beside the pipe. The board shows: Ben **1** · You **6** · Asha … (the lock waits for her) | Asha's **3** comes back, blinking: "Your crew needs it!" She presses **3**. |
+| 4 | The board now shows 1 · 6 · 3 (the order they were sent). Type **1, 6, 3** (any order works). | Keep sailing. |
 | 5 | Fixed: River +10, every plastic now ×1.5. | Same score boost for everyone. |
 
 **Away players** (paused, disconnected or quit): their number sends itself, so a lock is never impossible.
 
-### Playing alone: three numbers, smallest first
+### Playing alone: three numbers, any order
 
-With no crewmates, the lock shows **three numbers** (for example 7 · 2 · 5). Type them **smallest first** (2, 5, 7)
+With no crewmates, the lock shows **three numbers** (for example 7 · 2 · 5). Type all three, **in any order**,
 within 8 seconds; they stay on screen the whole time. ▲ skips here too. Running out of time makes the river take a
 hit (River Health −5).
 
