@@ -223,6 +223,10 @@ export class RiverScene {
     // Low-end mode: a shorter view (fog hides the cut), so far fewer objects are drawn.
     this.camera.maxZ = perf.low ? 230 : 400;
     this.camera.fov = 0.95;
+    // The sky dome (radius 350) must sit inside the far plane, or Low quality cuts it away
+    // and leaves a dark sky. Shrink it to fit; it is drawn at infinite distance, so it looks the same.
+    const dome = scene.getMeshByName("skydome");
+    if (dome) dome.scaling.setAll(Math.min(1, (this.camera.maxZ * 0.9) / 350));
 
     this.vc = new StandardMaterial("vc", scene);
     this.vc.specularColor = new Color3(0.08, 0.08, 0.08);
@@ -380,8 +384,12 @@ export class RiverScene {
 
   /** World x of a pipe on bank `side` (-1 left, +1 right). */
   pipeX(side: number) {
+    // Dry Season: the right bank moves in to the edge of the mud, and the pipe with it.
+    if (side > 0 && this.openLanes > 0 && this.openLanes < this.laneCount) return this.laneX(this.openLanes - 1) + LANE_W / 2 + 1.2;
     return side * (this.half + 1.2);
   }
+  /** Open lanes in the last drawn frame (fewer than laneCount in Dry Season). */
+  private openLanes = 0;
 
   /** World x of a lane's centre (lanes are numbered from 0 on the left). */
   laneX(lane: number) {
@@ -522,6 +530,7 @@ export class RiverScene {
     const t = this.time;
     for (const bt of Object.values(this.objBatches)) bt.begin();
     const ob = this.objBatches;
+    this.openLanes = open.length;
     for (const o of objs) {
       if (o.kind !== "pipe" && o.kind !== "wave" && !open.includes(o.lane)) continue;
       const x = this.laneX(o.lane);
@@ -568,11 +577,12 @@ export class RiverScene {
           break;
         case "pipe": {
           // Big enough to spot from far away; the brown plume spreads well into the river.
-          const px = o.lane * (HALF + 1.2);
+          const px = this.pipeX(o.lane);
           ob.pipe.add(px, 0.35, o.z, o.lane > 0 ? 0 : Math.PI, 1.6);
           if (o.plugged) ob.plug.add(px, 0.35, o.z, o.lane > 0 ? 0 : Math.PI, 1.6);
           else {
-            ob.plume.add(o.lane * (HALF - 1.6), -0.04, o.z + 6, 0, 1, 0, 0, 2.4 + Math.sin(t * 1.5 + o.id) * 0.3, 9);
+            // The plume starts at the pipe's mouth and flows into the open water (above the Dry Season mud).
+            ob.plume.add(px - o.lane * 2.8, 0.05, o.z + 6, 0, 1, 0, 0, 2.4 + Math.sin(t * 1.5 + o.id) * 0.3, 9);
             // A grumpy smog cloud sulks over every open pipe, bobbing and puffing.
             const puff = 1 + Math.sin(t * 3 + o.id) * 0.06;
             ob.murk.add(px - o.lane * 0.6, 2.6 + Math.sin(t * 1.7 + o.id) * 0.25, o.z, Math.sin(t * 0.8 + o.id) * 0.15, 1.7 * puff);

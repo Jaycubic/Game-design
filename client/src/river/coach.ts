@@ -116,10 +116,13 @@ export class Coach {
   constructor(
     private host: HTMLElement,
     private onExit: () => void,
+    /** The HUD slot the coach card stacks in (so it never covers the pipe card or banners). */
+    slot?: HTMLElement,
   ) {
     host.classList.add("tutorial");
     this.card = h("div", { class: "coach" });
-    host.appendChild(this.card);
+    if (slot) slot.prepend(this.card);
+    else host.appendChild(this.card);
     this.spot = new Spotlight(host);
     this.draw();
   }

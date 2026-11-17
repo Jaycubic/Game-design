@@ -120,7 +120,6 @@ export class TouchControls {
         ),
       ),
       p.mode === "swipe" ? h("div", { class: "tc-swipe-hint" }, "Swipe ← → to steer · ↑ hop · ↓ cut / plug") : null,
-      h("div", { class: "rotate-hint" }, "↻ Turn your phone sideways for a wider river"),
     );
     host.appendChild(this.root);
     document.body.classList.add("touch-run");

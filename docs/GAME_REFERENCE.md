@@ -315,7 +315,7 @@ Crew score = plastic × (1 + 0.5 × pipes plugged) + 5 × banks greened
 
 Every run changes its rules **exactly twice**, and the players choose both. Each change: a 5 s warning while racing
 → the run pauses → the crew votes → a full-screen card shows the result for 3 s → a HUD badge stays for the rest of
-the run. Ties and missing votes are settled by a **visible spin**. Controls, the score formula and the win condition
+the run. A tie goes to the **first vote cast** among the tied options (the card names that player); only no votes at all means a **visible spin**. Controls, the score formula and the win condition
 never change.
 
 ### Twist (~1:03, 15 s to vote)
@@ -504,20 +504,24 @@ falls **at most one step per UTC day**.
 8. **Panels**: Garage, Shop, Daily, River Road, Rivers, Missions, How to play, Settings.
 
 ### Run HUD
-| Where | What |
+
+The HUD is one grid of named **slots** (`client/src/river/run.css`, "HUD layout"). Every piece belongs to exactly one
+slot, and a slot stacks its pieces, so two pieces never land on top of each other on any screen size.
+
+| Slot | What it holds |
 |---|---|
-| Top left | Crew score with the multiplier badge; plastic ♻ and pipes 🔧 (and nets 🕸 on Mangrove) |
-| Top centre | Timer (or metres in Endless), rule badges, lives in crew Endless |
-| Top right | **River health** bar |
-| Under the timer | Pipe card (bank, distance, next step) |
-| Left | "Your key for the next pipe" card, while shown |
-| Middle | Lock popup (fixer) or "send your key!" call (teammates); countdown; votes; reveals; banners |
-| Over the world | Name tags, pipe marker, signal bubbles, "+1 ♻" pop-ups |
-| Bottom centre | Boost meter |
-| Bottom right (PC) | Signal bar (symbols, numbers, names) |
-| Bottom left (PC) | Key hints, including "Esc pause" |
-| Phones | Thumb buttons, symbol buttons |
-| Top left (every device) | ⏸ Pause button: menu with Resume and Quit run |
+| Top | ⏸ Pause · crew score · timer (or metres in Endless), rule badges, lives · **River health** |
+| Notices (under the top bar) | Tutorial coach card · pipe card (bank, distance, next step) · banners (at most 2; 1 at a lock or on short screens) |
+| Lower | "Your key for the next pipe" card, while shown · the lock card (fixer) or "send your key!" call (teammates) |
+| Bottom | Boost meter, with key hints (PC, left) and the signal bar (PC, right) beside it |
+| Over the world | Name tags, pipe marker, signal bubbles, "+1 ♻" pop-ups (lowest layer) |
+| Full screen | Countdown, votes, reveals, results (above the HUD; the HUD steps back while they show) |
+
+When pieces compete for room: at a lock the lock card wins and the pipe card hides (you're there); a fixer's key card
+hides too (their slot is typed from memory). Thumb buttons own the bottom corners on touch screens; on phones in
+portrait the six signals form one row above them, and the HUD reserves that space. Layers, low to high: world markers
+< HUD < thumb buttons < full-screen moments < pause menu < tutorial spotlight. Dev builds have `__audit()` and
+`__stress()` in the browser console to list any overlap.
 
 ---
 
@@ -569,7 +573,7 @@ Settings are saved per browser.
 | Racing ahead and ignoring a teammate's key call | The lock fails: River Health −5 for the whole crew. |
 | One player fixing every pipe | The marker suggests whoever has fixed the fewest; results show each player's pipes. |
 | Being stranded after fixing | The catch-up current. |
-| Random or forced rule changes | Both are crew votes; only ties or no votes spin, visibly. |
+| Random or forced rule changes | Both are crew votes; ties go to the first vote, and only no votes spin, visibly. |
 | Farming wins for Seeds | Win bonus only for the first 3 wins a day; practice and Endless pay half. |
 | Paying to win | No real money; upgrades capped and small. |
 | Regretted purchases | 10-minute undo. |

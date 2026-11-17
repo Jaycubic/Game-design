@@ -36,6 +36,7 @@ export class RunHud {
   private code = h("div", { class: "rh-code" });
   private bottom = h("div", { class: "rh-bottom" });
   private fx = h("div", { class: "rh-fx" });
+  private banners = h("div", { class: "rh-banners", "aria-live": "polite" });
   private sigTop = "";
   private sigCenter = "";
   private sigCode = "";
@@ -58,17 +59,36 @@ export class RunHud {
     this.root = h(
       "div",
       { class: "run-ui" },
-      this.top,
-      this.center,
-      this.code,
-      this.bottom,
+      // Layer 1: things pinned to the 3D world (name tags, +1 pops, pipe marker).
       this.fx,
-      this.pipeCard,
       this.pipeMark,
-      this.keyCard,
-      this.pauseBtn,
-      this.menu,
+      // Layer 2: the HUD slot grid (see run.css "HUD layout").
       h(
+        "div",
+        { class: "rhud" },
+        h("div", { class: "rhud-slot rhud-topbar" }, this.pauseBtn, this.top),
+        h("div", { class: "rhud-slot rhud-notices" }, this.pipeCard, this.banners),
+        // Your key sits right above the lock card, close to the signal buttons you press.
+        h("div", { class: "rhud-slot rhud-lower" }, this.keyCard, this.code),
+        h("div", { class: "rhud-slot rhud-bottom" }, this.bottom),
+        h("div", { class: "rhud-slot rhud-bl" }, this.keysHint()),
+        h("div", { class: "rhud-slot rhud-br" }, this.signalBar()),
+      ),
+      // Layer 3: full-screen moments (countdown, votes, reveal, results), then the pause menu.
+      this.center,
+      this.menu,
+    );
+    host.appendChild(this.root);
+  }
+
+  /** A HUD slot ("notices", "left", "lower", …) for pieces owned by other modules. */
+  slot(name: string): HTMLElement | undefined {
+    return this.root.querySelector<HTMLElement>(`.rhud-${name}`) ?? undefined;
+  }
+
+  /** Bottom-left keyboard hint (hidden with touch controls). */
+  private keysHint() {
+    return h(
         "div",
         { class: "rh-keys" },
         h("span", { "data-tut": "steer" }, `${hint("left")} ${hint("right")} steer`),
@@ -77,9 +97,12 @@ export class RunHud {
         " · ",
         h("span", { "data-tut": "action" }, `${hint("action")} cut / plug`),
         " · Esc pause",
-      ),
-      // Desktop signal bar: the six symbols with their key and name (touch has its own buttons).
-      h(
+      );
+  }
+
+  /** Desktop signal bar: the six symbols with their key and name (touch has its own buttons). */
+  private signalBar() {
+    return h(
         "div",
         { class: "rh-signals", role: "group", "aria-label": "Signals", "data-tut": "signals" },
         GLYPHS.map((g, i) =>
@@ -91,9 +114,7 @@ export class RunHud {
             h("small", null, signalName(i)),
           ),
         ),
-      ),
-    );
-    host.appendChild(this.root);
+      );
   }
 
   private name(seat: number) {
@@ -430,7 +451,7 @@ export class RunHud {
               );
             }),
           ),
-          h("div", { class: "rh-choice-foot" }, "A tie is settled by a spin."),
+          h("div", { class: "rh-choice-foot" }, "A tie goes to whoever voted first."),
         ),
       ];
     }
@@ -459,7 +480,7 @@ export class RunHud {
               );
             }),
           ),
-          h("div", { class: "rh-choice-foot" }, "A tie is settled by a spin."),
+          h("div", { class: "rh-choice-foot" }, "A tie goes to whoever voted first."),
         ),
       ];
     }
@@ -470,7 +491,17 @@ export class RunHud {
         h(
           "div",
           { class: "rh-reveal pop" },
-          h("div", { class: "rh-reveal-kicker" }, p.spin ? "🎡 No clear choice — the spin decides" : p.change === "twist" ? "The river changes" : "Final twist"),
+          h(
+            "div",
+            { class: "rh-reveal-kicker" },
+            p.spin
+              ? "🎡 Nobody voted — the river picks"
+              : p.tie_by !== undefined
+                ? `⚖️ A tie — ${p.tie_by === this.mySeat ? "you" : this.name(p.tie_by)} voted first, so it's`
+                : p.change === "twist"
+                  ? "The river changes"
+                  : "Final twist",
+          ),
           h("div", { class: "rh-card-icon big" }, info.icon),
           h("div", { class: "rh-reveal-name" }, info.name),
           h("div", { class: "rh-card-line" }, info.line),
@@ -601,10 +632,15 @@ export class RunHud {
     setTimeout(() => el.remove(), 700);
   }
 
-  banner(text: string, kind = "") {
+  banner(text: string, kind = "", ms = 1800) {
+    // The same message twice in a row just restarts its timer.
+    const same = [...this.banners.children].find((c) => c.textContent === text);
+    same?.remove();
     const el = h("div", { class: "rh-banner " + kind }, text);
-    this.fx.appendChild(el);
-    setTimeout(() => el.remove(), 1800);
+    this.banners.prepend(el);
+    while (this.banners.children.length > 2) this.banners.lastElementChild!.remove();
+    if (ms !== 1800) el.style.animationDuration = `${ms}ms`;
+    setTimeout(() => el.remove(), ms);
   }
 
   /** Name tag above each boat (screen position from the 3D scene). */

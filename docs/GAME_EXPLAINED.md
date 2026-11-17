@@ -217,7 +217,7 @@ source makes every clean-up effort more effective.
 
 ### The key lock: everyone holds a piece
 
-As the crew nears a pipe (about 70 m), **every player is shown their own key** for 3 seconds, on the left of the
+As the crew nears a pipe (about 70 m), **every player is shown their own key** for 3 seconds, near the bottom of the
 screen: one of the six symbols, different for each player. Nobody else sees yours.
 
 When someone presses Action at the pipe, they become the **fixer** and a lock opens with **one slot per player**, in
@@ -304,7 +304,7 @@ a 5-second warning → the game pauses → you choose → a card shows the new r
 | **Dry Season** | Fewer lanes to watch | A third of the lanes dry up, and pipes pour twice as fast | Low water concentrates pollution, so sewage does more damage |
 | **Volunteer Day** | Each plastic counts double | Weed mats keep spreading | Community clean-ups make a big difference, but nature fights back |
 
-A tie, or nobody voting, is settled by a **visible spin**, never secretly.
+A tie goes to **whoever voted first** (the result card says who), so everyone always gets the same river. Only if nobody votes at all does the river pick at random, with a visible spin.
 
 **Why a vote?** It's the **negotiation** part of the brief. Players argue out loud: "Dry Season will kill us, we
 haven't plugged a pipe!" Different players want different twists depending on how they play.
@@ -554,7 +554,7 @@ No. Everyone in the room is one crew against the pollution. You can still chase 
 records.
 
 **Is the rule change random?**
-No. Players choose both. Only a tie or no choice is settled by a spin, and the spin is shown on screen.
+No. Players choose both. A tie goes to the first vote; only when nobody votes does a visible spin decide.
 
 **Can I pay to win?**
 No. There is no real money. Better boats are only slightly better.

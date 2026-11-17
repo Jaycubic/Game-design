@@ -180,11 +180,14 @@ export class RunMode {
     this.scene.setLanes(s.lane_count ?? 3);
     if (s.river) this.scene.setRiver(s.river);
     if (first && s.river && s.river !== "canal" && !s.tutorial) this.hud.banner(RIVER_TITLES[s.river], "go");
+    if (first && this.touch && matchMedia("(max-width: 760px) and (orientation: portrait)").matches) {
+      this.hud.banner("↻ Turn your phone sideways for a wider river", "", 4000);
+    }
     this.beats(s);
     if (first) for (const b of s.boats) this.smooth.set(b.seat, { x: this.scene.laneX(b.lane), z: b.z });
     const me = s.boats.find((b) => b.seat === this.mySeat);
     if (me && this.predictedLane !== null && (me.lane === this.predictedLane || performance.now() > this.predictedUntil)) this.predictedLane = null;
-    if (s.tutorial && !this.coach) this.coach = new Coach(document.getElementById("run-ui")!, () => this.onLeave());
+    if (s.tutorial && !this.coach) this.coach = new Coach(document.getElementById("run-ui")!, () => this.onLeave(), this.hud.slot("notices"));
     this.coach?.snapshot(s, this.mySeat);
     if (!this.finished) this.hud.update(s);
     if (s.results && !this.finished && !s.tutorial) this.finish(s.results);
@@ -246,6 +249,12 @@ export class RunMode {
         case "plug_failed":
           sound.play("plugFail", { volume: mine ? 1 : 0.7 });
           this.hud.banner(s.boats.length > 1 ? "Lock failed! River −5 — new keys for the next try" : "Wrong code! River −5", "bad");
+          break;
+        case "pipe_missed":
+          if (!s.tutorial) {
+            sound.play("plugFail", { volume: 0.7 });
+            this.hud.banner("A pipe was left open behind you! River −5", "bad");
+          }
           break;
         case "plug_skipped":
           if (mine) this.hud.banner("You left the pipe — sail on!", "warn");

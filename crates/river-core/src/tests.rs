@@ -386,13 +386,13 @@ fn exactly_two_rule_changes_per_run_chosen_by_players() {
 }
 
 #[test]
-fn tied_or_missing_votes_resolve_with_a_visible_spin() {
+fn a_tie_goes_to_the_first_vote_and_no_votes_spin() {
     let mut r = Run::new(29, &[0, 1]);
     until(&mut r, |r| matches!(r.phase, Phase::Choosing { change: ChangeKind::Twist, .. }));
+    r.choose(1, 2).unwrap(); // seat 1 votes first
     r.choose(0, 0).unwrap();
-    r.choose(1, 2).unwrap();
-    assert!(matches!(r.phase, Phase::Reveal { spin: true, .. }));
-    assert!(matches!(r.twist, Some(Twist::MonsoonSurge) | Some(Twist::VolunteerDay)));
+    assert!(matches!(r.phase, Phase::Reveal { spin: false, tie_by: Some(1), .. }));
+    assert_eq!(r.twist, Some(Twist::VolunteerDay), "the first vote breaks the tie");
 
     let mut r = Run::new(31, &[0, 1]);
     until(&mut r, |r| matches!(r.phase, Phase::Reveal { change: ChangeKind::Twist, .. }));
@@ -988,4 +988,66 @@ fn snapshots_round_numbers_and_skip_defaults() {
     // Objects still deserialize with their defaults.
     let o: Obj = serde_json::from_str(r#"{"id":1,"kind":"plastic","lane":0,"z":12.3}"#).unwrap();
     assert!(o.alive && !o.plugged);
+}
+
+#[test]
+fn a_split_vote_gives_every_player_the_same_river() {
+    // Two players, Dry Season against Monsoon Surge: one spin, one result, the same for both.
+    for seed in 0..20 {
+        let mut r = Run::new(500 + seed, &[0, 1]);
+        until(&mut r, |r| matches!(r.phase, Phase::Choosing { change: ChangeKind::Twist, .. }));
+        r.choose(0, 1).unwrap();
+        r.choose(1, 0).unwrap();
+        assert!(matches!(r.phase, Phase::Reveal { spin: false, tie_by: Some(0), .. }));
+        let a = r.snapshot_for(0);
+        let b = r.snapshot_for(1);
+        assert_eq!(a.twist, Some(Twist::DrySeason), "seat 0 voted first: Dry Season, every seed");
+        assert_eq!(a.twist, b.twist, "both players see the same Twist");
+        assert_eq!(a.lanes, b.lanes, "both players see the same open lanes");
+        // A late vote change after the result is rejected and changes nothing.
+        assert!(r.choose(1, 1).is_err());
+        assert_eq!(r.snapshot_for(1).twist, a.twist);
+    }
+}
+
+#[test]
+fn changing_your_vote_replaces_it_and_a_missing_voter_times_out() {
+    let mut r = Run::new(77, &[0, 1, 2]);
+    until(&mut r, |r| matches!(r.phase, Phase::Choosing { change: ChangeKind::Twist, .. }));
+    r.choose(0, 0).unwrap();
+    r.choose(0, 1).unwrap(); // changed their mind
+    r.choose(1, 1).unwrap();
+    assert!(r.twist.is_none(), "still waiting for the third player");
+    assert_eq!(r.votes.len(), 2, "one vote per player");
+    // The third player never votes: the timer settles it, 2 votes to 0 for Dry Season.
+    until(&mut r, |r| matches!(r.phase, Phase::Reveal { .. }));
+    assert_eq!(r.twist, Some(Twist::DrySeason));
+    assert!(matches!(r.phase, Phase::Reveal { spin: false, .. }));
+}
+
+#[test]
+fn a_pipe_everyone_rowed_past_costs_once_then_stops_draining() {
+    let mut r = crew_at_pipe(41, 2);
+    let pipe = r.objs.iter().find(|o| o.kind == Kind::Pipe).unwrap().id;
+    // Row on past the pipe without plugging it.
+    let mut hit = 0;
+    for _ in 0..(TICK_HZ as usize * 8) {
+        r.health = 50.0;
+        let i = idle(&r);
+        r.step(&i);
+        if r.drain_events().iter().any(|e| *e == Event::PipeMissed { pipe }) {
+            hit += 1;
+        }
+    }
+    assert_eq!(hit, 1, "left open exactly once");
+    assert_eq!(r.pipes_missed, 1);
+    // Afterwards it no longer drains.
+    r.health = 50.0;
+    for _ in 0..TICK_HZ as usize {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    assert!(r.health >= 50.0 - 0.01 || r.objs.iter().all(|o| o.kind != Kind::Pipe || !o.alive), "no drain from a pipe left behind: {}", r.health);
+    let p = r.objs.iter().find(|o| o.id == pipe);
+    assert!(p.is_none_or(|p| !p.alive));
 }

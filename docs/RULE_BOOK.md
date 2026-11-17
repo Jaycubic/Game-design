@@ -104,8 +104,8 @@ whoever has fixed the fewest so far). It's only a hint: anyone can fix any pipe.
 
 ### With a crew (2–4 players): everyone holds a key
 
-1. **Keys.** As the crew nears a pipe (about 70 m), **each player sees their own key** for 3 seconds, on the left
-   of the screen: for example "Your key: ⭐ 6 · Star". Every player gets a different symbol, and nobody else sees
+1. **Keys.** As the crew nears a pipe (about 70 m), **each player sees their own key** for 3 seconds, just above
+   the lock card near the bottom of the screen: for example "Your key: ⭐ 6 · Star". Every player gets a different symbol, and nobody else sees
    yours. **Remember it.**
 2. **Call for help.** A player beside the pipe presses **Action**. Their boat stops and a **lock** opens with one
    slot per player, in seat order (player 1, 2, 3, 4), each in that player's colour.
@@ -167,6 +167,7 @@ For example, 40 plastic with 2 pipes plugged and 3 banks greened scores 40 × 2 
 | Pipe plugged | +10 |
 | Plastic missed | −0.8 |
 | Each open pipe | −0.12 every second |
+| A pipe left open (every boat rowed 15 m past it without plugging) | −5 once; it stops draining after that |
 
 - **River choked:** if River Health ever reaches 0, the crew's final score is **halved**.
 - **River revived:** if the run ends with River Health at 60 or more, the crew gets **+20**.
@@ -184,8 +185,8 @@ The controls, the score formula and the win condition never change.
 
 ### Rule change 1: Twist (about 1:03 into the run)
 
-Everyone votes within 15 seconds. The option with the most votes wins. A tie, or no votes at all, is settled by a
-visible spin among the tied options.
+Everyone votes within 15 seconds. The option with the most votes wins. If two options tie (for example 1–1 with two
+players), a tie goes to the option that got the **first vote** (the result card names who voted first), so the same votes always give the same river on every screen. Only if nobody votes at all does the river pick at random (a visible spin). You can change your vote until everyone has voted; changing it counts as a new, later vote.
 
 | Twist | Upside | Downside |
 |---|---|---|
@@ -195,8 +196,8 @@ visible spin among the tied options.
 
 ### Rule change 2: Finale (about 2:20 into the run)
 
-The crew **votes** within 10 seconds, like the Twist. The option with the most votes wins; a tie, or no votes, is
-settled by a visible spin.
+The crew **votes** within 10 seconds, like the Twist. The option with the most votes wins; a tie goes to the first
+vote, and only no votes at all means a visible spin.
 
 | Finale | Effect |
 |---|---|

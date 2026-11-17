@@ -134,12 +134,6 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .coach-text { font-size: 0.85rem; }
 }
 
-/* Portrait phone in a run: suggest turning sideways (the river reads better wide). */
-.rotate-hint { display: none; }
-@media (max-width: 760px) and (orientation: portrait) {
-  .touch-run .rotate-hint { display: block; position: absolute; left: 50%; top: 34%; transform: translateX(-50%); background: rgba(10, 30, 40, 0.75); color: #fff; border-radius: 12px; padding: 6px 12px; font-size: 0.85rem; pointer-events: none; animation: rh-fadeout 0.6s 4s forwards; white-space: nowrap; }
-}
-
 /* ── On-screen control options (Settings → Controls) ── */
 .tc-swipe-only .tc-left, .tc-swipe-only .tc-right { display: none; }
 .tc-swipe-hint { position: absolute; left: 50%; bottom: calc(70px + env(safe-area-inset-bottom, 0)); transform: translateX(-50%); background: rgba(10, 30, 40, 0.6); color: #fff; border-radius: 12px; padding: 4px 12px; font-size: 0.8rem; pointer-events: none; white-space: nowrap; animation: rh-fadeout 0.8s 6s forwards; }
@@ -177,12 +171,46 @@ body:has(.rh-choice, .rh-reveal, .rh-results) .touch-controls { display: none; }
   .hub-player > span:not(.seeds-chip):not(.hub-avatar):not(.rank-chip) { display: none; }
 }
 
-/* ── Pause button: make room for it at the left of the top bar ── */
-.run-ui .rh-top { left: 124px; }
+/* ── Pause button on phones: icon only ── */
 @media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
-  .rh-pause { top: calc(8px + env(safe-area-inset-top, 0)); left: calc(8px + env(safe-area-inset-left, 0)); width: 48px; height: 48px; padding: 0; justify-content: center; }
+  .rh-pause { width: 48px; height: 48px; padding: 0; justify-content: center; }
   .rh-pause-label { display: none; }
   .rh-pause-icon { font-size: 1.3rem; }
-  .run-ui .rh-top { left: calc(64px + env(safe-area-inset-left, 0)); }
 }
-.tutorial .rh-top { left: 12px; }
+/* Phone portrait: the six signals form one row just above the thumb buttons
+   (the HUD grid keeps --reserve-bottom free for both). */
+@media (max-width: 760px) and (orientation: portrait) {
+  .tc-glyphs, .tc-swap .tc-glyphs {
+    top: auto; right: auto; left: 50%; transform: translateX(-50%);
+    bottom: calc(102px + env(safe-area-inset-bottom, 0px));
+    grid-template-columns: repeat(6, 42px); gap: 6px;
+  }
+}
+/* Phones: a one-row key card, and lock slots that fit four across. */
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  .rhud .rh-key.on { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 14px; }
+  .rhud .rh-key-glyph { font-size: 1.8rem; margin: 0; grid-auto-flow: column; align-items: center; gap: 4px; }
+  .rhud .rh-key-hint { display: none; }
+  .rh-slots { gap: 6px; flex-wrap: nowrap; margin: 6px 0 4px; }
+  .rh-slot { min-width: 0; flex: 1 1 0; padding: 3px 4px; }
+  .rh-slot-key { font-size: 1.5rem; min-height: 1.7rem; }
+  .rhud .rh-code-card { padding: 8px 10px; }
+  .rh-code-title { font-size: 1rem; }
+}
+/* Phone landscape: the top bar on one row (score · clock · health), so the river keeps its height. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .rh-top { grid-template-columns: auto 1fr auto; }
+  .rh-scores { grid-column: 1; grid-row: 1; }
+  .rh-clock { grid-column: 2; grid-row: 1; }
+  .rh-health { grid-column: 3; grid-row: 1; justify-self: end; width: min(220px, 30vw); padding: 2px 10px; }
+  .rh-health-label { font-size: 0.7rem; }
+  .rh-bar { height: 10px; }
+  .rh-crew-name { display: none; }
+  .rhud .rh-pipe { padding: 4px 10px; }
+  .rhud .rh-banner { font-size: 1rem; padding: 4px 14px; }
+  .rhud .rh-code-hint, .rhud .rh-code-tip { display: none; }
+  .rh-code-title { font-size: 0.9rem; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .rh-clock { justify-self: center; }
+}

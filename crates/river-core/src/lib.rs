@@ -87,6 +87,9 @@ pub const HEALTH_MISSED: f32 = -0.8;
 pub const HEALTH_CUT: f32 = 1.5;
 pub const HEALTH_PLUG: f32 = 10.0;
 pub const PIPE_DRAIN: f32 = 0.12; // per active pipe per second
+/// A pipe every boat has passed by this many metres is "left open": it costs
+/// `LOCK_FAIL_COST` once and then stops draining (nobody can row back to it).
+pub const PIPE_MISS_GAP: f32 = 15.0;
 pub const REVIVED_AT: f32 = 60.0;
 pub const REVIVED_BONUS: i32 = 20;
 
@@ -466,7 +469,11 @@ pub enum Phase {
     Reveal {
         change: ChangeKind,
         left: f32,
+        /// Nobody voted: the river picked at random.
         spin: bool,
+        /// A tie was broken by the vote cast first; this is that player's seat.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tie_by: Option<u8>,
     },
     Finished,
 }
@@ -489,6 +496,8 @@ pub enum Event {
     PlugStarted { seat: u8, pipe: u32 },
     Plugged { seat: u8, pipe: u32 },
     PlugFailed { seat: u8, pipe: u32 },
+    /// Every boat rowed past this pipe without plugging it.
+    PipeMissed { pipe: u32 },
     Ping { seat: u8, glyph: u8 },
     WaveIncoming { id: u32 },
     RuleChanged { change: ChangeKind, choice: String },
@@ -574,6 +583,9 @@ pub struct Run {
     /// Plastic that escaped downstream, for performance scoring.
     #[serde(default)]
     pub missed: u32,
+    /// Pipes every boat rowed past without plugging.
+    #[serde(default)]
+    pub pipes_missed: u32,
     /// Course generation cursor (the next row's z) and the next pipe's z.
     #[serde(default)]
     pub gen_z: f32,
@@ -680,6 +692,7 @@ impl Run {
             adaptive: true,
             director: DirectorWindow::default(),
             missed: 0,
+            pipes_missed: 0,
             gen_z: 45.0,
             gen_pipe: 120.0,
             river,
@@ -962,24 +975,34 @@ impl Run {
         Ok(())
     }
 
-    /// The most-voted option (of `n`), and whether a tie (or no votes) was settled by a spin.
-    fn tally(&mut self, n: usize) -> (usize, bool) {
+    /// The most-voted option (of `n`). A tie goes to the tied option that got the first
+    /// vote (returned as `tie_by`, that voter's seat), so the same votes always give the
+    /// same result on every screen. With no votes at all the river spins (`spin`).
+    fn tally(&mut self, n: usize) -> (usize, bool, Option<u8>) {
+        if self.votes.is_empty() {
+            return (self.rng.range(n as u32) as usize, true, None);
+        }
         let mut counts = vec![0u32; n];
         for (_, o) in &self.votes {
             counts[*o as usize] += 1;
         }
         let best = *counts.iter().max().unwrap();
         let tied: Vec<usize> = (0..n).filter(|i| counts[*i] == best).collect();
-        (tied[self.rng.range(tied.len() as u32) as usize], tied.len() > 1)
+        if tied.len() == 1 {
+            return (tied[0], false, None);
+        }
+        // `votes` is in the order they were cast (changing your vote moves it to the end).
+        let (seat, first) = *self.votes.iter().find(|(_, o)| tied.contains(&(*o as usize))).expect("a tied option has votes");
+        (first as usize, false, Some(seat))
     }
 
     fn resolve_finale_vote(&mut self) {
-        let (pick, spin) = self.tally(FINALES.len());
-        self.resolve_finale(Some(pick), spin);
+        let (pick, spin, tie_by) = self.tally(FINALES.len());
+        self.resolve_finale(Some(pick), spin, tie_by);
     }
 
     fn resolve_twist(&mut self) {
-        let (pick, spin) = self.tally(TWISTS.len());
+        let (pick, spin, tie_by) = self.tally(TWISTS.len());
         let twist = TWISTS[pick];
         self.twist = Some(twist);
         self.changes += 1;
@@ -993,10 +1016,10 @@ impl Run {
             }
         }
         self.events.push(Event::RuleChanged { change: ChangeKind::Twist, choice: name_of(&twist) });
-        self.phase = Phase::Reveal { change: ChangeKind::Twist, left: REVEAL, spin };
+        self.phase = Phase::Reveal { change: ChangeKind::Twist, left: REVEAL, spin, tie_by };
     }
 
-    fn resolve_finale(&mut self, choice: Option<usize>, spin: bool) {
+    fn resolve_finale(&mut self, choice: Option<usize>, spin: bool, tie_by: Option<u8>) {
         let idx = choice.unwrap_or_else(|| self.rng.range(FINALES.len() as u32) as usize);
         let f = FINALES[idx];
         self.finale = Some(f);
@@ -1010,7 +1033,7 @@ impl Run {
             }
         }
         self.events.push(Event::RuleChanged { change: ChangeKind::Finale, choice: name_of(&f) });
-        self.phase = Phase::Reveal { change: ChangeKind::Finale, left: REVEAL, spin: spin || choice.is_none() };
+        self.phase = Phase::Reveal { change: ChangeKind::Finale, left: REVEAL, spin: spin || choice.is_none(), tie_by };
     }
 
     /// Advance one fixed step with each seat's input.
@@ -1194,7 +1217,7 @@ impl Run {
         let pipe = self
             .objs
             .iter()
-            .find(|o| o.kind == Kind::Pipe && !o.plugged && o.lane == side && z >= o.z - 7.0 && z <= o.z + 3.0)
+            .find(|o| o.kind == Kind::Pipe && o.alive && !o.plugged && o.lane == side && z >= o.z - 7.0 && z <= o.z + 3.0)
             .map(|o| o.id);
         if let Some(pipe) = pipe {
             let plug = if self.boats.len() > 1 {
@@ -1260,14 +1283,14 @@ impl Run {
         }
         let (front, last) = (self.leader_z(), self.last_z());
         let objs = &self.objs;
-        self.deals.retain(|d| objs.iter().any(|o| o.id == d.pipe && !o.plugged && o.z > last - 40.0));
+        self.deals.retain(|d| objs.iter().any(|o| o.id == d.pipe && o.alive && !o.plugged && o.z > last - 40.0));
         // One pipe's keys at a time, so "your key" is never ambiguous: the next pipe's
         // keys come once the current pipe is fixed or everyone has passed it.
         if self.deals.is_empty() {
             let next = self
                 .objs
                 .iter()
-                .filter(|o| o.kind == Kind::Pipe && !o.plugged && o.z > front - 3.0 && o.z <= front + KEY_DEAL_AT)
+                .filter(|o| o.kind == Kind::Pipe && o.alive && !o.plugged && o.z > front - 3.0 && o.z <= front + KEY_DEAL_AT)
                 .min_by(|a, b| a.z.total_cmp(&b.z))
                 .map(|o| o.id);
             if let Some(pipe) = next {
@@ -1435,7 +1458,7 @@ impl Run {
         }
         // Old objects far behind are dropped to keep snapshots small.
         let cutoff = last - 40.0;
-        self.objs.retain(|o| o.z > cutoff || (o.kind == Kind::Pipe && !o.plugged));
+        self.objs.retain(|o| o.z > cutoff || (o.kind == Kind::Pipe && o.alive && !o.plugged));
     }
 
     /// A short stop, then a moment of protection; the boat spills some of its
@@ -1502,7 +1525,26 @@ impl Run {
         if self.finale == Some(Finale::CleanSweep) {
             rate *= 0.5;
         }
-        let active = self.objs.iter().filter(|o| o.kind == Kind::Pipe && !o.plugged && o.z <= leader + 30.0).count();
+        // A pipe everyone has rowed past is left open: one hit, then it stops counting
+        // (it would otherwise drain the river forever from somewhere nobody can see or reach).
+        let last = self.last_z();
+        let left_open: Vec<u32> = self
+            .objs
+            .iter_mut()
+            .filter(|o| o.kind == Kind::Pipe && o.alive && !o.plugged && o.z < last - PIPE_MISS_GAP)
+            .map(|o| {
+                o.alive = false;
+                o.id
+            })
+            .collect();
+        for id in left_open {
+            self.pipes_missed += 1;
+            self.events.push(Event::PipeMissed { pipe: id });
+            if !self.tutorial {
+                self.heal(-LOCK_FAIL_COST);
+            }
+        }
+        let active = self.objs.iter().filter(|o| o.kind == Kind::Pipe && o.alive && !o.plugged && o.z <= leader + 30.0).count();
         self.heal(-(active as f32) * rate * DT);
 
         // Debris waves.
@@ -1608,7 +1650,7 @@ impl Run {
                 let leader = self.leader_z();
                 let open = self.objs.iter().any(|o| o.kind == Kind::Pipe && !o.plugged && o.z <= leader);
                 let plugged: u32 = self.crews.iter().map(|c| c.pipes).sum();
-                !open && plugged > 0
+                !open && self.pipes_missed == 0 && plugged > 0
             }
             River::Mangrove => crew.map(|c| c.nets).unwrap_or(0) >= 3,
             River::Gorge => b.capsizes == 0,

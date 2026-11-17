@@ -81,7 +81,8 @@ waves leave one gap per 3 lanes. Pipes are plugged from the outermost open lane 
 |---|---|---|
 | Who chooses | Every player votes (15 s) | Every player votes (10 s) |
 | Options | Monsoon Surge, Dry Season, Volunteer Day | Second Wind, Clean Sweep |
-| Tie or no choice | Visible spin among the tied options | Visible spin |
+| Tie | The first vote cast among the tied options wins (named on the result card) | Same |
+| No votes | Visible spin | Visible spin |
 | Purpose | A collective, negotiated change to the river | A late choice: points now or a safer river |
 
 Every option has an upside and a cost, so no choice is free. Both changes go through the same ceremony: a 5 s

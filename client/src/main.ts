@@ -29,6 +29,22 @@ let quality: Quality = loadQuality();
 let guess: HardwareGuess | null = null;
 let backdrop: MenuBackdrop | null = null;
 let runMode: RunMode | null = null;
+// Dev builds only: lets play-tests reach the live run (layout and overlap checks).
+if (import.meta.env.DEV) {
+  const w = window as unknown as Record<string, unknown>;
+  w.__run = () => runMode;
+  void import("./dev/layout-audit").then((m) => {
+    w.__audit = m.audit;
+    w.__stress = () => runMode && m.stress((runMode as unknown as { hud: { banner(t: string, k?: string): void } }).hud);
+  });
+  void import("./dev/autopilot").then((m) => {
+    w.__autopilot = (vote = 0) => {
+      const ap = m.autopilot(() => runMode, vote);
+      w.__report = ap.report;
+      return "on";
+    };
+  });
+}
 let runNames: Record<string, string> = {};
 let socket: RoomSocket | null = null;
 let myRooms: { room_id: string; code: string; status: string }[] = [];

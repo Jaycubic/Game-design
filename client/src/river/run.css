@@ -226,3 +226,101 @@ body:has(.rh-results) :is(.rh-top, .rh-bottom, .rh-pause, .rh-signals, .rh-keys,
 /* On the results screen, banners (e.g. Seeds earned) sit below the card, and score pop-ups are hidden. */
 body:has(.rh-results) .rh-pop, body:has(.rh-results) .rh-bubble { display: none !important; }
 body:has(.rh-results) .rh-banner { top: auto; bottom: 4%; }
+
+/* ── HUD layout ─────────────────────────────────────────────────────────────
+   One grid of named slots. Every HUD piece belongs to exactly one slot and a slot
+   stacks its pieces, so two pieces can never land on top of each other.
+
+     top    top     top       pause + crew score · clock · River health
+     left   notices right     pipe card, banners (max 2), tutorial coach
+     left   free    right     (open river) · your key card on the left
+     lower  lower   lower     pipe lock / code card
+     bl     bottom  br        key hints · boost bar · signal buttons
+
+   Layers, low to high: --z-world (tags, pops, pipe marker) < --z-hud (this grid)
+   < --z-controls (thumb buttons) < --z-moment (countdown, votes, reveal, results)
+   < --z-menu (pause) < --z-coach (tutorial spotlight).
+   Thumb controls reserve room with --reserve-* so the grid lays out around them. */
+:root {
+  --z-world: 1;
+  --z-hud: 2;
+  --z-controls: 3;
+  --z-moment: 4;
+  --z-menu: 5;
+  --z-coach: 6;
+  --reserve-bottom: 0px;
+  --reserve-right: 0px;
+  --side-min: 0px;
+}
+.rh-fx, .rh-pipe-mark { z-index: var(--z-world); }
+.rhud {
+  position: absolute; inset: 0; z-index: var(--z-hud); pointer-events: none;
+  display: grid;
+  grid-template-columns: minmax(var(--side-min), 1fr) minmax(0, 460px) minmax(var(--side-min), 1fr);
+  /* Only the notices (clipped) and the open river may shrink; the rest keep their size. */
+  grid-template-rows: auto minmax(0, auto) minmax(0, 1fr) auto auto;
+  grid-template-areas: "top top top" "left notices right" "left free right" "lower lower lower" "bl bottom br";
+  gap: 8px 12px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px) + var(--reserve-right))
+    calc(12px + env(safe-area-inset-bottom, 0px) + var(--reserve-bottom)) calc(12px + env(safe-area-inset-left, 0px));
+}
+.rhud-slot { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.rhud-notices { min-height: 0; overflow: hidden; }
+.rhud-topbar { grid-area: top; flex-direction: row; align-items: flex-start; gap: 10px; }
+.rhud-topbar .rh-top { flex: 1; min-width: 0; }
+.rhud-notices { grid-area: notices; align-items: center; }
+.rhud-left { grid-area: left; align-items: flex-start; justify-content: center; }
+.rhud-lower { grid-area: lower; align-items: center; }
+.rhud-bottom { grid-area: bottom; align-items: center; justify-content: flex-end; }
+.rhud-bl { grid-area: bl; justify-content: flex-end; align-items: flex-start; }
+.rhud-br { grid-area: br; justify-content: flex-end; align-items: flex-end; }
+/* Pieces in slots flow; the old fixed offsets no longer apply. */
+.rhud :is(.rh-top, .rh-code, .rh-bottom, .rh-keys, .rh-signals, .rh-pipe, .rh-key, .rh-pause, .rh-banner, .coach) { position: static; inset: auto; transform: none; margin: 0; }
+.rhud .rh-pipe { width: min(380px, 100%); }
+.rhud .rh-code { max-width: 100%; }
+.rhud .coach { width: min(520px, 100%); }
+.rh-banners { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 100%; }
+.rhud .rh-banner { animation-name: rh-banner-in; max-width: 100%; white-space: normal; text-align: center; }
+.rhud .rh-banner.go { font-size: 3.6rem; padding: 0 12px; }
+@keyframes rh-banner-in { 0% { opacity: 0; transform: scale(0.7); } 15% { opacity: 1; transform: scale(1.05); } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+.rh-center { z-index: var(--z-moment); }
+.rh-menu { z-index: var(--z-menu); }
+.touch-controls { z-index: var(--z-controls); }
+.spot { z-index: var(--z-coach); }
+/* Big moments take the screen: the slot grid steps back so nothing peeks through. */
+body:has(.rh-choice, .rh-reveal, .rh-results) .rhud :is(.rhud-notices, .rhud-left, .rhud-lower, .rhud-bottom) { visibility: hidden; }
+/* Priorities when pieces compete for room:
+   at a lock the lock card wins and the pipe card steps aside (you're there). When you are
+   the one fixing, your key card steps aside too: your slot is typed from memory. */
+body:has(.rh-code-card) .rhud .rh-pipe { display: none; }
+body:has(.rh-code-card.fixer, .rh-code-card:not(.lock)) .rhud .rh-key { display: none; }
+/* At a lock, or on short screens: one banner at a time. */
+body:has(.rh-code-card) .rh-banners > .rh-banner:nth-child(n + 2) { display: none; }
+/* Short screens: one banner at a time. */
+@media (max-height: 500px) { .rh-banners > .rh-banner:nth-child(n + 2) { display: none; } }
+/* Touch screens never show keyboard hints. */
+@media (pointer: coarse) { .rh-keys { display: none; } }
+
+/* Touch controls: the thumb clusters own the bottom corners, so the grid's bottom
+   corners grow to fit them and the boost bar and lock card sit between them. */
+.touch-run .rhud {
+  --side-min: 170px;
+  grid-template-areas: "top top top" "left notices right" "left free right" "bl lower br" "bl bottom br";
+}
+.touch-run .rh-signals { display: none; }
+/* Tablets: the signal column sits on the right edge. */
+.touch-run { --reserve-right: 58px; }
+/* Phone landscape: the signal grid sits top-right under the health bar. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .touch-run { --reserve-right: 0px; }
+  .touch-run .rhud { --side-min: 160px; padding-top: calc(6px + env(safe-area-inset-top, 0px)); padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+}
+/* Phone portrait: thumbs and a row of signals along the bottom; everything else stacks above. */
+@media (max-width: 760px) and (orientation: portrait) {
+  .rhud { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "notices" "free" "lower" "bottom"; padding-left: 8px; padding-right: 8px; }
+  .rhud-left { grid-area: free; align-items: center; justify-content: flex-start; }
+  .rhud-bl, .rhud-br { display: none; }
+  .touch-run .rhud { --side-min: 0px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "notices" "free" "lower" "bottom"; }
+  .touch-run { --reserve-right: 0px; --reserve-bottom: 168px; }
+  body:has(.tc-swipe-only) { --reserve-bottom: 92px; }
+}

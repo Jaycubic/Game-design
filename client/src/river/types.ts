@@ -47,7 +47,7 @@ export type RunPhase =
   | { phase: "running" }
   | { phase: "warning"; change: ChangeKind; left: number }
   | { phase: "choosing"; change: ChangeKind; left: number; pickers: number | null }
-  | { phase: "reveal"; change: ChangeKind; left: number; spin: boolean }
+  | { phase: "reveal"; change: ChangeKind; left: number; spin: boolean; tie_by?: number }
   | { phase: "finished" };
 
 export interface PlugView {
@@ -122,6 +122,7 @@ export type RunEvent =
   | { type: "plug_started"; seat: number; pipe: number }
   | { type: "plugged"; seat: number; pipe: number }
   | { type: "plug_failed"; seat: number; pipe: number }
+  | { type: "pipe_missed"; pipe: number }
   | { type: "ping"; seat: number; glyph: number }
   | { type: "wave_incoming"; id: number }
   | { type: "rule_changed"; change: ChangeKind; choice: string }
