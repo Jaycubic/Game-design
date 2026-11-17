@@ -972,3 +972,20 @@ fn team_endless_shares_three_lives() {
     assert_eq!(r.phase, Phase::Finished, "the third capsize ends it");
     assert_eq!(Run::endless(8, &[0], 1.0, River::Canal).lives, 1, "solo has one life");
 }
+
+#[test]
+fn snapshots_round_numbers_and_skip_defaults() {
+    let mut r = Run::new(3, &[0, 1, 2, 3]);
+    r.phase = Phase::Running;
+    for _ in 0..40 {
+        let i = idle(&r);
+        r.step(&i);
+    }
+    let json = serde_json::to_string(&r.snapshot_for(0)).unwrap();
+    assert!(!json.contains(r#""alive":true"#), "alive is implied");
+    assert!(!json.contains(r#""plugged":false"#), "plugged is implied");
+    assert!(json.len() < 7_000, "4-player snapshot {} bytes", json.len());
+    // Objects still deserialize with their defaults.
+    let o: Obj = serde_json::from_str(r#"{"id":1,"kind":"plastic","lane":0,"z":12.3}"#).unwrap();
+    assert!(o.alive && !o.plugged);
+}

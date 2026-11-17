@@ -145,6 +145,11 @@ export class RunMode {
   }
 
   onSnapshot(s: Snapshot) {
+    // The server leaves out defaults to keep snapshots small.
+    for (const o of s.objs) {
+      if (o.alive === undefined) o.alive = true;
+      if (o.plugged === undefined) o.plugged = false;
+    }
     const first = !this.snap;
     this.snap = s;
     this.snapAt = performance.now();

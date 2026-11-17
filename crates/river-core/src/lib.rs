@@ -161,6 +161,23 @@ pub const NET_HP: u8 = 2;
 /// Plastic a freed ghost net releases.
 pub const NET_PLASTIC: u32 = 4;
 
+fn yes() -> bool {
+    true
+}
+fn is_true(v: &bool) -> bool {
+    *v
+}
+fn is_false(v: &bool) -> bool {
+    !*v
+}
+/// Snapshot numbers are rounded so the JSON sent 15 times a second stays small.
+fn round1<S: serde::Serializer>(v: &f32, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_f32((v * 10.0).round() / 10.0)
+}
+fn round2<S: serde::Serializer>(v: &f32, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_f32((v * 100.0).round() / 100.0)
+}
+
 fn is_zero_u8(v: &u8) -> bool {
     *v == 0
 }
@@ -239,10 +256,13 @@ pub struct Obj {
     pub id: u32,
     pub kind: Kind,
     pub lane: i8,
+    #[serde(serialize_with = "round1")]
     pub z: f32,
+    /// Left out of the JSON when true (almost always), to keep snapshots small.
+    #[serde(default = "yes", skip_serializing_if = "is_true")]
     pub alive: bool,
     /// Pipes: plugged.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_false")]
     pub plugged: bool,
     /// Debris waves on wide rivers leave a second gap lane.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1626,17 +1646,26 @@ pub struct BoatView {
     pub seat: u8,
     pub crew: u8,
     pub lane: i8,
+    #[serde(serialize_with = "round2")]
     pub z: f32,
+    #[serde(serialize_with = "round2")]
     pub speed: f32,
+    #[serde(serialize_with = "round2")]
     pub hop: f32,
+    #[serde(serialize_with = "round2")]
     pub capsize: f32,
+    #[serde(serialize_with = "round2")]
     pub immune: f32,
+    #[serde(serialize_with = "round2")]
     pub slow: f32,
+    #[serde(serialize_with = "round2")]
     pub boost: f32,
+    #[serde(serialize_with = "round2")]
     pub boosting: f32,
     pub plastic: u32,
     pub plugging: Option<u32>,
     /// Seconds left fixing a just-plugged pipe.
+    #[serde(serialize_with = "round2")]
     pub fixing: f32,
     /// Pipes this boat has fixed this run (for the suggested fixer).
     pub pipes: u32,
@@ -1660,6 +1689,7 @@ pub struct PlugView {
     /// Memory puzzle, after the code has been hidden: `code` carries nothing.
     pub hidden: bool,
     pub entered: usize,
+    #[serde(serialize_with = "round2")]
     pub left: f32,
 }
 
@@ -1671,11 +1701,14 @@ pub struct Snapshot {
     /// Endless: lives the crew has left.
     pub lives: u8,
     /// Metres travelled by the leading boat (shown in Endless).
+    #[serde(serialize_with = "round2")]
     pub distance: f32,
     pub duration: f32,
     pub tutorial: bool,
+    #[serde(serialize_with = "round2")]
     pub t: f32,
     pub phase: Phase,
+    #[serde(serialize_with = "round2")]
     pub health: f32,
     pub choked: bool,
     pub twist: Option<Twist>,

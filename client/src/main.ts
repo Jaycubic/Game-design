@@ -7,7 +7,7 @@ import { api, auth, ApiError } from "./net/api";
 import { RoomSocket } from "./net/socket";
 import { store } from "./store";
 import type { Envelope, RoomView } from "./types";
-import { createEngine, loadQuality, qualitySettings, saveQuality, type EngineInfo, type Quality } from "./render/engine";
+import { createEngine, detectQuality, loadQuality, perf, qualitySettings, saveQuality, type EngineInfo, type HardwareGuess, type Level, type Quality } from "./render/engine";
 import { clear, h, ModalStack, toast } from "./ui/dom";
 import { authScreen, hubScreen, lobbyScreen, titleScreen, type UiActions } from "./ui/screens";
 import { icon } from "./ui/icons";
@@ -25,6 +25,8 @@ const banner = document.getElementById("banner")!;
 
 let engineInfo: EngineInfo;
 let quality: Quality = loadQuality();
+/** What "auto" picked on this device, and why. */
+let guess: HardwareGuess | null = null;
 let backdrop: MenuBackdrop | null = null;
 let runMode: RunMode | null = null;
 let runNames: Record<string, string> = {};
@@ -254,11 +256,17 @@ const ui: UiActions = {
     modals.push(
       "settings",
       "Settings",
-      settings(quality, engineInfo.backend, engineInfo.reason, (q) => {
-        quality = q;
-        saveQuality(q);
-        location.reload();
-      }),
+      settings(
+        quality,
+        engineInfo.backend,
+        engineInfo.reason,
+        (q) => {
+          quality = q;
+          saveQuality(q);
+          location.reload();
+        },
+        guess ? `${guess.level === "low" ? "Low" : "Medium"} here: ${guess.why}` : "",
+      ),
     ),
 };
 
@@ -336,11 +344,59 @@ function renderBanner() {
   banner.textContent = s.socket === "connecting" ? "Connecting…" : `Connection lost — ${s.socketDetail ?? "reconnecting…"}`;
 }
 
+// ── frame-rate watch (Auto quality) ─────────────────────────────────────────
+
+/**
+ * In Auto quality, measure the frame rate during runs. If it stays under 40 fps
+ * for a 4-second window, render at a lower resolution (up to half), without a
+ * reload. The first window of each run is skipped (models and shaders load then).
+ */
+function watchFrameRate() {
+  const engine = engineInfo.engine;
+  let start = 0;
+  let frames = 0;
+  let windows = 0;
+  let told = false;
+  engine.onEndFrameObservable.add(() => {
+    if (!runMode || document.hidden) {
+      start = 0;
+      windows = 0;
+      return;
+    }
+    const now = performance.now();
+    if (!start) {
+      start = now;
+      frames = 0;
+      return;
+    }
+    frames++;
+    if (now - start < 4000) return;
+    const fps = (frames * 1000) / (now - start);
+    start = now;
+    frames = 0;
+    if (windows++ === 0) return; // warm-up window
+    const scale = engine.getHardwareScalingLevel();
+    if (fps < 40 && scale < 2) {
+      engine.setHardwareScalingLevel(Math.min(2, scale + 0.25));
+      perf.low = true;
+      if (!told) {
+        told = true;
+        toast("Graphics lowered automatically for a smoother game.");
+      }
+    }
+  });
+}
+
 // ── boot ─────────────────────────────────────────────────────────────────
 
 async function boot() {
-  engineInfo = await createEngine(canvas);
-  engineInfo.engine.setHardwareScalingLevel(qualitySettings(quality).scaling);
+  // Graphics level: the player's choice, or "auto" from the hardware.
+  guess = await detectQuality();
+  const level: Level = quality === "auto" ? guess.level : quality;
+  perf.low = level === "low";
+  engineInfo = await createEngine(canvas, true, !perf.low);
+  engineInfo.engine.setHardwareScalingLevel(qualitySettings(level).scaling);
+  if (quality === "auto") watchFrameRate();
   window.addEventListener("resize", () => engineInfo.engine.resize());
   backdrop = new MenuBackdrop(engineInfo.engine);
   (window as any).__nt = { store, engineInfo };

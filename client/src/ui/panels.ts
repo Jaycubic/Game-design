@@ -162,7 +162,7 @@ export function signalName(i: number): string {
   return n.charAt(0).toUpperCase() + n.slice(1);
 }
 
-export function settings(current: Quality, backend: string, reason: string, onQuality: (q: Quality) => void): HTMLElement {
+export function settings(current: Quality, backend: string, reason: string, onQuality: (q: Quality) => void, autoNote = ""): HTMLElement {
   return h(
     "div",
     { class: "settings" },
@@ -171,13 +171,23 @@ export function settings(current: Quality, backend: string, reason: string, onQu
       "fieldset",
       null,
       h("legend", null, "Graphics quality"),
-      (["low", "medium", "high"] as Quality[]).map((q) =>
+      (["auto", "low", "medium", "high"] as Quality[]).map((q) =>
         h(
           "label",
           { class: "radio" },
           h("input", { type: "radio", name: "quality", value: q, checked: q === current, onchange: () => onQuality(q) }),
-          ` ${q[0].toUpperCase() + q.slice(1)}`,
-          h("small", { class: "muted" }, q === "low" ? " — lower resolution (older laptops)" : q === "medium" ? " — recommended" : " — full resolution"),
+          ` ${q === "auto" ? "Auto" : q[0].toUpperCase() + q.slice(1)}`,
+          h(
+            "small",
+            { class: "muted" },
+            q === "auto"
+              ? ` — recommended: picks for this device${autoNote ? ` (${autoNote})` : ""} and lowers itself if the game slows down`
+              : q === "low"
+                ? " — lower resolution, shorter view, no smoothing (phones, older laptops)"
+                : q === "medium"
+                  ? " — balanced"
+                  : " — full resolution",
+          ),
         ),
       ),
     ),

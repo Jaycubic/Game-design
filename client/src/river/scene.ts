@@ -44,6 +44,7 @@ import {
   murkMesh,
 } from "./props";
 import { LANE_W, SEAT_COLOURS, type River, type RunObj } from "./types";
+import { perf } from "../render/engine";
 
 /** Per-river look: water colour when clean, bank colours and heights, what lines the banks. */
 interface Theme {
@@ -198,7 +199,7 @@ export class RiverScene {
     scene.clearColor = new Color4(sky.r, sky.g, sky.b, 1);
     scene.fogMode = Scene.FOGMODE_LINEAR;
     scene.fogStart = 120;
-    scene.fogEnd = 300;
+    scene.fogEnd = perf.low ? 210 : 300;
     scene.fogColor = new Color3(0.8, 0.84, 0.82);
     const ip = scene.imageProcessingConfiguration;
     ip.toneMappingEnabled = true;
@@ -219,7 +220,8 @@ export class RiverScene {
 
     this.camera = new UniversalCamera("chase", new Vector3(0, 4, -8), scene);
     this.camera.minZ = 0.2;
-    this.camera.maxZ = 400;
+    // Low-end mode: a shorter view (fog hides the cut), so far fewer objects are drawn.
+    this.camera.maxZ = perf.low ? 230 : 400;
     this.camera.fov = 0.95;
 
     this.vc = new StandardMaterial("vc", scene);
@@ -676,14 +678,14 @@ export class RiverScene {
       this.waterTex.uOffset = Math.sin(this.time * 0.3) * 0.02;
       this.banks(focus.z, open);
       this.wake.emitter = new Vector3(focus.x, 0.05, focus.z - 1.1);
-      this.wake.emitRate = focus.boosting ? 160 : 55;
+      this.wake.emitRate = (focus.boosting ? 160 : 55) * (perf.low ? 0.5 : 1);
     }
   }
 
   burst(x: number, z: number, count = 24, colour?: Color4) {
     this.splash.emitter = new Vector3(x, 0.2, z);
     if (colour) this.splash.color1 = colour;
-    this.splash.manualEmitCount = count;
+    this.splash.manualEmitCount = perf.low ? Math.ceil(count / 2) : count;
   }
 
   /** Player's shake setting, 0–1. */
