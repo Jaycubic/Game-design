@@ -14,7 +14,7 @@ import { icon } from "./ui/icons";
 import { howToPlay, settings } from "./ui/panels";
 import { MenuBackdrop } from "./river/backdrop";
 import { RunMode } from "./river/mode";
-import { hubPanel, loadProfile, PANEL_TITLES } from "./ui/hub";
+import { forgetProfile, hubPanel, hydrateProfile, loadProfile, PANEL_TITLES } from "./ui/hub";
 import { selectedRiver } from "./ui/rivers";
 import { sound } from "./audio/sound";
 
@@ -231,8 +231,9 @@ const ui: UiActions = {
   logout() {
     api.logout().catch(() => undefined);
     auth.set(null);
+    forgetProfile();
     socket?.close();
-    store.set({ player: null, room: null });
+    store.set({ player: null, room: null, profile: null });
   },
   async play() {
     const r = await api.createRoom();
@@ -288,6 +289,7 @@ const ui: UiActions = {
 
 async function afterLogin() {
   authError = null;
+  if (store.state.player) hydrateProfile(store.state.player.id);
   void loadProfile();
   if (!tutorialDone() && !new URLSearchParams(location.search).has("room")) offerTutorial();
   await refreshRooms();

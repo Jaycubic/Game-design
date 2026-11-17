@@ -626,7 +626,7 @@ Size: about 15,700 lines of Rust and TypeScript (excluding styles and tests data
 | `player_skill` | Skill rating, confidence, runs, shown rank and its daily floor |
 | `director_runs`, `director_players` | Difficulty log per run and per player |
 
-A run itself lives in server memory for its 3 minutes; only results, rewards and logs are written. Migrations
+A run itself lives in server memory for its 3 minutes; only results, rewards and logs are written. A run whose room empties (everyone quit, refreshed or closed the tab) stops at once instead of simulating for nobody, and an empty room is dropped from memory. The hub profile's reads run in parallel on the server, and the client keeps the last profile in `localStorage` (`nt.profile`, cleared on sign-out) so the hub draws instantly; overlapping profile loads share one request. Migrations
 `0001`–`0006` (see [DATABASE.md](DATABASE.md)).
 
 ---

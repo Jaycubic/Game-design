@@ -91,36 +91,47 @@ async fn ensure(db: &PgPool, pid: Uuid) -> sqlx::Result<()> {
 pub async fn profile(state: web::Data<AppState>, player: AuthPlayer) -> ApiResult<HttpResponse> {
     let pid = player.0.id;
     ensure(&state.db, pid).await?;
-    let (seeds, runs, wins, best, equipped): (i32, i32, i32, i32, String) =
-        sqlx::query_as("SELECT seeds, runs, wins, best_score, equipped FROM player_wallets WHERE player_id = $1")
-            .bind(pid)
-            .fetch_one(&state.db)
-            .await?;
-    let items: Vec<(String, String, bool)> = sqlx::query_as(
-        "SELECT item_key, source, (source = 'shop' AND acquired_at > now() - make_interval(mins => $2)) FROM player_items WHERE player_id = $1",
-    )
-    .bind(pid)
-    .bind(REFUND_MINUTES as i32)
-    .fetch_all(&state.db)
-    .await?;
-    let claims: i64 = sqlx::query_scalar("SELECT count(*) FROM daily_claims WHERE player_id = $1")
+    // Independent reads run side by side (each on its own pooled connection).
+    let db = &state.db;
+    let wallet = async {
+        sqlx::query_as::<_, (i32, i32, i32, i32, String)>(
+            "SELECT seeds, runs, wins, best_score, equipped FROM player_wallets WHERE player_id = $1",
+        )
         .bind(pid)
-        .fetch_one(&state.db)
-        .await?;
-    let claimed_today: bool = sqlx::query_scalar(
-        "SELECT EXISTS (SELECT 1 FROM daily_claims WHERE player_id = $1 AND day = (now() AT TIME ZONE 'utc')::date)",
-    )
-    .bind(pid)
-    .fetch_one(&state.db)
-    .await?;
-    let road_claimed: Vec<i32> = sqlx::query_scalar("SELECT milestone FROM road_claims WHERE player_id = $1")
+        .fetch_one(db)
+        .await
+    };
+    let items = async {
+        sqlx::query_as::<_, (String, String, bool)>(
+            "SELECT item_key, source, (source = 'shop' AND acquired_at > now() - make_interval(mins => $2)) FROM player_items WHERE player_id = $1",
+        )
         .bind(pid)
-        .fetch_all(&state.db)
-        .await?;
+        .bind(REFUND_MINUTES as i32)
+        .fetch_all(db)
+        .await
+    };
+    // Daily claims: how many, and whether today's is taken, in one query.
+    let daily = async {
+        sqlx::query_as::<_, (i64, bool)>(
+            "SELECT count(*), COALESCE(bool_or(day = (now() AT TIME ZONE 'utc')::date), false) FROM daily_claims WHERE player_id = $1",
+        )
+        .bind(pid)
+        .fetch_one(db)
+        .await
+    };
+    let road = async {
+        sqlx::query_scalar::<_, i32>("SELECT milestone FROM road_claims WHERE player_id = $1").bind(pid).fetch_all(db).await
+    };
+    let ((seeds, runs, wins, best, equipped), items, (claims, claimed_today), road_claimed, rivers, missions, rank) = tokio::try_join!(
+        wallet,
+        items,
+        daily,
+        road,
+        crate::rivers::profile(db, pid),
+        crate::missions::list(db, pid),
+        crate::missions::rank(db, pid),
+    )?;
     let owned: Vec<&String> = items.iter().map(|(k, _, _)| k).collect();
-    let rivers = crate::rivers::profile(&state.db, pid).await?;
-    let missions = crate::missions::list(&state.db, pid).await?;
-    let rank = crate::missions::rank(&state.db, pid).await?;
     Ok(HttpResponse::Ok().json(json!({
         "missions": missions, "rank": rank,
         "rivers": rivers["rivers"], "stars": rivers["stars"],

@@ -57,14 +57,50 @@ export function rankCard(r: RankView | undefined) {
   );
 }
 
-export async function loadProfile(): Promise<Profile | null> {
+// The profile (Seeds, boats, missions…) is cached on this device so the hub draws
+// instantly; the server copy always replaces it a moment later. Loads that overlap
+// (end of a run, rewards, opening a panel) share one request.
+const PROFILE_KEY = "nt.profile";
+let inflight: Promise<Profile | null> | null = null;
+
+/** Show this player's cached profile straight away, if there is one. */
+export function hydrateProfile(playerId: string) {
   try {
-    const p = await api.profile();
-    store.set({ profile: p });
-    return p;
+    const raw = localStorage.getItem(PROFILE_KEY);
+    const c = raw ? (JSON.parse(raw) as { id: string; p: Profile }) : null;
+    if (c && c.id === playerId && !store.state.profile) store.set({ profile: c.p });
   } catch {
-    return null;
+    /* no storage, or a bad entry: just wait for the server */
   }
+}
+
+export function forgetProfile() {
+  try {
+    localStorage.removeItem(PROFILE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadProfile(): Promise<Profile | null> {
+  inflight ??= (async () => {
+    try {
+      const p = await api.profile();
+      store.set({ profile: p });
+      const id = store.state.player?.id;
+      try {
+        if (id) localStorage.setItem(PROFILE_KEY, JSON.stringify({ id, p }));
+      } catch {
+        /* storage full or blocked */
+      }
+      return p;
+    } catch {
+      return null;
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
 }
 
 const STAT_NAMES: [keyof CatalogBoat["stats"], string][] = [

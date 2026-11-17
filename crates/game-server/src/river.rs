@@ -164,6 +164,12 @@ async fn run_loop(entry: Arc<Mutex<RoomEntry>>, db: PgPool) {
         tick.tick().await;
         let mut g = entry.lock().await;
         let room = g.state.id;
+        // Everyone has left (quit, refreshed, closed the tab): stop simulating for nobody.
+        if g.state.roster.members.is_empty() {
+            g.run = None;
+            tracing::info!(room = %room, "river run stopped: room is empty");
+            return;
+        }
         // Players who are disconnected, quit (no longer in the room) or paused are away:
         // their boats wait and their keys fill in by themselves, so a lock is never impossible.
         let here: HashSet<u8> = g.state.roster.members.iter().filter(|m| m.connected).map(|m| m.seat).collect();
